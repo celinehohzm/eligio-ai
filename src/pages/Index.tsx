@@ -189,7 +189,8 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
-                  "We often get the wrong referrals, using AI to assist scheduling recommendations would make it incredibly accurate."
+                  "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient 
+                  needs we might have missed. Absolutely revolutionary."
                 </p>
               </CardContent>
             </Card>
@@ -201,13 +202,12 @@ const Index = () => {
                     RP
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Dr. Yew</h4>
-                    <p className="text-gray-600 text-sm">Ophthalmologist @ Singapore</p>
+                    <h4 className="font-semibold text-gray-900">Mr. Deise</h4>
+                    <p className="text-gray-600 text-sm">Patient Access Leadership Team @ Hopkins</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
-                  "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient 
-                  needs we might have missed. Absolutely revolutionary."
+                  "60% of referrals require manual chart review, and it takes 40 hours/week to review documentation. Eligio AI would really help us reduce scheduling time and streamline referrals."
                 </p>
               </CardContent>
             </Card>
