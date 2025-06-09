@@ -184,7 +184,7 @@ const Index = () => {
                     JB
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Dr. James Buchanan</h4>
+                    <h4 className="font-semibold text-gray-900">Dr. Varsha Subramaniam</h4>
                     <p className="text-gray-600 text-sm">Cardiologist @ Mount Sinai</p>
                   </div>
                 </div>
