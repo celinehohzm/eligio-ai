@@ -32,7 +32,7 @@ const Index = () => {
           <div className="max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Revolutionize Your
-              <span className="text-blue-600 block">Medical Practice</span>
+              <span className="text-blue-600 block">Patient Scheduling</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
               AI-powered medical note summarization and intelligent scheduling recommendations 
