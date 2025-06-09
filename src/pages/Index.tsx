@@ -1,3 +1,4 @@
+
 import { ArrowRight, Calendar, FileText, Brain, Users, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +13,7 @@ const Index = () => {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Brain className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">MediSync</span>
+            <span className="text-xl font-bold text-gray-900">TriageGPT</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
             <a href="#features" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
@@ -154,7 +155,7 @@ const Index = () => {
               Trusted by Healthcare Professionals
             </h2>
             <p className="text-xl text-gray-600">
-              See how MediSync is transforming medical practices nationwide.
+              See how TriageGPT is transforming medical practices nationwide.
             </p>
           </div>
           
@@ -171,7 +172,7 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
-                  "MediSync has cut my note review time by 70%. I can now spend more quality time 
+                  "TriageGPT has cut my note review time by 70%. I can now spend more quality time 
                   with my patients instead of drowning in paperwork."
                 </p>
               </CardContent>
@@ -224,7 +225,7 @@ const Index = () => {
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Join thousands of healthcare professionals who are already saving time 
-            and improving patient care with MediSync.
+            and improving patient care with TriageGPT.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg">
@@ -243,7 +244,7 @@ const Index = () => {
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Brain className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold">MediSync</span>
+                <span className="text-xl font-bold">TriageGPT</span>
               </div>
               <p className="text-gray-400">
                 Revolutionizing healthcare with AI-powered solutions for medical professionals.
@@ -269,7 +270,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 MediSync. All rights reserved.</p>
+            <p>&copy; 2024 TriageGPT. All rights reserved.</p>
           </div>
         </div>
       </footer>
