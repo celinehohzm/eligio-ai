@@ -13,7 +13,7 @@ const Index = () => {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Brain className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">TriageGPT</span>
+            <span className="text-xl font-bold text-gray-900">Eligio AI</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
             <a href="#features" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
@@ -21,9 +21,6 @@ const Index = () => {
             </a>
             <a href="#testimonials" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
               Testimonials
-            </a>
-            <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-              Pricing
             </a>
           </nav>
         </div>
@@ -42,13 +39,15 @@ const Index = () => {
               that help doctors focus on what matters most - patient care.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg">
-                Watch Demo
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
+                onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSew9JsFOkP0ED6l0ISISMys5kwkMClSbC2ngq7BzYuebfyg0A/viewform?usp=sharing&ouid=110317697554240526367', '_blank')}
+              >
+                Get Early Access
               </Button>
             </div>
-            <p className="text-sm text-gray-500 mt-4">
-              No credit card required • 14-day free trial
-            </p>
           </div>
         </div>
       </section>
@@ -155,7 +154,7 @@ const Index = () => {
               Trusted by Healthcare Professionals
             </h2>
             <p className="text-xl text-gray-600">
-              See how TriageGPT is transforming medical practices nationwide.
+              See how Eligio AI will transform medical practices nationwide.
             </p>
           </div>
           
@@ -164,15 +163,15 @@ const Index = () => {
               <CardContent className="p-0">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    DR
+                    KG
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Dr. Sarah Chen</h4>
+                    <h4 className="font-semibold text-gray-900">Dr. Kemar Green</h4>
                     <p className="text-gray-600 text-sm">Internal Medicine</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
-                  "TriageGPT has cut my note review time by 70%. I can now spend more quality time 
+                  "Having Eligio AI would cut my note review time by 70%. I would be able to spend more quality time 
                   with my patients instead of drowning in paperwork."
                 </p>
               </CardContent>
@@ -182,15 +181,15 @@ const Index = () => {
               <CardContent className="p-0">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    MJ
+                    JB
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Dr. Michael Johnson</h4>
+                    <h4 className="font-semibold text-gray-900">Dr. James Buchanan</h4>
                     <p className="text-gray-600 text-sm">Cardiology</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
-                  "The scheduling recommendations are incredibly accurate. It's like having 
+                  "The scheduling recommendations would be incredibly accurate. It would be like having 
                   an AI assistant that knows my practice better than I do."
                 </p>
               </CardContent>
@@ -208,7 +207,7 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
-                  "Game-changer for our practice. The AI insights help us identify patient 
+                  "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient 
                   needs we might have missed. Absolutely revolutionary."
                 </p>
               </CardContent>
@@ -224,12 +223,17 @@ const Index = () => {
             Ready to Transform Your Practice?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of healthcare professionals who are already saving time 
-            and improving patient care with TriageGPT.
+            Join the waitlist to be among the first healthcare professionals to experience 
+            the future of AI-powered medical practice management with Eligio AI.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg">
-              Schedule Demo
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
+              onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSew9JsFOkP0ED6l0ISISMys5kwkMClSbC2ngq7BzYuebfyg0A/viewform?usp=sharing&ouid=110317697554240526367', '_blank')}
+            >
+              Join Waitlist
             </Button>
           </div>
         </div>
@@ -238,39 +242,21 @@ const Index = () => {
       {/* Footer */}
       <footer className="px-4 py-12 bg-gray-900 text-white">
         <div className="container mx-auto">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-1 gap-8 text-center">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
+              <div className="flex items-center space-x-2 mb-4 justify-center">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Brain className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold">TriageGPT</span>
+                <span className="text-xl font-bold">Eligio AI</span>
               </div>
               <p className="text-gray-400">
                 Revolutionizing healthcare with AI-powered solutions for medical professionals.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-              </ul>
-            </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 TriageGPT. All rights reserved.</p>
+            <p>&copy; 2024 Eligio AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
