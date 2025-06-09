@@ -167,7 +167,7 @@ const Index = () => {
                   </div>
                   <div className="ml-4">
                     <h4 className="font-semibold text-gray-900">Dr. Kemar Green</h4>
-                    <p className="text-gray-600 text-sm">Internal Medicine</p>
+                    <p className="text-gray-600 text-sm">Neurologist @ Hopkins</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
@@ -185,12 +185,11 @@ const Index = () => {
                   </div>
                   <div className="ml-4">
                     <h4 className="font-semibold text-gray-900">Dr. James Buchanan</h4>
-                    <p className="text-gray-600 text-sm">Cardiology</p>
+                    <p className="text-gray-600 text-sm">Cardiologist @ Mount Sinai</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
-                  "The scheduling recommendations would be incredibly accurate. It would be like having 
-                  an AI assistant that knows my practice better than I do."
+                  "We often get the wrong referrals, using AI to assist scheduling recommendations would make it incredibly accurate."
                 </p>
               </CardContent>
             </Card>
@@ -202,8 +201,8 @@ const Index = () => {
                     RP
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Dr. Rachel Patel</h4>
-                    <p className="text-gray-600 text-sm">Family Medicine</p>
+                    <h4 className="font-semibold text-gray-900">Dr. Yew</h4>
+                    <p className="text-gray-600 text-sm">Ophthalmologist @ Singapore</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
