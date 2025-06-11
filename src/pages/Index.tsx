@@ -32,7 +32,7 @@ const Index = () => {
           <div className="max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Revolutionize Your
-              <span className="text-blue-600 block">Patient Scheduling</span>
+              <span className="text-blue-600 block">Patient Workflow</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
               AI-powered medical note summarization and intelligent scheduling recommendations 
@@ -166,8 +166,8 @@ const Index = () => {
                     KG
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Dr. Kemar Green</h4>
-                    <p className="text-gray-600 text-sm">Neurologist @ Hopkins</p>
+                    <h4 className="font-semibold text-gray-900">Neurologist</h4>
+                    <p className="text-gray-600 text-sm">Johns Hopkins Hospital</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
@@ -184,8 +184,8 @@ const Index = () => {
                     JB
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Dr. Varsha Subramaniam</h4>
-                    <p className="text-gray-600 text-sm">Cardiologist @ Mount Sinai</p>
+                    <h4 className="font-semibold text-gray-900">Cardiologist</h4>
+                    <p className="text-gray-600 text-sm">Mount Sinai Hospital</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
@@ -202,8 +202,8 @@ const Index = () => {
                     RP
                   </div>
                   <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Mr. Deise</h4>
-                    <p className="text-gray-600 text-sm">Patient Access Leadership Team @ Hopkins</p>
+                    <h4 className="font-semibold text-gray-900">Patient Access Leadership Team</h4>
+                    <p className="text-gray-600 text-sm">Johns Hopkins Hospital</p>
                   </div>
                 </div>
                 <p className="text-gray-600 italic">
