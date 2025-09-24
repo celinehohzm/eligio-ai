@@ -2,6 +2,7 @@
 import { ArrowRight, Calendar, FileText, Brain, Users, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
@@ -39,14 +40,15 @@ const Index = () => {
               that help doctors focus on what matters most - patient care.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
-                onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSew9JsFOkP0ED6l0ISISMys5kwkMClSbC2ngq7BzYuebfyg0A/viewform?usp=sharing&ouid=110317697554240526367', '_blank')}
-              >
-                Get Early Access
-              </Button>
+              <Link to="/chat">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
+                >
+                  Get Early Access
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -226,14 +228,15 @@ const Index = () => {
             the future of AI-powered medical practice management with Eligio AI.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
-              onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSew9JsFOkP0ED6l0ISISMys5kwkMClSbC2ngq7BzYuebfyg0A/viewform?usp=sharing&ouid=110317697554240526367', '_blank')}
-            >
-              Join Waitlist
-            </Button>
+            <Link to="/chat">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
+              >
+                Join Waitlist
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
