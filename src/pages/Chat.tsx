@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, Brain } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Message {
@@ -103,7 +103,14 @@ const Chat = () => {
               <span className="text-sm font-medium">Back</span>
             </Link>
             <div className="h-6 w-px bg-gray-300" />
-            <h1 className="text-xl font-bold text-gray-900">Eligio • Patients Triaging Chat</h1>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Brain className="h-4 w-4 text-white" />
+              </div>
+              <h1 className="text-xl font-bold text-gray-900">Eligio AI</h1>
+              <span className="text-gray-400">•</span>
+              <span className="text-lg font-medium text-gray-700">Patient Triaging Chat</span>
+            </div>
           </div>
         </div>
       </header>
@@ -114,8 +121,18 @@ const Chat = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto space-y-4 mb-4" style={{ height: '70vh' }}>
             {messages.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">Start a conversation to begin triaging patients</p>
+              <div className="text-center py-16">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Brain className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Welcome to Eligio AI
+                  </h3>
+                  <p className="text-gray-600 text-lg">
+                    Describe your patient's symptoms and condition to get intelligent triaging recommendations.
+                  </p>
+                </div>
               </div>
             )}
             
@@ -124,10 +141,10 @@ const Chat = () => {
                 key={index}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <Card className={`max-w-[80%] ${
+                <Card className={`max-w-[80%] shadow-md hover:shadow-lg transition-shadow ${
                   message.role === 'user' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white border border-gray-200'
+                    ? 'bg-blue-600 text-white border-l-4 border-l-blue-800' 
+                    : 'bg-white border border-gray-200 border-l-4 border-l-blue-600'
                 }`}>
                   <CardContent className="p-4">
                     <p className="whitespace-pre-wrap">{message.content}</p>
@@ -138,15 +155,20 @@ const Chat = () => {
             
             {isLoading && (
               <div className="flex justify-start">
-                <Card className="bg-white border border-gray-200">
+                <Card className="bg-white border border-gray-200 border-l-4 border-l-blue-600 shadow-md">
                   <CardContent className="p-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <Brain className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-gray-500 text-sm">Thinking...</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                        <span className="text-gray-600 text-sm font-medium">Analyzing patient information...</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -167,23 +189,24 @@ const Chat = () => {
           </div>
 
           {/* Input Bar */}
-          <div className="border-t pt-4">
-            <form onSubmit={handleSubmit} className="flex items-end space-x-2">
+          <div className="border-t pt-4 bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+            <form onSubmit={handleSubmit} className="flex items-end space-x-3">
               <div className="flex-1">
                 <Textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Describe the patient's symptoms and condition..."
-                  className="min-h-[60px] max-h-[120px] resize-none"
+                  placeholder="Describe the patient's symptoms, medical history, and current condition..."
+                  className="min-h-[60px] max-h-[120px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   rows={2}
                 />
               </div>
               <Button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="px-6 py-3 h-auto"
+                className="px-6 py-3 h-auto bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                size="lg"
               >
                 <Send className="h-5 w-5" />
               </Button>
