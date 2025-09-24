@@ -232,9 +232,9 @@ const Index = () => {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
+                className="border-white text-blue-600 hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
               >
-                Join Waitlist
+                Eligio AI chat
               </Button>
             </Link>
           </div>
