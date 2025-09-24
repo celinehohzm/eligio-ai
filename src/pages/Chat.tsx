@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send, ArrowLeft, Brain } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -38,10 +39,11 @@ const Chat = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/ai-chat', {
+      const response = await fetch('https://reizxjvmkebjsdtfnqmv.supabase.co/functions/v1/ai-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlaXp4anZta2VianNkdGZucW12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg5MjQsImV4cCI6MjA3NDMxNDkyNH0.Xq3ebkmfxe1yO2HDBIXDcCdjvhkhElPN4dg6ZMyp6dQ'}`,
         },
         body: JSON.stringify({ messages: newMessages }),
       });
@@ -64,14 +66,32 @@ const Chat = () => {
           if (done) break;
 
           const chunk = decoder.decode(value);
-          assistantContent += chunk;
-
-          // Update the last message (assistant message)
-          setMessages(prev => {
-            const updated = [...prev];
-            updated[updated.length - 1] = { role: 'assistant', content: assistantContent };
-            return updated;
-          });
+          
+          // Parse SSE chunks from OpenAI
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+              
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || '';
+                if (content) {
+                  assistantContent += content;
+                  
+                  // Update the last message (assistant message)
+                  setMessages(prev => {
+                    const updated = [...prev];
+                    updated[updated.length - 1] = { role: 'assistant', content: assistantContent };
+                    return updated;
+                  });
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
+          }
         }
       } else {
         // Fallback to regular JSON response
@@ -79,7 +99,11 @@ const Chat = () => {
         setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
+      setError(errorMessage);
+      toast.error('Failed to send message', {
+        description: errorMessage
+      });
     } finally {
       setIsLoading(false);
     }
