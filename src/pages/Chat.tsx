@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft, Brain } from 'lucide-react';
+import { Send, ArrowLeft, Brain, Paperclip, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -16,8 +17,16 @@ const Chat = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfText, setPdfText] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Set up PDF.js worker
+  useEffect(() => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,14 +36,70 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please select a PDF file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    setPdfFile(file);
+    toast.success('PDF attached successfully');
+
+    // Extract text from PDF
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+
+      setPdfText(fullText);
+    } catch (err) {
+      console.error('Error parsing PDF:', err);
+      toast.error('Failed to read PDF file');
+      setPdfFile(null);
+    }
+  };
+
+  const removePdfFile = () => {
+    setPdfFile(null);
+    setPdfText('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !pdfText) || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input.trim() };
+    let messageContent = input.trim();
+    if (pdfText) {
+      messageContent = `${messageContent}\n\n[PDF Content]:\n${pdfText}`;
+    }
+
+    const userMessage: Message = { role: 'user', content: messageContent };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
+    setPdfFile(null);
+    setPdfText('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     setIsLoading(true);
     setError(null);
 
@@ -214,26 +279,61 @@ const Chat = () => {
 
           {/* Input Bar */}
           <div className="border-t pt-3 md:pt-4 bg-white/80 backdrop-blur-sm rounded-lg p-3 md:p-4 shadow-lg">
-            <form onSubmit={handleSubmit} className="flex items-end space-x-2 md:space-x-3">
-              <div className="flex-1">
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Describe the patient's symptoms, medical history, and current condition..."
-                  className="min-h-[50px] md:min-h-[60px] max-h-[100px] md:max-h-[120px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm md:text-base"
-                  rows={2}
+            <form onSubmit={handleSubmit} className="space-y-2 md:space-y-3">
+              {pdfFile && (
+                <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-2 md:p-3">
+                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    <Paperclip className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <span className="text-sm text-blue-900 truncate">{pdfFile.name}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removePdfFile}
+                    className="h-6 w-6 p-0 hover:bg-blue-100 flex-shrink-0"
+                  >
+                    <X className="h-4 w-4 text-blue-600" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex items-end space-x-2 md:space-x-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="application/pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="px-3 md:px-4 py-2 md:py-3 h-auto border-blue-300 hover:bg-blue-50 flex-shrink-0"
+                >
+                  <Paperclip className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
+                </Button>
+                <div className="flex-1">
+                  <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Describe the patient's symptoms, medical history, and current condition..."
+                    className="min-h-[50px] md:min-h-[60px] max-h-[100px] md:max-h-[120px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm md:text-base"
+                    rows={2}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={(!input.trim() && !pdfText) || isLoading}
+                  className="px-4 md:px-6 py-2 md:py-3 h-auto bg-blue-600 hover:bg-blue-700 text-white shadow-md flex-shrink-0"
+                  size="lg"
+                >
+                  <Send className="h-4 w-4 md:h-5 md:w-5" />
+                </Button>
               </div>
-              <Button
-                type="submit"
-                disabled={!input.trim() || isLoading}
-                className="px-4 md:px-6 py-2 md:py-3 h-auto bg-blue-600 hover:bg-blue-700 text-white shadow-md flex-shrink-0"
-                size="lg"
-              >
-                <Send className="h-4 w-4 md:h-5 md:w-5" />
-              </Button>
             </form>
           </div>
         </div>
