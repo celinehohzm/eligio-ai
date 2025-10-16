@@ -307,10 +307,10 @@ const Chat = () => {
                 />
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
-                  className="px-3 md:px-4 py-2 md:py-3 h-auto border-blue-300 hover:bg-blue-50 flex-shrink-0"
+                  className="px-3 md:px-4 py-2 md:py-3 h-auto hover:bg-blue-50 flex-shrink-0"
                 >
                   <Paperclip className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
                 </Button>
