@@ -321,8 +321,8 @@ const Chat = () => {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Describe the patient's symptoms, medical history, and current condition..."
-                    className="min-h-[50px] md:min-h-[60px] max-h-[100px] md:max-h-[120px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm md:text-base"
-                    rows={2}
+                    className="min-h-[40px] md:min-h-[44px] max-h-[100px] md:max-h-[120px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm md:text-base"
+                    rows={1}
                   />
                 </div>
                 <Button
