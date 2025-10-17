@@ -98,12 +98,17 @@ const Chat = () => {
     e.preventDefault();
     if ((!input.trim() && !pdfText) || isLoading) return;
 
-    const displayContent = input.trim();
+    let displayContent = input.trim();
     let apiContent = displayContent;
+    
+    // Add PDF filename to display message
+    if (pdfFile) {
+      displayContent = `${displayContent}\n\n📎 ${pdfFile.name}`;
+    }
     
     // Add PDF content to API message but not display message
     if (pdfText) {
-      apiContent = `${displayContent}\n\n[PDF Content]:\n${pdfText}`;
+      apiContent = `${apiContent}\n\n[PDF Content]:\n${pdfText}`;
     }
 
     // Display message without PDF content
