@@ -14,8 +14,8 @@ interface Message {
 
 const Chat = () => {
   const [messages, setMessages] = useState<Message[]>(() => {
-    // Load messages from localStorage on mount
-    const saved = localStorage.getItem('chat-messages');
+    // Load messages from sessionStorage on mount (persists on refresh, not on new tab)
+    const saved = sessionStorage.getItem('chat-messages');
     return saved ? JSON.parse(saved) : [];
   });
   const [input, setInput] = useState('');
@@ -35,9 +35,9 @@ const Chat = () => {
     ).toString();
   }, []);
 
-  // Save messages to localStorage whenever they change
+  // Save messages to sessionStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('chat-messages', JSON.stringify(messages));
+    sessionStorage.setItem('chat-messages', JSON.stringify(messages));
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -103,7 +103,9 @@ const Chat = () => {
     
     // Add PDF filename to display message
     if (pdfFile) {
-      displayContent = `${displayContent}\n\n📎 ${pdfFile.name}`;
+      displayContent = displayContent 
+        ? `${displayContent}\n\n📎 ${pdfFile.name}`
+        : `📎 ${pdfFile.name}`;
     }
     
     // Add PDF content to API message but not display message
