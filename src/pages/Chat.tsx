@@ -13,7 +13,11 @@ interface Message {
 }
 
 const Chat = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Load messages from localStorage on mount
+    const saved = localStorage.getItem('chat-messages');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +34,11 @@ const Chat = () => {
       import.meta.url
     ).toString();
   }, []);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('chat-messages', JSON.stringify(messages));
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -89,12 +98,22 @@ const Chat = () => {
     e.preventDefault();
     if ((!input.trim() && !pdfText) || isLoading) return;
 
-    let messageContent = input.trim();
+    const displayContent = input.trim();
+    let apiContent = displayContent;
+    
+    // Add PDF content to API message but not display message
     if (pdfText) {
-      messageContent = `${messageContent}\n\n[PDF Content]:\n${pdfText}`;
+      apiContent = `${displayContent}\n\n[PDF Content]:\n${pdfText}`;
     }
 
-    const userMessage: Message = { role: 'user', content: messageContent };
+    // Display message without PDF content
+    const userMessage: Message = { role: 'user', content: displayContent };
+    
+    // API message with PDF content
+    const apiMessage: Message = { role: 'user', content: apiContent };
+    const apiMessages = [...messages, apiMessage];
+    
+    // Update display messages
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
@@ -113,7 +132,7 @@ const Chat = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlaXp4anZta2VianNkdGZucW12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg5MjQsImV4cCI6MjA3NDMxNDkyNH0.Xq3ebkmfxe1yO2HDBIXDcCdjvhkhElPN4dg6ZMyp6dQ'}`,
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: apiMessages }),
       });
 
       if (!response.ok) {
