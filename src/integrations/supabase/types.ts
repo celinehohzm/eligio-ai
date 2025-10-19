@@ -14,7 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      patient_documents: {
+        Row: {
+          created_at: string
+          document_subtype: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          patient_submission_id: string
+          section_name: string
+          upload_status: string
+        }
+        Insert: {
+          created_at?: string
+          document_subtype: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          mime_type: string
+          patient_submission_id: string
+          section_name: string
+          upload_status?: string
+        }
+        Update: {
+          created_at?: string
+          document_subtype?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          patient_submission_id?: string
+          section_name?: string
+          upload_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_documents_patient_submission_id_fkey"
+            columns: ["patient_submission_id"]
+            isOneToOne: false
+            referencedRelation: "patient_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_submissions: {
+        Row: {
+          address: string
+          age: number
+          created_at: string
+          date_of_birth: string
+          full_name: string
+          id: string
+          phone_number: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          age: number
+          created_at?: string
+          date_of_birth: string
+          full_name: string
+          id?: string
+          phone_number: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          age?: number
+          created_at?: string
+          date_of_birth?: string
+          full_name?: string
+          id?: string
+          phone_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
