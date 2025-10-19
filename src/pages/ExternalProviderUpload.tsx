@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +27,7 @@ import { DocumentUploadSection } from "@/components/DocumentUploadSection";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import eligioLogo from "@/assets/eligio-logo.png";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -175,7 +178,24 @@ export default function ExternalProviderUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Header */}
+      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+              <span className="text-sm font-medium">Back</span>
+            </Link>
+            <div className="h-6 w-px bg-gray-300" />
+            <div className="flex items-center space-x-2">
+              <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 object-contain" />
+              <h1 className="text-xl font-bold text-gray-900">Eligio AI</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
       <div className="container mx-auto py-8 px-4 max-w-4xl">
         <h1 className="text-3xl font-bold mb-2">External Provider Upload</h1>
         <p className="text-muted-foreground mb-8">
@@ -185,8 +205,8 @@ export default function ExternalProviderUpload() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {/* Patient Information */}
-            <div className="bg-card p-6 rounded-lg border">
-              <h2 className="text-xl font-semibold mb-6">
+            <div className="bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-blue-600 shadow-md hover:shadow-lg transition-shadow">
+              <h2 className="text-xl font-semibold mb-6 text-gray-900">
                 Patient Information
               </h2>
               <div className="grid gap-4 md:grid-cols-2">
@@ -305,7 +325,7 @@ export default function ExternalProviderUpload() {
 
             {/* Document Upload Sections */}
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Medical Documents</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Medical Documents</h2>
               {documentSections.map((section) => (
                 <DocumentUploadSection
                   key={section.title}
@@ -318,7 +338,12 @@ export default function ExternalProviderUpload() {
               ))}
             </div>
 
-            <Button type="submit" size="lg" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              size="lg" 
+              disabled={isSubmitting}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+            >
               {isSubmitting ? "Submitting..." : "Submit Patient Information"}
             </Button>
           </form>
