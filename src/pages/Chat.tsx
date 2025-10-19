@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft, Brain, Paperclip, X } from 'lucide-react';
+import { Send, ArrowLeft, Paperclip, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import * as pdfjsLib from 'pdfjs-dist';
+import eligioLogo from '@/assets/eligio-logo.png';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -222,9 +223,7 @@ const Chat = () => {
             </Link>
             <div className="h-4 md:h-6 w-px bg-gray-300" />
             <div className="flex items-center space-x-1 md:space-x-2">
-              <div className="w-5 h-5 md:w-6 md:h-6 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Brain className="h-3 w-3 md:h-4 md:w-4 text-white" />
-              </div>
+              <img src={eligioLogo} alt="Eligio AI" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
               <h1 className="text-lg md:text-xl font-bold text-gray-900">Eligio AI</h1>
               <span className="hidden sm:inline text-gray-400">•</span>
               <span className="hidden sm:inline text-sm md:text-lg font-medium text-gray-700">Patient Triaging Chat</span>
@@ -241,8 +240,8 @@ const Chat = () => {
             {messages.length === 0 && (
               <div className="text-center py-8 md:py-16 px-4">
                 <div className="max-w-md mx-auto">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-                    <Brain className="h-6 w-6 md:h-8 md:w-8 text-white" />
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                    <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
                     Welcome to Eligio AI
@@ -276,8 +275,8 @@ const Chat = () => {
                 <Card className="bg-white border border-gray-200 border-l-4 border-l-blue-600 shadow-md max-w-[95%] sm:max-w-[85%] md:max-w-[80%]">
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center space-x-2 md:space-x-3">
-                      <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Brain className="h-3 w-3 md:h-4 md:w-4 text-white" />
+                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                        <img src={eligioLogo} alt="Eligio AI" className="w-6 h-6 md:w-8 md:h-8 object-contain" />
                       </div>
                       <div className="flex items-center space-x-2 min-w-0">
                         <div className="flex space-x-1 flex-shrink-0">
