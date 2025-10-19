@@ -15,7 +15,48 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    // Validate request body size to prevent DoS
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 100000) { // 100KB limit
+      return new Response(JSON.stringify({ error: 'Request too large' }), {
+        status: 413,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const body = await req.json();
+    const { messages } = body;
+
+    // Validate messages array
+    if (!Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: 'Messages must be an array' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (messages.length === 0 || messages.length > 50) {
+      return new Response(JSON.stringify({ error: 'Messages array must contain 1-50 items' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate each message structure and sanitize
+    for (const msg of messages) {
+      if (!msg.role || !msg.content) {
+        return new Response(JSON.stringify({ error: 'Invalid message format' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (typeof msg.content !== 'string' || msg.content.length > 10000) {
+        return new Response(JSON.stringify({ error: 'Message content too long (max 10000 chars)' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
     if (!openAIApiKey) {
       throw new Error('OPENAI_API_KEY not configured');

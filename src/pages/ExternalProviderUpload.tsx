@@ -30,13 +30,22 @@ import { cn } from "@/lib/utils";
 import eligioLogo from "@/assets/eligio-logo.png";
 
 const formSchema = z.object({
-  fullName: z.string().min(1, "Full name is required"),
+  fullName: z.string()
+    .min(1, "Full name is required")
+    .max(100, "Name must be less than 100 characters")
+    .regex(/^[a-zA-Z\s'-]+$/, "Name can only contain letters, spaces, hyphens, and apostrophes")
+    .trim(),
   age: z.coerce.number().min(0, "Age must be positive").max(150, "Invalid age"),
   dateOfBirth: z.date({
     required_error: "Date of birth is required",
   }),
-  address: z.string().min(1, "Address is required"),
-  phoneNumber: z.string().min(10, "Valid phone number is required"),
+  address: z.string()
+    .min(5, "Address must be at least 5 characters")
+    .max(500, "Address must be less than 500 characters")
+    .trim(),
+  phoneNumber: z.string()
+    .regex(/^\+?[1-9]\d{9,14}$/, "Please enter a valid phone number (10-15 digits)")
+    .trim(),
 });
 
 type FormData = z.infer<typeof formSchema>;
