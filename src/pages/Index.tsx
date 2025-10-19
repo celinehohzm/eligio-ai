@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar, FileText, Users, Shield, Zap } from "lucide-react";
+import { ArrowRight, Calendar, FileText, Users, Shield, Zap, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -93,7 +93,7 @@ const Index = () => {
 
             <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
               <CardContent className="p-0">
-                <img src={eligioLogo} alt="Eligio AI" className="h-24 w-24 object-contain mb-4" />
+                <Brain className="h-12 w-12 text-blue-600 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">
                   AI-Powered Insights
                 </h3>
