@@ -21,6 +21,9 @@ const Index = () => {
             <a href="#testimonials" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
               Testimonials
             </a>
+            <Link to="/external-provider-upload" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+              Upload
+            </Link>
           </nav>
         </div>
       </header>
