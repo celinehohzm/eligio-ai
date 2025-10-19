@@ -223,7 +223,7 @@ const Chat = () => {
             </Link>
             <div className="h-4 md:h-6 w-px bg-gray-300" />
             <div className="flex items-center space-x-1 md:space-x-2">
-              <img src={eligioLogo} alt="Eligio AI" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
+              <img src={eligioLogo} alt="Eligio AI" className="w-10 h-10 md:w-12 md:h-12 object-contain" />
               <h1 className="text-lg md:text-xl font-bold text-gray-900">Eligio AI</h1>
               <span className="hidden sm:inline text-gray-400">•</span>
               <span className="hidden sm:inline text-sm md:text-lg font-medium text-gray-700">Patient Triaging Chat</span>
@@ -240,8 +240,8 @@ const Chat = () => {
             {messages.length === 0 && (
               <div className="text-center py-8 md:py-16 px-4">
                 <div className="max-w-md mx-auto">
-                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-                    <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                    <img src={eligioLogo} alt="Eligio AI" className="w-24 h-24 md:w-32 md:h-32 object-contain" />
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
                     Welcome to Eligio AI
@@ -275,8 +275,8 @@ const Chat = () => {
                 <Card className="bg-white border border-gray-200 border-l-4 border-l-blue-600 shadow-md max-w-[95%] sm:max-w-[85%] md:max-w-[80%]">
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center space-x-2 md:space-x-3">
-                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0">
-                        <img src={eligioLogo} alt="Eligio AI" className="w-6 h-6 md:w-8 md:h-8 object-contain" />
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0">
+                        <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
                       </div>
                       <div className="flex items-center space-x-2 min-w-0">
                         <div className="flex space-x-1 flex-shrink-0">

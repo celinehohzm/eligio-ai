@@ -11,7 +11,7 @@ const Index = () => {
       <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img src={eligioLogo} alt="Eligio AI" className="w-8 h-8 object-contain" />
+            <img src={eligioLogo} alt="Eligio AI" className="w-16 h-16 object-contain" />
             <span className="text-xl font-bold text-gray-900">Eligio AI</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
@@ -93,7 +93,7 @@ const Index = () => {
 
             <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
               <CardContent className="p-0">
-                <img src={eligioLogo} alt="Eligio AI" className="h-12 w-12 object-contain mb-4" />
+                <img src={eligioLogo} alt="Eligio AI" className="h-24 w-24 object-contain mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">
                   AI-Powered Insights
                 </h3>
@@ -245,7 +245,7 @@ const Index = () => {
           <div className="grid md:grid-cols-1 gap-8 text-center">
             <div>
               <div className="flex items-center space-x-2 mb-4 justify-center">
-                <img src={eligioLogo} alt="Eligio AI" className="w-8 h-8 object-contain" />
+                <img src={eligioLogo} alt="Eligio AI" className="w-16 h-16 object-contain" />
                 <span className="text-xl font-bold">Eligio AI</span>
               </div>
               <p className="text-gray-400">
