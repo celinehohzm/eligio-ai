@@ -22,7 +22,7 @@ const Index = () => {
               Testimonials
             </a>
             <Link to="/external-provider-upload" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-              Upload Documents
+              External Providers Portal
             </Link>
           </nav>
         </div>
