@@ -1,52 +1,12 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Card } from "@/components/ui/card";
 import { DocumentUploadSection } from "@/components/DocumentUploadSection";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
 import eligioLogo from "@/assets/eligio-logo.png";
-
-const formSchema = z.object({
-  fullName: z.string()
-    .min(1, "Full name is required")
-    .max(100, "Name must be less than 100 characters")
-    .regex(/^[a-zA-Z\s'-]+$/, "Name can only contain letters, spaces, hyphens, and apostrophes")
-    .trim(),
-  age: z.coerce.number().min(0, "Age must be positive").max(150, "Invalid age"),
-  dateOfBirth: z.date({
-    required_error: "Date of birth is required",
-  }),
-  address: z.string()
-    .min(5, "Address must be at least 5 characters")
-    .max(500, "Address must be less than 500 characters")
-    .trim(),
-  phoneNumber: z.string()
-    .regex(/^\+?[1-9]\d{9,14}$/, "Please enter a valid phone number (10-15 digits)")
-    .trim(),
-});
 
 const documentSections = [
   {
@@ -72,27 +32,21 @@ const documentSections = [
 ];
 
 export default function ExternalProviderUpload() {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentFiles, setDocumentFiles] = useState({});
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: "",
-      age: 0,
-      address: "",
-      phoneNumber: "",
-    },
+  const [formData, setFormData] = useState({
+    fullName: "",
+    age: "",
+    dateOfBirth: "",
+    address: "",
+    phoneNumber: "",
   });
 
-  const formatPhoneNumber = (value) => {
-    const cleaned = value.replace(/\D/g, "");
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return `(${match[1]}) ${match[2]}-${match[3]}`;
-    }
-    return value;
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleDocumentFilesChange = (title, files) => {
@@ -102,74 +56,29 @@ export default function ExternalProviderUpload() {
     }));
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (e) => {
+    e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Insert patient submission
-      const { data: submission, error: submissionError } = await supabase
-        .from("patient_submissions")
-        .insert({
-          full_name: data.fullName,
-          age: data.age,
-          date_of_birth: format(data.dateOfBirth, "yyyy-MM-dd"),
-          address: data.address,
-          phone_number: data.phoneNumber,
-        })
-        .select()
-        .single();
-
-      if (submissionError) throw submissionError;
-      if (!submission) throw new Error("Failed to create submission");
-
-      // Upload all documents
-      const uploadPromises = [];
-
-      for (const [sectionTitle, files] of Object.entries(documentFiles)) {
-        for (const fileData of files) {
-          const filePath = `${submission.id}/${sectionTitle}/${fileData.id}-${fileData.file.name}`;
-
-          // Upload to storage
-          const uploadPromise = supabase.storage
-            .from("patient-documents")
-            .upload(filePath, fileData.file)
-            .then(({ error: uploadError }) => {
-              if (uploadError) throw uploadError;
-
-              // Insert document metadata
-              return supabase.from("patient_documents").insert({
-                patient_submission_id: submission.id,
-                file_name: fileData.file.name,
-                file_path: filePath,
-                file_size: fileData.file.size,
-                mime_type: fileData.file.type,
-                section_name: sectionTitle,
-                document_subtype: fileData.subtype,
-                upload_status: "uploaded",
-              });
-            });
-
-          uploadPromises.push(uploadPromise);
-        }
-      }
-
-      await Promise.all(uploadPromises);
-
-      toast({
-        title: "Success",
-        description: "Patient information and documents uploaded successfully",
-      });
-
+      // Simulate submission - in real app, this would submit to backend
+      console.log("Form data:", formData);
+      console.log("Document files:", documentFiles);
+      
       // Reset form
-      form.reset();
+      setFormData({
+        fullName: "",
+        age: "",
+        dateOfBirth: "",
+        address: "",
+        phoneNumber: "",
+      });
       setDocumentFiles({});
+      
+      alert("Patient information submitted successfully!");
     } catch (error) {
       console.error("Upload error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload. Please try again.",
-        variant: "destructive",
-      });
+      alert("Failed to upload. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -200,152 +109,92 @@ export default function ExternalProviderUpload() {
           Submit patient information and medical documents
         </p>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Patient Information */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-blue-600 shadow-md hover:shadow-lg transition-shadow">
-              <h2 className="text-xl font-semibold mb-6 text-gray-900">
-                Patient Information
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+        <form onSubmit={onSubmit} className="space-y-8">
+          {/* Patient Information */}
+          <Card className="p-6 border border-gray-200 border-l-4 border-l-blue-600 shadow-md hover:shadow-lg transition-shadow">
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">
+              Patient Information
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium mb-2">Full Name</label>
+                <Input 
+                  placeholder="John Doe" 
+                  value={formData.fullName}
+                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  required
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Age</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="30" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <div>
+                <label className="block text-sm font-medium mb-2">Age</label>
+                <Input 
+                  type="number" 
+                  placeholder="30" 
+                  value={formData.age}
+                  onChange={(e) => handleInputChange('age', e.target.value)}
+                  required
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="dateOfBirth"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date of Birth</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <div>
+                <label className="block text-sm font-medium mb-2">Date of Birth</label>
+                <Input 
+                  type="date" 
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                  required
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="(555) 123-4567"
-                          {...field}
-                          onChange={(e) => {
-                            const formatted = formatPhoneNumber(e.target.value);
-                            field.onChange(formatted);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <div>
+                <label className="block text-sm font-medium mb-2">Phone Number</label>
+                <Input
+                  placeholder="(555) 123-4567"
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                  required
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="123 Main St, City, State, ZIP"
-                          className="resize-none"
-                          rows={3}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2">Address</label>
+                <Textarea
+                  placeholder="123 Main St, City, State, ZIP"
+                  className="resize-none"
+                  rows={3}
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  required
                 />
               </div>
             </div>
+          </Card>
 
-            {/* Document Upload Sections */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Medical Documents</h2>
-              {documentSections.map((section) => (
-                <DocumentUploadSection
-                  key={section.title}
-                  title={section.title}
-                  subtypes={section.subtypes}
-                  onFilesChange={(files) =>
-                    handleDocumentFilesChange(section.title, files)
-                  }
-                />
-              ))}
-            </div>
+          {/* Document Upload Sections */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900">Medical Documents</h2>
+            {documentSections.map((section) => (
+              <DocumentUploadSection
+                key={section.title}
+                title={section.title}
+                subtypes={section.subtypes}
+                onFilesChange={(files) =>
+                  handleDocumentFilesChange(section.title, files)
+                }
+              />
+            ))}
+          </div>
 
-            <Button 
-              type="submit" 
-              size="lg" 
-              disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Patient Information"}
-            </Button>
-          </form>
-        </Form>
+          <Button 
+            type="submit" 
+            size="lg" 
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Patient Information"}
+          </Button>
+        </form>
       </div>
     </div>
   );
