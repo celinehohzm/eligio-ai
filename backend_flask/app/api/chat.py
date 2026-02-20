@@ -1,15 +1,41 @@
 from flask import Blueprint, request, jsonify, Response
 from flask_jwt_extended import jwt_required, create_access_token
 import json
-import openai
+from openai import OpenAI
 from config.config import Config
 import logging
 
 chat_bp = Blueprint('chat', __name__)
 
-# Configure OpenAI
-if Config.OPENAI_API_KEY:
-    openai.api_key = Config.OPENAI_API_KEY
+# Global client variable
+openai_client = None
+
+def get_openai_client():
+    """Get OpenAI client instance"""
+    global openai_client
+    if openai_client is None and Config.OPENAI_API_KEY:
+        try:
+            # Temporarily clear proxy environment variables that might interfere
+            import os
+            original_env = {}
+            proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
+            
+            for var in proxy_vars:
+                if var in os.environ:
+                    original_env[var] = os.environ[var]
+                    del os.environ[var]
+            
+            try:
+                openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
+            finally:
+                # Restore original environment
+                for var, value in original_env.items():
+                    os.environ[var] = value
+                    
+        except Exception as e:
+            logging.error(f"Failed to initialize OpenAI client: {str(e)}")
+            openai_client = None
+    return openai_client
 
 @chat_bp.route('/ai-chat', methods=['POST'])
 def ai_chat():
@@ -49,12 +75,13 @@ Please provide thoughtful, safe, and helpful triaging recommendations."""
         
         # Check if client wants streaming response
         accept_header = request.headers.get('Accept', '')
-        wants_streaming = 'text/stream' in accept_header or wants_streaming_response(messages)
+        client = get_openai_client()
+        wants_streaming = 'text/stream' in accept_header and wants_streaming_response(messages) and client
         
-        if wants_streaming and Config.OPENAI_API_KEY:
-            return generate_streaming_response(messages)
+        if wants_streaming:
+            return generate_streaming_response(messages, client)
         else:
-            return generate_regular_response(messages)
+            return generate_regular_response(messages, client)
             
     except Exception as e:
         logging.error(f"Error in ai_chat: {str(e)}")
@@ -66,10 +93,10 @@ def wants_streaming_response(messages):
     total_chars = sum(len(msg.get('content', '')) for msg in messages)
     return total_chars > 500
 
-def generate_streaming_response(messages):
+def generate_streaming_response(messages, client):
     """Generate streaming response using OpenAI API"""
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=Config.OPENAI_MODEL,
             messages=messages,
             stream=True,
@@ -78,11 +105,12 @@ def generate_streaming_response(messages):
         
         def generate():
             for chunk in response:
-                if chunk['choices'][0]['delta'].get('content'):
-                    content = chunk['choices'][0]['delta']['content']
+                if chunk.choices[0].delta.get('content'):
+                    content = chunk.choices[0].delta.content
                     # Format as Server-Sent Events
-                    yield f"data: {json.dumps({'choices': [{'delta': {'content': content}}]})}\n\n"
-                elif chunk['choices'][0].get('finish_reason') == 'stop':
+                    data = {'choices': [{'delta': {'content': content}}]}
+                    yield f"data: {json.dumps(data)}\n\n"
+                elif chunk.choices[0].get('finish_reason') == 'stop':
                     yield "data: [DONE]\n\n"
         
         return Response(generate(), mimetype='text/stream')
@@ -90,20 +118,20 @@ def generate_streaming_response(messages):
     except Exception as e:
         logging.error(f"Streaming error: {str(e)}")
         # Fallback to regular response
-        return generate_regular_response(messages)
+        return generate_regular_response(messages, client)
 
-def generate_regular_response(messages):
+def generate_regular_response(messages, client):
     """Generate regular JSON response"""
     try:
-        if Config.OPENAI_API_KEY:
-            response = openai.ChatCompletion.create(
+        if client:
+            response = client.chat.completions.create(
                 model=Config.OPENAI_MODEL,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=1000
             )
             
-            content = response['choices'][0]['message']['content']
+            content = response.choices[0].message.content
             return jsonify({'content': content})
         else:
             # Mock response when OpenAI is not configured
@@ -121,7 +149,7 @@ def generate_mock_response(messages):
     last_message = messages[-1]['content'] if messages else ""
     
     if 'emergency' in last_message.lower() or 'severe' in last_message.lower():
-        return """Based on the symptoms you've described, I recommend seeking immediate emergency medical care. 
+        return """Based on symptoms you've described, I recommend seeking immediate emergency medical care. 
 
 Please go to the nearest emergency department or call emergency services right away. 
 

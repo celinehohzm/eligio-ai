@@ -1,4 +1,4 @@
-import openai
+from openai import OpenAI
 from config.config import Config
 import logging
 import json
@@ -7,9 +7,34 @@ class AIService:
     """Service for handling AI interactions"""
     
     def __init__(self):
-        if Config.OPENAI_API_KEY:
-            openai.api_key = Config.OPENAI_API_KEY
+        self.client = None
         self.model = Config.OPENAI_MODEL
+        self._initialize_client()
+    
+    def _initialize_client(self):
+        """Initialize OpenAI client safely"""
+        if Config.OPENAI_API_KEY:
+            try:
+                # Temporarily clear proxy environment variables that might interfere
+                import os
+                original_env = {}
+                proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
+                
+                for var in proxy_vars:
+                    if var in os.environ:
+                        original_env[var] = os.environ[var]
+                        del os.environ[var]
+                
+                try:
+                    self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
+                finally:
+                    # Restore original environment
+                    for var, value in original_env.items():
+                        os.environ[var] = value
+                        
+            except Exception as e:
+                logging.error(f"Failed to initialize OpenAI client in AIService: {str(e)}")
+                self.client = None
     
     def generate_chat_response(self, messages, stream=False):
         """Generate AI response for chat messages"""
@@ -30,11 +55,11 @@ class AIService:
             
             if stream:
                 params['stream'] = True
-                return openai.ChatCompletion.create(**params)
+                return self.client.chat.completions.create(**params)
             else:
                 params['max_tokens'] = 1000
-                response = openai.ChatCompletion.create(**params)
-                return response['choices'][0]['message']['content']
+                response = self.client.chat.completions.create(**params)
+                return response.choices[0].message.content
                 
         except Exception as e:
             logging.error(f"AI service error: {str(e)}")
@@ -109,14 +134,14 @@ Provide a structured summary of the medical information."""
                 }
             ]
             
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=0.3,
                 max_tokens=1500
             )
             
-            return response['choices'][0]['message']['content']
+            return response.choices[0].message.content
             
         except Exception as e:
             logging.error(f"Document analysis error: {str(e)}")
