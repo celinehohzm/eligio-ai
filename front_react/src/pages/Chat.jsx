@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import * as pdfjsLib from 'pdfjs-dist';
 import eligioLogo from '@/assets/eligio-logo.png';
+import apiService from '@/services/api';
 
 const Chat = () => {
   const [messages, setMessages] = useState(() => {
@@ -129,64 +130,31 @@ const Chat = () => {
     setError(null);
 
     try {
-      const response = await fetch('https://reizxjvmkebjsdtfnqmv.supabase.co/functions/v1/ai-chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlaXp4anZta2VianNkdGZucW12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3Mzg5MjQsImV4cCI6MjA3NDMxNDkyNH0.Xq3ebkmfxe1yO2HDBIXDcCdjvhkhElPN4dg6ZMyp6dQ'}`,
-        },
-        body: JSON.stringify({ messages: apiMessages }),
+      // Use streaming for better user experience
+      const response = await apiService.streamChatMessage(apiMessages, (chunk, fullContent) => {
+        // Update last message (assistant message) with streaming content
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated.length === 0 || updated[updated.length - 1].role !== 'assistant') {
+            // Add assistant message placeholder if it doesn't exist
+            updated.push({ role: 'assistant', content: fullContent });
+          } else {
+            // Update existing assistant message
+            updated[updated.length - 1] = { role: 'assistant', content: fullContent };
+          }
+          return updated;
+        });
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
-
-      // Check if streaming is supported
-      if (response.body && response.headers.get('content-type')?.includes('text/stream')) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let assistantContent = '';
-
-        // Add assistant message placeholder
-        setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          
-          // Parse SSE chunks from OpenAI
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
-              
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content || '';
-                if (content) {
-                  assistantContent += content;
-                  
-                  // Update the last message (assistant message)
-                  setMessages(prev => {
-                    const updated = [...prev];
-                    updated[updated.length - 1] = { role: 'assistant', content: assistantContent };
-                    return updated;
-                  });
-                }
-              } catch (e) {
-                // Skip invalid JSON
-              }
-            }
+      // If streaming didn't work, add response normally
+      if (response && response.content) {
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated.length === 0 || updated[updated.length - 1].role !== 'assistant') {
+            updated.push({ role: 'assistant', content: response.content });
           }
-        }
-      } else {
-        // Fallback to regular JSON response
-        const data = await response.json();
-        setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
+          return updated;
+        });
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Something went wrong';

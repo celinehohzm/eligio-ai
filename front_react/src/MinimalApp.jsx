@@ -1,6 +1,9 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom"
+import { AuthProvider } from "@/contexts/AuthContext"
 import Index from './pages/Index'
+import Login from './pages/Login'
+import Register from './pages/Register'
 import Chat from './pages/Chat'
 import ExternalProviderUpload from './pages/ExternalProviderUpload'
 import NotFound from './pages/NotFound'
@@ -12,12 +15,16 @@ import NotFound from './pages/NotFound'
 
 const MinimalApp = () => (
   <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/chat" element={<Chat />} />
-      <Route path="/external-provider-upload" element={<ExternalProviderUpload />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/external-provider-upload" element={<ExternalProviderUpload />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AuthProvider>
   </BrowserRouter>
 )
 

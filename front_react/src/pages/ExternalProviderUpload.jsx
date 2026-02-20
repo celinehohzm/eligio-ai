@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { DocumentUploadSection } from "@/components/DocumentUploadSection";
 import eligioLogo from "@/assets/eligio-logo.png";
+import apiService from "@/services/api";
+import { toast } from "sonner";
 
 const documentSections = [
   {
@@ -61,11 +63,22 @@ export default function ExternalProviderUpload() {
     setIsSubmitting(true);
 
     try {
-      // Simulate submission - in real app, this would submit to backend
-      console.log("Form data:", formData);
-      console.log("Document files:", documentFiles);
+      // Prepare files for upload
+      const filesToUpload = [];
       
-      // Reset form
+      Object.entries(documentFiles).forEach(([category, files]) => {
+        if (files && files.length > 0) {
+          filesToUpload.push({
+            category,
+            files: files
+          });
+        }
+      });
+
+      // Submit to backend
+      const response = await apiService.uploadDocuments(formData, filesToUpload);
+      
+      // Reset form on successful submission
       setFormData({
         fullName: "",
         age: "",
@@ -75,10 +88,14 @@ export default function ExternalProviderUpload() {
       });
       setDocumentFiles({});
       
-      alert("Patient information submitted successfully!");
+      toast.success("Patient information submitted successfully!", {
+        description: `Submission ID: ${response.submissionId}`
+      });
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload. Please try again.");
+      toast.error("Failed to upload documents", {
+        description: error.message || "Please try again."
+      });
     } finally {
       setIsSubmitting(false);
     }

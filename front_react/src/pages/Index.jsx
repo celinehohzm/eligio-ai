@@ -2,9 +2,12 @@ import { ArrowRight, Calendar, FileText, Users, Shield, Zap, Brain } from "lucid
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import eligioLogo from "@/assets/eligio-logo.png";
 
 const Index = () => {
+  const { isAuthenticated, user, logout } = useAuth();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
@@ -15,12 +18,36 @@ const Index = () => {
             <span className="text-xl font-bold text-gray-900">Eligio AI</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/chat" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-              Scheduling Portal
-            </Link>
-            <Link to="/external-provider-upload" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-              External Providers Portal
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link to="/chat" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                  Patient Triage Chat
+                </Link>
+                <Link to="/external-provider-upload" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                  Document Upload
+                </Link>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={logout}
+                    className="text-gray-600 hover:text-blue-600"
+                  >
+                    Logout
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                  Login
+                </Link>
+                <Link to="/register" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                  Register
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -38,15 +65,38 @@ const Index = () => {
               that help doctors focus on what matters most - patient care.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/chat">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
-                >
-                  Try out Eligio AI!
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/chat">
+                  <Button 
+                    size="lg" 
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+                  >
+                    Go to Patient Triage Chat
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/register">
+                    <Button 
+                      size="lg" 
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+                    >
+                      Get Started Now
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
