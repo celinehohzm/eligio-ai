@@ -76,12 +76,15 @@ Please provide thoughtful, safe, and helpful triaging recommendations."""
         # Check if client wants streaming response
         accept_header = request.headers.get('Accept', '')
         client = get_openai_client()
-        wants_streaming = 'text/stream' in accept_header and wants_streaming_response(messages) and client
-        
+        wants_streaming = 'text/stream' in accept_header
+
+        # Frontend consumes SSE by default; always stream when requested.
         if wants_streaming:
-            return generate_streaming_response(messages, client)
-        else:
-            return generate_regular_response(messages, client)
+            if client:
+                return generate_streaming_response(messages, client)
+            return generate_mock_streaming_response(messages)
+
+        return generate_regular_response(messages, client)
             
     except Exception as e:
         logging.error(f"Error in ai_chat: {str(e)}")
@@ -105,12 +108,18 @@ def generate_streaming_response(messages, client):
         
         def generate():
             for chunk in response:
-                if chunk.choices[0].delta.get('content'):
-                    content = chunk.choices[0].delta.content
+                if not chunk.choices:
+                    continue
+
+                choice = chunk.choices[0]
+                delta = getattr(choice, 'delta', None)
+                content = getattr(delta, 'content', None) if delta else None
+
+                if content:
                     # Format as Server-Sent Events
                     data = {'choices': [{'delta': {'content': content}}]}
                     yield f"data: {json.dumps(data)}\n\n"
-                elif chunk.choices[0].get('finish_reason') == 'stop':
+                elif getattr(choice, 'finish_reason', None) == 'stop':
                     yield "data: [DONE]\n\n"
         
         return Response(generate(), mimetype='text/stream')
@@ -119,6 +128,20 @@ def generate_streaming_response(messages, client):
         logging.error(f"Streaming error: {str(e)}")
         # Fallback to regular response
         return generate_regular_response(messages, client)
+
+def generate_mock_streaming_response(messages):
+    """Generate streaming response when OpenAI is not configured"""
+    mock_response = generate_mock_response(messages)
+
+    def generate():
+        chunk_size = 80
+        for i in range(0, len(mock_response), chunk_size):
+            content = mock_response[i:i + chunk_size]
+            data = {'choices': [{'delta': {'content': content}}]}
+            yield f"data: {json.dumps(data)}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return Response(generate(), mimetype='text/stream')
 
 def generate_regular_response(messages, client):
     """Generate regular JSON response"""

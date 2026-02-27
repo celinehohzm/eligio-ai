@@ -71,9 +71,21 @@ def upload_documents():
                 file_path = os.path.join(upload_dir, unique_filename)
                 file.save(file_path)
                 
-                # Extract metadata from form
-                category = request.form.get(f'category_{file_key}', 'Unknown')
-                subtype = request.form.get(f'subtype_{file_key}', 'Unknown')
+                # Extract metadata from form.
+                # Supports both:
+                # - category_file_0_0 / subtype_file_0_0
+                # - category_0_0 / subtype_0_0 (frontend format)
+                key_suffix = file_key[5:] if file_key.startswith('file_') else file_key
+                category = (
+                    request.form.get(f'category_{file_key}')
+                    or request.form.get(f'category_{key_suffix}')
+                    or 'Unknown'
+                )
+                subtype = (
+                    request.form.get(f'subtype_{file_key}')
+                    or request.form.get(f'subtype_{key_suffix}')
+                    or 'Unknown'
+                )
                 
                 file_info = {
                     'id': str(uuid.uuid4()),
