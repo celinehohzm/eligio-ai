@@ -41,7 +41,7 @@ def get_openai_client():
 def ai_chat():
     """Handle AI chat requests for patient triaging"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
         
         if not data or 'messages' not in data:
             return jsonify({'error': 'Messages are required'}), 400

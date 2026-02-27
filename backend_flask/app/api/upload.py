@@ -2,10 +2,12 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import uuid
-import json
 from datetime import datetime
 from config.config import Config
 import logging
+
+from app.extensions import db
+from app.models import Document, Submission
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -34,6 +36,7 @@ def create_upload_directory():
 @upload_bp.route('/upload-documents', methods=['POST'])
 def upload_documents():
     """Handle document uploads from external providers"""
+    saved_paths = []
     try:
         # Create upload directory
         upload_dir = create_upload_directory()
@@ -57,6 +60,19 @@ def upload_documents():
         # Process uploaded files
         uploaded_files = []
         file_keys = [key for key in request.files.keys() if key.startswith('file_')]
+        submission_id = str(uuid.uuid4())
+
+        submission = Submission(
+            id=submission_id,
+            full_name=patient_data['fullName'],
+            age=patient_data['age'],
+            date_of_birth=patient_data['dateOfBirth'],
+            address=patient_data['address'],
+            phone_number=patient_data['phoneNumber'],
+            status='received'
+        )
+
+        db.session.add(submission)
         
         for file_key in file_keys:
             file = request.files[file_key]
@@ -70,6 +86,7 @@ def upload_documents():
                 # Save file
                 file_path = os.path.join(upload_dir, unique_filename)
                 file.save(file_path)
+                saved_paths.append(file_path)
                 
                 # Extract metadata from form.
                 # Supports both:
@@ -87,54 +104,42 @@ def upload_documents():
                     or 'Unknown'
                 )
                 
-                file_info = {
-                    'id': str(uuid.uuid4()),
-                    'originalName': original_filename,
-                    'filename': unique_filename,
-                    'filePath': file_path,
-                    'category': category,
-                    'subtype': subtype,
-                    'size': os.path.getsize(file_path),
-                    'uploadedAt': datetime.now().isoformat(),
-                    'status': 'uploaded'
-                }
+                document = Document(
+                    id=str(uuid.uuid4()),
+                    submission_id=submission_id,
+                    original_name=original_filename,
+                    filename=unique_filename,
+                    file_path=file_path,
+                    category=category,
+                    subtype=subtype,
+                    size=os.path.getsize(file_path),
+                    status='uploaded'
+                )
+                db.session.add(document)
                 
-                uploaded_files.append(file_info)
+                uploaded_files.append(document)
             else:
                 logging.warning(f"Invalid file skipped: {file.filename}")
-        
-        # Create submission record
-        submission = {
-            'id': str(uuid.uuid4()),
-            'patientInfo': patient_data,
-            'documents': uploaded_files,
-            'submittedAt': datetime.now().isoformat(),
-            'status': 'received'
-        }
-        
-        # Save submission metadata (in production, save to database)
-        save_submission_metadata(submission, upload_dir)
+
+        db.session.commit()
         
         return jsonify({
             'success': True,
-            'submissionId': submission['id'],
+            'submissionId': submission_id,
             'message': f'Successfully uploaded {len(uploaded_files)} documents',
             'uploadedFiles': len(uploaded_files)
         })
         
     except Exception as e:
+        db.session.rollback()
+        for saved_path in saved_paths:
+            try:
+                if os.path.exists(saved_path):
+                    os.remove(saved_path)
+            except Exception:
+                pass
         logging.error(f"Upload error: {str(e)}")
         return jsonify({'error': 'Failed to upload documents'}), 500
-
-def save_submission_metadata(submission, upload_dir):
-    """Save submission metadata to JSON file"""
-    try:
-        metadata_file = os.path.join(upload_dir, f"submission_{submission['id']}.json")
-        with open(metadata_file, 'w') as f:
-            json.dump(submission, f, indent=2)
-        logging.info(f"Submission metadata saved: {metadata_file}")
-    except Exception as e:
-        logging.error(f"Failed to save submission metadata: {str(e)}")
 
 @upload_bp.route('/document-categories', methods=['GET'])
 def get_document_categories():
@@ -156,17 +161,11 @@ def upload_health():
 def get_submission(submission_id):
     """Get submission details by ID (for testing/admin)"""
     try:
-        # In production, this would query a database
-        # For now, search upload directories
-        for root, dirs, files in os.walk(Config.UPLOAD_FOLDER):
-            for file in files:
-                if file == f"submission_{submission_id}.json":
-                    metadata_path = os.path.join(root, file)
-                    with open(metadata_path, 'r') as f:
-                        submission = json.load(f)
-                    return jsonify(submission)
-        
-        return jsonify({'error': 'Submission not found'}), 404
+        submission = Submission.query.filter_by(id=submission_id).first()
+        if not submission:
+            return jsonify({'error': 'Submission not found'}), 404
+
+        return jsonify(submission.to_dict())
         
     except Exception as e:
         logging.error(f"Error retrieving submission: {str(e)}")

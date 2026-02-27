@@ -1,13 +1,20 @@
 import pytest
 import json
+import tempfile
+import os
+
 from app import create_app
 
 @pytest.fixture
 def app():
     """Create test app"""
-    app = create_app()
-    app.config['TESTING'] = True
-    return app
+    temp_dir = tempfile.mkdtemp()
+    return create_app({
+        'TESTING': True,
+        'UPLOAD_FOLDER': os.path.join(temp_dir, 'uploads'),
+        'SQLALCHEMY_DATABASE_URI': f"sqlite:///{os.path.join(temp_dir, 'test.db')}",
+        'OPENAI_API_KEY': '',
+    })
 
 @pytest.fixture
 def client(app):

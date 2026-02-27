@@ -4,32 +4,30 @@ from datetime import timedelta
 from config.config import Config
 import logging
 
+from app.extensions import db
+from app.models import User
+
 auth_bp = Blueprint('auth', __name__)
 
-# Mock user database (in production, use a real database)
-USERS = {
-    'demo@eligio.ai': {
-        'password': 'demo123',  # In production, use hashed passwords
-        'name': 'Demo User',
-        'role': 'provider'
-    }
-}
+
+def normalize_email(raw_email):
+    return (raw_email or "").strip().lower()
 
 @auth_bp.route('/auth/login', methods=['POST'])
 def login():
     """Authenticate user and return JWT token"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         
         if not data or 'email' not in data or 'password' not in data:
             return jsonify({'error': 'Email and password are required'}), 400
         
-        email = data['email']
+        email = normalize_email(data['email'])
         password = data['password']
         
         # Validate credentials
-        user = USERS.get(email)
-        if not user or user['password'] != password:
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.check_password(password):
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Create access token
@@ -42,11 +40,7 @@ def login():
             'access_token': access_token,
             'token_type': 'Bearer',
             'expires_in': Config.JWT_ACCESS_TOKEN_EXPIRES,
-            'user': {
-                'email': email,
-                'name': user['name'],
-                'role': user['role']
-            }
+            'user': user.to_dict()
         })
         
     except Exception as e:
@@ -57,41 +51,41 @@ def login():
 def register():
     """Register a new user"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         
         required_fields = ['email', 'password', 'name']
-        missing_fields = [field for field in required_fields if field not in data]
+        missing_fields = [field for field in required_fields if not data.get(field)]
         
         if missing_fields:
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
         
-        email = data['email']
+        email = normalize_email(data['email'])
         password = data['password']
-        name = data['name']
+        name = data['name'].strip()
         
         # Check if user already exists
-        if email in USERS:
+        if User.query.filter_by(email=email).first():
             return jsonify({'error': 'User already exists'}), 409
         
-        # Create new user (in production, hash password)
-        USERS[email] = {
-            'password': password,  # In production, use hashed passwords
-            'name': name,
-            'role': data.get('role', 'provider')
-        }
+        # Create new user
+        user = User(
+            email=email,
+            name=name,
+            role=data.get('role', 'provider')
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
         
         logging.info(f"New user registered: {email}")
         
         return jsonify({
             'message': 'User registered successfully',
-            'user': {
-                'email': email,
-                'name': name,
-                'role': USERS[email]['role']
-            }
+            'user': user.to_dict()
         }), 201
         
     except Exception as e:
+        db.session.rollback()
         logging.error(f"Registration error: {str(e)}")
         return jsonify({'error': 'Registration failed'}), 500
 
@@ -101,16 +95,12 @@ def get_current_user():
     """Get current user information"""
     try:
         current_email = get_jwt_identity()
-        user = USERS.get(current_email)
+        user = User.query.filter_by(email=current_email).first()
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        return jsonify({
-            'email': current_email,
-            'name': user['name'],
-            'role': user['role']
-        })
+        return jsonify(user.to_dict())
         
     except Exception as e:
         logging.error(f"Get user error: {str(e)}")
@@ -149,5 +139,6 @@ def auth_health():
     return jsonify({
         'status': 'healthy',
         'service': 'Authentication Service',
-        'jwt_configured': bool(Config.JWT_SECRET_KEY)
+        'jwt_configured': bool(Config.JWT_SECRET_KEY),
+        'database_configured': bool(Config.SQLALCHEMY_DATABASE_URI)
     })

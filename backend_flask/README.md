@@ -6,7 +6,8 @@ A Python Flask backend service for the Eligio AI patient triaging application.
 
 - **AI Chat Service**: Patient triaging with OpenAI integration
 - **Document Upload**: Medical document processing and storage
-- **Authentication**: JWT-based user authentication
+- **Authentication**: JWT-based user authentication with persistent users
+- **Database Persistence**: SQLAlchemy models for users, submissions, and documents
 - **File Management**: Secure file upload and validation
 
 ## API Endpoints
@@ -47,7 +48,12 @@ A Python Flask backend service for the Eligio AI patient triaging application.
    OPENAI_API_KEY=your-openai-api-key
    SECRET_KEY=your-flask-secret-key
    JWT_SECRET_KEY=your-jwt-secret-key
+   DATABASE_URL=postgresql+psycopg2://user:password@server.postgres.database.azure.com:5432/eligio?sslmode=require
    ```
+
+   Notes:
+   - Leave `DATABASE_URL` empty to use local SQLite (`backend_flask/eligio.db`).
+   - Set `AUTO_CREATE_TABLES=true` for auto table creation during local development.
 
 4. **Run the Server**
    ```bash
@@ -82,6 +88,13 @@ python -m pytest tests/
 # Run specific test
 python -m pytest tests/test_chat.py
 ```
+
+### Database Notes
+
+- On startup, the app auto-creates tables when `AUTO_CREATE_TABLES=true`.
+- The backend seeds a default demo account if missing:
+  - `demo@eligio.ai / demo123`
+- For Azure PostgreSQL, use a connection string in `DATABASE_URL` with `sslmode=require`.
 
 ### API Documentation
 

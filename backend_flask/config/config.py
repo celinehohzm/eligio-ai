@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
 def _default_cors_origins():
     """Allow localhost/127.0.0.1 on any port for local frontend dev."""
     configured_origins = os.environ.get('CORS_ORIGINS')
@@ -15,6 +18,16 @@ def _default_cors_origins():
         r"http://127\.0\.0\.1:\d+",
     ]
 
+
+def _database_uri():
+    configured_uri = os.environ.get("DATABASE_URL")
+    if configured_uri:
+        if configured_uri.startswith("postgres://"):
+            return configured_uri.replace("postgres://", "postgresql://", 1)
+        return configured_uri
+
+    return f"sqlite:///{os.path.join(BASE_DIR, 'eligio.db')}"
+
 class Config:
     """Application configuration class"""
     
@@ -25,6 +38,12 @@ class Config:
     # API Configuration
     HOST = os.environ.get('API_HOST', '0.0.0.0')
     PORT = int(os.environ.get('API_PORT', 5000))
+
+    # Database Configuration
+    SQLALCHEMY_DATABASE_URI = _database_uri()
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
+    AUTO_CREATE_TABLES = os.environ.get("AUTO_CREATE_TABLES", "true").lower() == "true"
     
     # OpenAI Configuration
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
