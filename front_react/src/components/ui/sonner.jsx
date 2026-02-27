@@ -1,3 +1,14 @@
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster as Sonner } from "sonner";
 
-export { Toaster }
+const Toaster = (props) => {
+  return (
+    <Sonner
+      richColors
+      closeButton
+      position="top-right"
+      {...props}
+    />
+  );
+};
+
+export { Toaster };

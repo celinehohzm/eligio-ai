@@ -3,6 +3,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _default_cors_origins():
+    """Allow localhost/127.0.0.1 on any port for local frontend dev."""
+    configured_origins = os.environ.get('CORS_ORIGINS')
+    if configured_origins:
+        return [origin.strip() for origin in configured_origins.split(',') if origin.strip()]
+
+    return [
+        r"http://localhost:\d+",
+        r"http://127\.0\.0\.1:\d+",
+    ]
+
 class Config:
     """Application configuration class"""
     
@@ -28,4 +40,4 @@ class Config:
     ALLOWED_EXTENSIONS = set(os.environ.get('ALLOWED_EXTENSIONS', 'pdf,doc,docx,jpg,jpeg,png').split(','))
     
     # CORS Configuration
-    CORS_ORIGINS = ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://127.0.0.1:3000", "http://127.0.0.1:5173", "http://127.0.0.1:8080"]
+    CORS_ORIGINS = _default_cors_origins()
