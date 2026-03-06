@@ -1,11 +1,11 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt, get_jwt_identity, jwt_required
 from datetime import timedelta
 from config.config import Config
 import logging
 
-from app.extensions import db
-from app.models import User
+from app.extensions import db, limiter
+from app.models import TokenBlocklist, User
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -14,6 +14,7 @@ def normalize_email(raw_email):
     return (raw_email or "").strip().lower()
 
 @auth_bp.route('/auth/login', methods=['POST'])
+@limiter.limit("15 per minute")
 def login():
     """Authenticate user and return JWT token"""
     try:
@@ -35,9 +36,14 @@ def login():
             identity=email,
             expires_delta=timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
         )
+        refresh_token = create_refresh_token(
+            identity=email,
+            expires_delta=timedelta(seconds=Config.JWT_REFRESH_TOKEN_EXPIRES)
+        )
         
         return jsonify({
             'access_token': access_token,
+            'refresh_token': refresh_token,
             'token_type': 'Bearer',
             'expires_in': Config.JWT_ACCESS_TOKEN_EXPIRES,
             'user': user.to_dict()
@@ -48,6 +54,7 @@ def login():
         return jsonify({'error': 'Login failed'}), 500
 
 @auth_bp.route('/auth/register', methods=['POST'])
+@limiter.limit("10 per minute")
 def register():
     """Register a new user"""
     try:
@@ -62,6 +69,9 @@ def register():
         email = normalize_email(data['email'])
         password = data['password']
         name = data['name'].strip()
+
+        if len(password) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters'}), 400
         
         # Check if user already exists
         if User.query.filter_by(email=email).first():
@@ -91,6 +101,7 @@ def register():
 
 @auth_bp.route('/auth/me', methods=['GET'])
 @jwt_required()
+@limiter.limit("120 per minute")
 def get_current_user():
     """Get current user information"""
     try:
@@ -108,6 +119,7 @@ def get_current_user():
 
 @auth_bp.route('/auth/refresh', methods=['POST'])
 @jwt_required(refresh=True)
+@limiter.limit("30 per minute")
 def refresh():
     """Refresh JWT token"""
     try:
@@ -129,9 +141,21 @@ def refresh():
 
 @auth_bp.route('/auth/logout', methods=['POST'])
 @jwt_required()
+@limiter.limit("30 per minute")
 def logout():
-    """Logout user (token invalidation would be handled client-side)"""
-    return jsonify({'message': 'Successfully logged out'})
+    """Logout user by revoking current token"""
+    try:
+        token_payload = get_jwt()
+        token_jti = token_payload.get("jti")
+        token_type = token_payload.get("type", "access")
+        if token_jti:
+            db.session.add(TokenBlocklist(jti=token_jti, token_type=token_type))
+            db.session.commit()
+        return jsonify({'message': 'Successfully logged out'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Logout error: {str(e)}")
+        return jsonify({'error': 'Logout failed'}), 500
 
 @auth_bp.route('/auth/health', methods=['GET'])
 def auth_health():

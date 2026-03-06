@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, current_app, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -6,7 +6,7 @@ from datetime import datetime
 from config.config import Config
 import logging
 
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models import Document, Submission
 
 upload_bp = Blueprint('upload', __name__)
@@ -25,22 +25,24 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
-def create_upload_directory():
-    """Create upload directory with date subfolder"""
-    today = datetime.now().strftime('%Y-%m-%d')
-    upload_dir = os.path.join(Config.UPLOAD_FOLDER, today)
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
-    return upload_dir
+def authorize_upload_request():
+    """Optional API-key protection for external upload endpoint."""
+    required_api_key = Config.UPLOAD_API_KEY
+    if not required_api_key:
+        return True
+
+    request_api_key = request.headers.get("X-Upload-Api-Key")
+    return request_api_key == required_api_key
 
 @upload_bp.route('/upload-documents', methods=['POST'])
+@limiter.limit("20 per minute")
 def upload_documents():
     """Handle document uploads from external providers"""
-    saved_paths = []
+    saved_keys = []
     try:
-        # Create upload directory
-        upload_dir = create_upload_directory()
-        
+        if not authorize_upload_request():
+            return jsonify({'error': 'Unauthorized upload request'}), 401
+
         # Parse form data
         patient_data = {
             'fullName': request.form.get('fullName'),
@@ -80,13 +82,20 @@ def upload_documents():
             if file and file.filename and allowed_file(file.filename):
                 # Generate unique filename
                 original_filename = secure_filename(file.filename)
-                file_extension = original_filename.rsplit('.', 1)[1].lower()
                 unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+                file.stream.seek(0, os.SEEK_END)
+                file_size = file.stream.tell()
+                file.stream.seek(0)
                 
                 # Save file
-                file_path = os.path.join(upload_dir, unique_filename)
-                file.save(file_path)
-                saved_paths.append(file_path)
+                relative_dir = datetime.now().strftime('%Y-%m-%d')
+                relative_path = os.path.join(relative_dir, unique_filename)
+                storage_result = current_app.storage_service.save_file(
+                    file,
+                    relative_path,
+                    content_type=file.mimetype,
+                )
+                saved_keys.append(storage_result['storage_key'])
                 
                 # Extract metadata from form.
                 # Supports both:
@@ -109,11 +118,13 @@ def upload_documents():
                     submission_id=submission_id,
                     original_name=original_filename,
                     filename=unique_filename,
-                    file_path=file_path,
+                    file_path=storage_result['file_path'],
                     category=category,
                     subtype=subtype,
-                    size=os.path.getsize(file_path),
-                    status='uploaded'
+                    size=file_size,
+                    status='uploaded',
+                    storage_provider=storage_result['provider'],
+                    storage_key=storage_result['storage_key'],
                 )
                 db.session.add(document)
                 
@@ -132,10 +143,9 @@ def upload_documents():
         
     except Exception as e:
         db.session.rollback()
-        for saved_path in saved_paths:
+        for saved_key in saved_keys:
             try:
-                if os.path.exists(saved_path):
-                    os.remove(saved_path)
+                current_app.storage_service.delete_file(saved_key)
             except Exception:
                 pass
         logging.error(f"Upload error: {str(e)}")
@@ -153,6 +163,7 @@ def upload_health():
         'status': 'healthy',
         'service': 'Document Upload Service',
         'upload_folder': Config.UPLOAD_FOLDER,
+        'storage_provider': Config.STORAGE_PROVIDER,
         'max_file_size': Config.MAX_CONTENT_LENGTH,
         'allowed_extensions': list(Config.ALLOWED_EXTENSIONS)
     })

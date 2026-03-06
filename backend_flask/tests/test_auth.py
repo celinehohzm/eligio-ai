@@ -60,6 +60,7 @@ def test_register_login_me_flow(client):
     assert login_response.status_code == 200
     login_data = json.loads(login_response.data)
     assert 'access_token' in login_data
+    assert 'refresh_token' in login_data
     assert login_data['user']['email'] == email
 
     me_response = client.get(
@@ -96,3 +97,48 @@ def test_login_invalid_credentials(client):
         }
     )
     assert response.status_code == 401
+
+
+def test_refresh_and_logout_revocation(client):
+    login_response = client.post(
+        '/api/auth/login',
+        json={
+            'email': 'demo@eligio.ai',
+            'password': 'demo123',
+        }
+    )
+    assert login_response.status_code == 200
+    login_data = json.loads(login_response.data)
+
+    refresh_response = client.post(
+        '/api/auth/refresh',
+        headers={'Authorization': f"Bearer {login_data['refresh_token']}"},
+    )
+    assert refresh_response.status_code == 200
+    refresh_data = json.loads(refresh_response.data)
+    assert 'access_token' in refresh_data
+
+    logout_response = client.post(
+        '/api/auth/logout',
+        headers={'Authorization': f"Bearer {login_data['access_token']}"},
+    )
+    assert logout_response.status_code == 200
+
+    me_response = client.get(
+        '/api/auth/me',
+        headers={'Authorization': f"Bearer {login_data['access_token']}"},
+    )
+    assert me_response.status_code == 401
+
+
+def test_register_short_password_rejected(client):
+    response = client.post(
+        '/api/auth/register',
+        json={
+            'email': 'shortpw@example.com',
+            'password': '12345',
+            'name': 'Short Password',
+            'role': 'provider',
+        }
+    )
+    assert response.status_code == 400

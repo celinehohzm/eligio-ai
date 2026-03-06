@@ -4,14 +4,24 @@ class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     this.token = localStorage.getItem('auth_token');
+    this.refreshTokenValue = localStorage.getItem('refresh_token');
   }
 
-  setToken(token) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('auth_token', token);
+  setToken(token, refreshToken = undefined) {
+    this.token = token || null;
+    if (this.token) {
+      localStorage.setItem('auth_token', this.token);
     } else {
       localStorage.removeItem('auth_token');
+    }
+
+    if (refreshToken !== undefined) {
+      this.refreshTokenValue = refreshToken;
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+      } else {
+        localStorage.removeItem('refresh_token');
+      }
     }
   }
 
@@ -166,7 +176,7 @@ class ApiService {
     });
     
     if (data.access_token) {
-      this.setToken(data.access_token);
+      this.setToken(data.access_token, data.refresh_token || null);
     }
     
     return data;
@@ -184,8 +194,16 @@ class ApiService {
   }
 
   async refreshToken() {
+    if (!this.refreshTokenValue) {
+      throw new Error('No refresh token available');
+    }
+
     const data = await this.request('/auth/refresh', {
       method: 'POST',
+      headers: {
+        ...this.getHeaders(),
+        Authorization: `Bearer ${this.refreshTokenValue}`,
+      },
     });
     
     if (data.access_token) {
@@ -196,7 +214,7 @@ class ApiService {
   }
 
   logout() {
-    this.setToken(null);
+    this.setToken(null, null);
   }
 
   // Health check methods

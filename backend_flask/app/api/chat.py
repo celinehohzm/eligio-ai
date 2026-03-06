@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify, Response
-from flask_jwt_extended import jwt_required, create_access_token
 import json
 from openai import OpenAI
 from config.config import Config
 import logging
+
+from app.extensions import limiter
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -38,6 +39,7 @@ def get_openai_client():
     return openai_client
 
 @chat_bp.route('/ai-chat', methods=['POST'])
+@limiter.limit("30 per minute")
 def ai_chat():
     """Handle AI chat requests for patient triaging"""
     try:
@@ -191,6 +193,7 @@ Please go to the nearest emergency department or call emergency services right a
 **Disclaimer**: I am an AI assistant and cannot provide medical diagnoses. Please consult with a qualified healthcare professional for proper medical advice and treatment."""
 
 @chat_bp.route('/chat/health', methods=['GET'])
+@limiter.limit("120 per minute")
 def chat_health():
     """Health check endpoint for chat service"""
     return jsonify({

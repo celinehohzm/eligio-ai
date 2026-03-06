@@ -86,6 +86,8 @@ class Document(db.Model):
     size = db.Column(db.BigInteger, nullable=False, default=0)
     uploaded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(db.String(50), nullable=False, default="uploaded")
+    storage_provider = db.Column(db.String(20), nullable=False, default="local")
+    storage_key = db.Column(db.Text, nullable=True)
     submission = db.relationship("Submission", back_populates="documents")
 
     def to_dict(self):
@@ -99,4 +101,14 @@ class Document(db.Model):
             "size": self.size,
             "uploadedAt": self.uploaded_at.isoformat(),
             "status": self.status,
+            "storageProvider": self.storage_provider,
         }
+
+
+class TokenBlocklist(db.Model):
+    __tablename__ = "token_blocklist"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    jti = db.Column(db.String(36), nullable=False, unique=True, index=True)
+    token_type = db.Column(db.String(20), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
