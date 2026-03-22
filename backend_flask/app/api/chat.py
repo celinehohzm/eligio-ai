@@ -57,18 +57,21 @@ def ai_chat():
         # System prompt for patient triaging
         system_prompt = {
             "role": "system",
-            "content": """You are Eligio AI, an intelligent patient triaging assistant. Your role is to help assess patient symptoms and provide appropriate medical guidance.
+            "content": 
+            """
+            You are Eligio AI, an intelligent patient triaging assistant. Your role is to help assess patient symptoms and provide appropriate medical guidance.
 
-Guidelines:
-1. Always prioritize patient safety
-2. Ask clarifying questions when needed
-3. Provide general medical information, not specific diagnoses
-4. Recommend appropriate level of care (emergency care, urgent care, primary care)
-5. Include disclaimers that your advice is not a substitute for professional medical care
-6. Be empathetic and professional in your responses
-7. If symptoms suggest emergency conditions, advise immediate emergency care
+            Guidelines:
+            1. Always prioritize patient safety
+            2. Ask clarifying questions when needed
+            3. Provide general medical information, not specific diagnoses
+            4. Recommend appropriate level of care (emergency care, urgent care, primary care)
+            5. Include disclaimers that your advice is not a substitute for professional medical care
+            6. Be empathetic and professional in your responses
+            7. If symptoms suggest emergency conditions, advise immediate emergency care
 
-Please provide thoughtful, safe, and helpful triaging recommendations."""
+            Please provide thoughtful, safe, and helpful triaging recommendations.
+            """
         }
         
         # Add system prompt if not present
@@ -174,23 +177,30 @@ def generate_mock_response(messages):
     last_message = messages[-1]['content'] if messages else ""
     
     if 'emergency' in last_message.lower() or 'severe' in last_message.lower():
-        return """Based on symptoms you've described, I recommend seeking immediate emergency medical care. 
+        return """
+        Based on symptoms you've described, I recommend seeking immediate emergency medical care. 
 
-Please go to the nearest emergency department or call emergency services right away. 
+        Please go to the nearest emergency department or call emergency services right away. 
 
-**Disclaimer**: This assessment is not a substitute for professional medical evaluation. Please seek immediate medical attention for proper diagnosis and treatment."""
+        **Disclaimer**: This assessment is not a substitute for professional medical evaluation. Please seek immediate medical attention for proper diagnosis and treatment.
+        """
+
     elif 'pain' in last_message.lower() or 'fever' in last_message.lower():
-        return """Based on your symptoms, I recommend scheduling an appointment with your primary care physician or visiting an urgent care center if your symptoms are concerning to you.
+        return """
+        Based on your symptoms, I recommend scheduling an appointment with your primary care physician or visiting an urgent care center if your symptoms are concerning to you.
+        **Disclaimer**: This information is for educational purposes only and should not replace professional medical advice. Please consult with a healthcare provider for proper evaluation and treatment.
+        """
 
-**Disclaimer**: This information is for educational purposes only and should not replace professional medical advice. Please consult with a healthcare provider for proper evaluation and treatment."""
     else:
-        return """Thank you for providing information about your symptoms. Based on what you've shared, I recommend:
+        return """
+        Thank you for providing information about your symptoms. Based on what you've shared, I recommend:
 
-1. Monitoring your symptoms closely
-2. Contacting your primary care physician for a proper evaluation
-3. Seeking urgent care if symptoms worsen or you develop new concerning symptoms
+        1. Monitoring your symptoms closely
+        2. Contacting your primary care physician for a proper evaluation
+        3. Seeking urgent care if symptoms worsen or you develop new concerning symptoms
 
-**Disclaimer**: I am an AI assistant and cannot provide medical diagnoses. Please consult with a qualified healthcare professional for proper medical advice and treatment."""
+        **Disclaimer**: I am an AI assistant and cannot provide medical diagnoses. Please consult with a qualified healthcare professional for proper medical advice and treatment.
+        """
 
 @chat_bp.route('/chat/health', methods=['GET'])
 @limiter.limit("120 per minute")
