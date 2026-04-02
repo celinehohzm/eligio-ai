@@ -41,21 +41,36 @@ if [ -z "$deployment_token" ]; then
 fi
 
 log "Deploying static frontend assets"
-if az staticwebapp upload \
+if az staticwebapp upload -h >/dev/null 2>&1 && az staticwebapp upload \
   --name "$AZ_STATIC_WEBAPP_NAME" \
   --resource-group "$AZ_RESOURCE_GROUP" \
   --source "$frontend_dir/dist" \
   --deployment-token "$deployment_token" \
   --output none; then
   log "Frontend upload completed with az staticwebapp upload."
-elif command -v swa >/dev/null 2>&1; then
-  log "az staticwebapp upload failed; trying SWA CLI fallback."
+else
+  swa_cmd=""
+
+  if command -v swa >/dev/null 2>&1; then
+    swa_cmd="$(command -v swa)"
+  else
+    swa_cli_dir="${SWA_CLI_INSTALL_DIR:-/tmp/eligio-swa-cli}"
+    log "Installing Static Web Apps CLI to ${swa_cli_dir}"
+    rm -rf "$swa_cli_dir"
+    mkdir -p "$swa_cli_dir"
+    npm install --prefix "$swa_cli_dir" @azure/static-web-apps-cli@latest >/dev/null
+    swa_cmd="$swa_cli_dir/node_modules/.bin/swa"
+  fi
+
+  if [ ! -x "$swa_cmd" ]; then
+    fail "Frontend upload failed because SWA CLI is unavailable after installation."
+  fi
+
+  log "Using SWA CLI fallback for frontend deployment"
   (
     cd "$frontend_dir"
-    swa deploy dist --deployment-token "$deployment_token" --env production
+    "$swa_cmd" deploy dist --deployment-token "$deployment_token" --env production
   )
-else
-  fail "Frontend upload failed and SWA CLI fallback is unavailable."
 fi
 
 frontend_host="$(az staticwebapp show --name "$AZ_STATIC_WEBAPP_NAME" --resource-group "$AZ_RESOURCE_GROUP" --query defaultHostname -o tsv)"

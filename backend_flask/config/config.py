@@ -17,6 +17,17 @@ def _env_bool(name, default=False):
     return raw_value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_stripped(name, default=None, empty_as_none=False):
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+
+    normalized = raw_value.strip()
+    if empty_as_none and normalized == "":
+        return None
+    return normalized
+
+
 def _default_cors_origins():
     """Use explicit CORS in production, localhost-only defaults in development."""
     configured_origins = _parse_csv_env("CORS_ORIGINS")
@@ -59,14 +70,16 @@ class Config:
     SQLALCHEMY_DATABASE_URI = _database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
+    if SQLALCHEMY_DATABASE_URI.startswith("postgresql"):
+        SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = {"connect_timeout": 10}
     AUTO_CREATE_TABLES = _env_bool(
         "AUTO_CREATE_TABLES",
         os.environ.get("FLASK_ENV", "development").lower() != "production",
     )
     
     # OpenAI Configuration
-    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-    OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+    OPENAI_API_KEY = _env_stripped('OPENAI_API_KEY', empty_as_none=True)
+    OPENAI_MODEL = _env_stripped('OPENAI_MODEL', default='gpt-4o-mini') or 'gpt-4o-mini'
     
     # JWT Configuration
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'your-super-secret-jwt-key-for-development-32-chars-minimum'
@@ -97,3 +110,7 @@ class Config:
     FORCE_HTTPS = _env_bool("FORCE_HTTPS", FLASK_ENV.lower() == "production")
     ENABLE_SECURITY_HEADERS = _env_bool("ENABLE_SECURITY_HEADERS", True)
     ALLOWED_HOSTS = _parse_csv_env("ALLOWED_HOSTS")
+    SEED_DEMO_USER = _env_bool(
+        "SEED_DEMO_USER",
+        os.environ.get("FLASK_ENV", "development").lower() != "production",
+    )

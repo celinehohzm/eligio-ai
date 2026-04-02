@@ -3,10 +3,48 @@ import json
 import logging
 
 from app.extensions import limiter
-from app.services.ai_service import AIService
+from app.services.ai_service import AIService, AIServiceInitError
 
 chat_bp = Blueprint('chat', __name__)
 ai_service = AIService()
+
+
+def _openai_failure_response(exc):
+    message = str(exc)
+    lowered = message.lower()
+    error_code = getattr(exc, "code", None)
+    status_code = getattr(exc, "status_code", None)
+
+    if error_code == "insufficient_quota" or "insufficient_quota" in lowered:
+        return jsonify({
+            'error': 'OpenAI quota exceeded for the configured API key. Add billing/credits or replace the key.'
+        }), 503
+
+    if status_code == 401 or "invalid api key" in lowered:
+        return jsonify({
+            'error': 'OpenAI authentication failed. Update the configured API key.'
+        }), 502
+
+    if status_code == 429:
+        return jsonify({
+            'error': 'OpenAI rate limit exceeded. Please try again shortly.'
+        }), 429
+
+    if "connection error" in lowered:
+        return jsonify({
+            'error': 'OpenAI connection failed. Please try again shortly.'
+        }), 502
+
+    return jsonify({
+        'error': 'OpenAI chat is unavailable right now.'
+    }), 502
+
+
+def _openai_init_failure_response():
+    return jsonify({
+        'error': 'OpenAI client initialization failed. Check the configured API key and deployment settings.'
+    }), 502
+
 
 @chat_bp.route('/ai-chat', methods=['POST'])
 @limiter.limit("30 per minute")
@@ -14,16 +52,16 @@ def ai_chat():
     """Handle AI chat requests for patient triaging"""
     try:
         data = request.get_json(silent=True)
-        
+
         if not data or 'messages' not in data:
             return jsonify({'error': 'Messages are required'}), 400
-        
+
         messages = data['messages']
-        
+
         # Validate messages format
         if not isinstance(messages, list) or len(messages) == 0:
             return jsonify({'error': 'Messages must be a non-empty array'}), 400
-        
+
         accept_header = request.headers.get('Accept', '')
         wants_streaming = 'text/stream' in accept_header
 
@@ -31,10 +69,11 @@ def ai_chat():
             return generate_streaming_response(messages)
 
         return generate_regular_response(messages)
-            
+
     except Exception as e:
         logging.error(f"Error in ai_chat: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
 
 def generate_streaming_response(messages):
     """Generate streaming response using the shared AI service."""
@@ -53,17 +92,19 @@ def generate_streaming_response(messages):
                 content = getattr(delta, 'content', None) if delta else None
 
                 if content:
-                    # Format as Server-Sent Events
                     data = {'choices': [{'delta': {'content': content}}]}
                     yield f"data: {json.dumps(data)}\n\n"
                 elif getattr(choice, 'finish_reason', None) == 'stop':
                     yield "data: [DONE]\n\n"
-        
+
         return Response(generate(), mimetype='text/stream')
-        
+
+    except AIServiceInitError:
+        return _openai_init_failure_response()
     except Exception as e:
         logging.error(f"Streaming error: {str(e)}")
-        return generate_regular_response(messages)
+        return _openai_failure_response(e)
+
 
 def generate_mock_streaming_response(mock_response):
     """Generate streaming response from a prebuilt mock message."""
@@ -78,15 +119,18 @@ def generate_mock_streaming_response(mock_response):
 
     return Response(generate(), mimetype='text/stream')
 
+
 def generate_regular_response(messages):
     """Generate regular JSON response."""
     try:
         content = ai_service.generate_chat_response(messages, stream=False)
         return jsonify({'content': content})
+    except AIServiceInitError:
+        return _openai_init_failure_response()
     except Exception as e:
         logging.error(f"Regular response error: {str(e)}")
-        mock_response = ai_service._generate_mock_response(messages)
-        return jsonify({'content': mock_response})
+        return _openai_failure_response(e)
+
 
 @chat_bp.route('/chat/health', methods=['GET'])
 @limiter.limit("120 per minute")

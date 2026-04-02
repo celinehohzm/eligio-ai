@@ -26,6 +26,11 @@ CORS_ORIGINS="${CORS_ORIGINS:-https://eligio.net,https://www.eligio.net}"
 ALLOWED_HOSTS="${ALLOWED_HOSTS:-api.eligio.net,${AZ_BACKEND_WEBAPP}.azurewebsites.net}"
 OPENAI_MODEL="${OPENAI_MODEL:-gpt-4o-mini}"
 RATELIMIT_STORAGE_URI="${RATELIMIT_STORAGE_URI:-memory://}"
+NORMALIZED_OPENAI_API_KEY="$(python - <<'PY'
+import os
+print(os.environ.get("OPENAI_API_KEY", "").strip(), end="")
+PY
+)"
 
 if [ -z "${SECRET_KEY:-}" ]; then
   SECRET_KEY="$(python - <<'PY'
@@ -56,11 +61,7 @@ postgres_fqdn="$(az postgres flexible-server show \
   --name "$AZ_POSTGRES_SERVER" \
   --query fullyQualifiedDomainName -o tsv)"
 
-if [[ "$AZ_POSTGRES_ADMIN" == *"@"* ]]; then
-  postgres_user="$AZ_POSTGRES_ADMIN"
-else
-  postgres_user="${AZ_POSTGRES_ADMIN}@${AZ_POSTGRES_SERVER}"
-fi
+postgres_user="$AZ_POSTGRES_ADMIN"
 
 encoded_password="$(python - <<'PY'
 import os
@@ -79,8 +80,8 @@ az keyvault secret set --vault-name "$AZ_KEYVAULT_NAME" --name "jwt-secret-key" 
 az keyvault secret set --vault-name "$AZ_KEYVAULT_NAME" --name "upload-api-key" --value "$UPLOAD_API_KEY" --output none
 az keyvault secret set --vault-name "$AZ_KEYVAULT_NAME" --name "azure-storage-connection-string" --value "$storage_connection_string" --output none
 
-if [ -n "${OPENAI_API_KEY:-}" ]; then
-  az keyvault secret set --vault-name "$AZ_KEYVAULT_NAME" --name "openai-api-key" --value "$OPENAI_API_KEY" --output none
+if [ -n "$NORMALIZED_OPENAI_API_KEY" ]; then
+  az keyvault secret set --vault-name "$AZ_KEYVAULT_NAME" --name "openai-api-key" --value "$NORMALIZED_OPENAI_API_KEY" --output none
 else
   az keyvault secret set --vault-name "$AZ_KEYVAULT_NAME" --name "openai-api-key" --value "" --output none
   log "OPENAI_API_KEY is not set. Backend chat will run in mock mode until you add it."
@@ -124,15 +125,33 @@ az webapp config appsettings set \
     RATELIMIT_HEADERS_ENABLED=true \
     FLASK_APP=app:create_app \
     WEBSITES_PORT=8000 \
+    WEBSITE_WARMUP_PATH=/ready \
+    WEBSITE_WARMUP_STATUSES=200 \
     SCM_DO_BUILD_DURING_DEPLOYMENT=true \
     APPLICATIONINSIGHTS_CONNECTION_STRING="$appinsights_connection_string" \
+    SEED_DEMO_USER=false \
+    RUN_DB_MIGRATIONS_ON_STARTUP=false \
     --output none
 
 log "Setting backend startup command"
 az webapp config set \
   --resource-group "$AZ_RESOURCE_GROUP" \
   --name "$AZ_BACKEND_WEBAPP" \
-  --startup-file "bash startup.sh" \
+  --startup-file "startup.sh" \
+  --output none
+
+log "Enabling Always On for backend app"
+az webapp config set \
+  --resource-group "$AZ_RESOURCE_GROUP" \
+  --name "$AZ_BACKEND_WEBAPP" \
+  --always-on true \
+  --output none
+
+log "Setting backend health check path"
+az webapp config set \
+  --resource-group "$AZ_RESOURCE_GROUP" \
+  --name "$AZ_BACKEND_WEBAPP" \
+  --generic-configurations '{"healthCheckPath":"/ready"}' \
   --output none
 
 log "Key Vault + app settings configuration complete."

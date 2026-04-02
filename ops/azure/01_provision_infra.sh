@@ -29,6 +29,7 @@ set_subscription
 
 AZ_ACTION_GROUP_NAME="${AZ_ACTION_GROUP_NAME:-ag-eligio-prod}"
 AZ_STATIC_WEBAPP_LOCATION="${AZ_STATIC_WEBAPP_LOCATION:-$AZ_LOCATION}"
+AZ_APP_PLAN_SKU="${AZ_APP_PLAN_SKU:-B1}"
 
 log "Creating resource group: $AZ_RESOURCE_GROUP"
 az group create \
@@ -63,7 +64,7 @@ az appservice plan create \
   --resource-group "$AZ_RESOURCE_GROUP" \
   --location "$AZ_LOCATION" \
   --is-linux \
-  --sku B1 \
+  --sku "$AZ_APP_PLAN_SKU" \
   --output none
 
 if az webapp show --resource-group "$AZ_RESOURCE_GROUP" --name "$AZ_BACKEND_WEBAPP" >/dev/null 2>&1; then
@@ -155,9 +156,9 @@ az storage container create \
   --output none
 
 log "Enabling blob soft delete/versioning"
-az storage blob service-properties update \
+az storage account blob-service-properties update \
+  --resource-group "$AZ_RESOURCE_GROUP" \
   --account-name "$AZ_STORAGE_ACCOUNT" \
-  --account-key "$storage_key" \
   --enable-versioning true \
   --enable-delete-retention true \
   --delete-retention-days 14 \
@@ -185,6 +186,16 @@ az role assignment create \
   --role "Key Vault Secrets User" \
   --scope "$kv_id" \
   --output none || true
+
+if signed_in_user_id="$(az ad signed-in-user show --query id -o tsv 2>/dev/null)"; then
+  log "Granting signed-in user access to manage Key Vault secrets"
+  az role assignment create \
+    --assignee-object-id "$signed_in_user_id" \
+    --assignee-principal-type User \
+    --role "Key Vault Secrets Officer" \
+    --scope "$kv_id" \
+    --output none || true
+fi
 
 if az extension show --name staticwebapp >/dev/null 2>&1; then
   az extension update --name staticwebapp --yes >/dev/null 2>&1 || true
@@ -219,6 +230,7 @@ action_group_id="$(az monitor action-group show \
   --name "$AZ_ACTION_GROUP_NAME" \
   --query id -o tsv)"
 backend_id="$(az webapp show --resource-group "$AZ_RESOURCE_GROUP" --name "$AZ_BACKEND_WEBAPP" --query id -o tsv)"
+app_plan_id="$(az appservice plan show --resource-group "$AZ_RESOURCE_GROUP" --name "$AZ_APP_PLAN" --query id -o tsv)"
 postgres_id="$(az postgres flexible-server show --resource-group "$AZ_RESOURCE_GROUP" --name "$AZ_POSTGRES_SERVER" --query id -o tsv)"
 
 log "Creating backend HTTP 5xx alert"
@@ -238,7 +250,7 @@ log "Creating backend CPU alert"
 az monitor metrics alert create \
   --resource-group "$AZ_RESOURCE_GROUP" \
   --name "${AZ_BACKEND_WEBAPP}-cpu" \
-  --scopes "$backend_id" \
+  --scopes "$app_plan_id" \
   --condition "avg CpuPercentage > 80" \
   --window-size 10m \
   --evaluation-frequency 5m \

@@ -1,6 +1,7 @@
 import os
 
 from azure.storage.blob import BlobServiceClient
+from azure.core.exceptions import ResourceExistsError
 
 
 class StorageService:
@@ -12,6 +13,7 @@ class StorageService:
         self.container_name = config.get("AZURE_STORAGE_CONTAINER", "uploads")
         self.blob_service_client = None
         self.container_client = None
+        self._container_ready = False
 
         if self.provider == "azure":
             connection_string = config.get("AZURE_STORAGE_CONNECTION_STRING")
@@ -20,11 +22,21 @@ class StorageService:
 
             self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
             self.container_client = self.blob_service_client.get_container_client(self.container_name)
-            if not self.container_client.exists():
-                self.container_client.create_container()
+
+    def _ensure_container_ready(self):
+        if self.provider != "azure" or self._container_ready:
+            return
+
+        try:
+            self.container_client.create_container()
+        except ResourceExistsError:
+            pass
+
+        self._container_ready = True
 
     def save_file(self, file_storage, relative_path, content_type=None):
         if self.provider == "azure":
+            self._ensure_container_ready()
             blob_name = relative_path.replace("\\", "/")
             blob_client = self.container_client.get_blob_client(blob_name)
             file_storage.stream.seek(0)

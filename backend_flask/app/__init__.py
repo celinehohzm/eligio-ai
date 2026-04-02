@@ -98,15 +98,18 @@ def create_app(test_config=None):
     with app.app_context():
         if app.config.get("AUTO_CREATE_TABLES", True):
             db.create_all()
-        try:
-            ensure_demo_user()
-        except Exception as exc:
-            logging.warning("Could not seed demo user: %s", exc)
+        if app.config.get("SEED_DEMO_USER", False):
+            try:
+                ensure_demo_user()
+            except Exception as exc:
+                logging.warning("Could not seed demo user: %s", exc)
 
     @app.before_request
     def enforce_request_security():
+        is_health_endpoint = request.endpoint in {"health_check", "readiness_check"}
+
         allowed_hosts = [host.lower() for host in app.config.get("ALLOWED_HOSTS", [])]
-        if allowed_hosts:
+        if allowed_hosts and not is_health_endpoint:
             request_host = (request.host or "").split(":")[0].lower()
             if request_host not in allowed_hosts:
                 return jsonify({"error": "Host not allowed"}), 400
@@ -115,7 +118,7 @@ def create_app(test_config=None):
             forwarded_proto = request.headers.get("X-Forwarded-Proto", "")
             forwarded_proto = forwarded_proto.split(",")[0].strip().lower()
             is_https = request.is_secure or forwarded_proto == "https"
-            if not is_https and request.endpoint not in {"health_check", "readiness_check"}:
+            if not is_https and not is_health_endpoint:
                 return jsonify({"error": "HTTPS is required"}), 426
 
     @app.after_request

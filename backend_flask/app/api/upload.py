@@ -1,4 +1,5 @@
 from flask import Blueprint, current_app, request, jsonify
+from flask_jwt_extended import verify_jwt_in_request
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -26,13 +27,21 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 def authorize_upload_request():
-    """Optional API-key protection for external upload endpoint."""
+    """Allow either a trusted external upload API key or an authenticated user JWT."""
     required_api_key = Config.UPLOAD_API_KEY
-    if not required_api_key:
-        return True
 
     request_api_key = request.headers.get("X-Upload-Api-Key")
-    return request_api_key == required_api_key
+    if required_api_key and request_api_key == required_api_key:
+        return True
+
+    if request.headers.get("Authorization", "").startswith("Bearer "):
+        try:
+            verify_jwt_in_request()
+            return True
+        except Exception:
+            return False
+
+    return not required_api_key
 
 @upload_bp.route('/upload-documents', methods=['POST'])
 @limiter.limit("20 per minute")
