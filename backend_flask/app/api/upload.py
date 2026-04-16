@@ -1,5 +1,5 @@
 from flask import Blueprint, current_app, request, jsonify
-from flask_jwt_extended import verify_jwt_in_request
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -9,6 +9,8 @@ import logging
 
 from app.extensions import db, limiter
 from app.models import Document, Submission
+from app.models import User
+from app.roles import can_access_upload
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -32,16 +34,22 @@ def authorize_upload_request():
 
     request_api_key = request.headers.get("X-Upload-Api-Key")
     if required_api_key and request_api_key == required_api_key:
-        return True
+        return True, None
 
     if request.headers.get("Authorization", "").startswith("Bearer "):
         try:
             verify_jwt_in_request()
-            return True
+            current_email = get_jwt_identity()
+            user = User.query.filter_by(email=current_email).first()
+            if not user:
+                return False, 'User not found'
+            if not can_access_upload(user.role):
+                return False, 'Upload access is not available for your role'
+            return True, None
         except Exception:
-            return False
+            return False, 'Unauthorized upload request'
 
-    return not required_api_key
+    return (not required_api_key), ('Unauthorized upload request' if required_api_key else None)
 
 @upload_bp.route('/upload-documents', methods=['POST'])
 @limiter.limit("20 per minute")
@@ -49,8 +57,10 @@ def upload_documents():
     """Handle document uploads from external providers"""
     saved_keys = []
     try:
-        if not authorize_upload_request():
-            return jsonify({'error': 'Unauthorized upload request'}), 401
+        is_authorized, auth_error = authorize_upload_request()
+        if not is_authorized:
+            status_code = 403 if auth_error == 'Upload access is not available for your role' else 401
+            return jsonify({'error': auth_error or 'Unauthorized upload request'}), status_code
 
         # Parse form data
         patient_data = {

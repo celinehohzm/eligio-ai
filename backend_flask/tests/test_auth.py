@@ -6,6 +6,7 @@ import time
 import pytest
 
 from app import create_app
+from app.roles import ROLE_PATIENT_SCHEDULER, ROLE_REFERRING_PROVIDER
 
 
 @pytest.fixture
@@ -45,7 +46,7 @@ def test_register_login_me_flow(client):
             'email': email,
             'password': password,
             'name': 'Auth Test',
-            'role': 'provider',
+            'role': ROLE_PATIENT_SCHEDULER,
         }
     )
     assert register_response.status_code == 201
@@ -78,7 +79,7 @@ def test_register_duplicate_email(client):
         'email': 'duplicate@example.com',
         'password': 'secret123',
         'name': 'Duplicate User',
-        'role': 'provider',
+        'role': ROLE_REFERRING_PROVIDER,
     }
 
     first_response = client.post('/api/auth/register', json=payload)
@@ -138,7 +139,20 @@ def test_register_short_password_rejected(client):
             'email': 'shortpw@example.com',
             'password': '12345',
             'name': 'Short Password',
-            'role': 'provider',
+            'role': ROLE_PATIENT_SCHEDULER,
+        }
+    )
+    assert response.status_code == 400
+
+
+def test_register_invalid_role_rejected(client):
+    response = client.post(
+        '/api/auth/register',
+        json={
+            'email': 'invalidrole@example.com',
+            'password': 'secret123',
+            'name': 'Invalid Role',
+            'role': 'administrator',
         }
     )
     assert response.status_code == 400

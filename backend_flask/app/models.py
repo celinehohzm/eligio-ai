@@ -4,6 +4,7 @@ from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
+from app.roles import DEFAULT_REGISTRATION_ROLE
 
 
 def new_uuid():
@@ -17,7 +18,7 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(50), nullable=False, default="provider")
+    role = db.Column(db.String(50), nullable=False, default=DEFAULT_REGISTRATION_ROLE)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def set_password(self, password):

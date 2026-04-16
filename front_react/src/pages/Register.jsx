@@ -6,13 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import eligioLogo from "@/assets/eligio-logo.png";
+import {
+  ROLE_PATIENT_SCHEDULER,
+  ROLE_REFERRING_PROVIDER,
+} from "@/lib/roles";
 
 export default function Register() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     name: "",
-    role: "provider",
+    role: ROLE_PATIENT_SCHEDULER,
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -102,8 +106,8 @@ export default function Register() {
                 onChange={(e) => handleInputChange('role', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
               >
-                <option value="provider">Healthcare Provider</option>
-                <option value="admin">Administrator</option>
+                <option value={ROLE_PATIENT_SCHEDULER}>Patient Scheduler</option>
+                <option value={ROLE_REFERRING_PROVIDER}>Referring Provider</option>
               </select>
             </div>
 

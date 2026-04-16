@@ -6,6 +6,7 @@ import io
 
 from app import create_app
 from app.api import upload as upload_api
+from app.roles import ROLE_REFERRING_PROVIDER
 
 @pytest.fixture
 def app():
@@ -75,14 +76,25 @@ def test_upload_documents_complete_fields(client):
     assert data['uploadedFiles'] == 0
 
 
-def test_upload_documents_allows_authenticated_user_when_api_key_configured(client, monkeypatch):
+def test_upload_documents_allows_referring_provider_when_api_key_configured(client, monkeypatch):
     monkeypatch.setattr(upload_api.Config, 'UPLOAD_API_KEY', 'secret-upload-key')
+
+    register_response = client.post(
+        '/api/auth/register',
+        json={
+            'email': 'ref_provider@example.com',
+            'password': 'secret123',
+            'name': 'Referring Provider',
+            'role': ROLE_REFERRING_PROVIDER,
+        }
+    )
+    assert register_response.status_code == 201
 
     login_response = client.post(
         '/api/auth/login',
         json={
-            'email': 'demo@eligio.ai',
-            'password': 'demo123',
+            'email': 'ref_provider@example.com',
+            'password': 'secret123',
         }
     )
     assert login_response.status_code == 200

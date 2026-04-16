@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import eligioLogo from "@/assets/eligio-logo.png";
+import { getDefaultRouteForRole } from "@/lib/roles";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -28,9 +29,9 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      const response = await login(formData.email, formData.password);
       toast.success("Login successful!");
-      navigate("/chat");
+      navigate(getDefaultRouteForRole(response?.user?.role));
     } catch (error) {
       toast.error("Login failed", {
         description: error.message || "Invalid credentials"

@@ -9,6 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.extensions import db, jwt, limiter, migrate
 from app.models import TokenBlocklist, User
+from app.roles import ROLE_PATIENT_SCHEDULER
 from app.services.storage_service import StorageService
 
 
@@ -42,7 +43,7 @@ def ensure_demo_user():
     demo_user = User(
         email=demo_email,
         name="Demo User",
-        role="provider",
+        role=ROLE_PATIENT_SCHEDULER,
     )
     demo_user.set_password("demo123")
     db.session.add(demo_user)

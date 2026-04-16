@@ -6,6 +6,7 @@ import logging
 
 from app.extensions import db, limiter
 from app.models import TokenBlocklist, User
+from app.roles import DEFAULT_REGISTRATION_ROLE, can_register_as, normalize_role
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -77,11 +78,15 @@ def register():
         if User.query.filter_by(email=email).first():
             return jsonify({'error': 'User already exists'}), 409
         
+        role = normalize_role(data.get('role'), default=DEFAULT_REGISTRATION_ROLE)
+        if not can_register_as(role):
+            return jsonify({'error': 'Invalid role selected'}), 400
+
         # Create new user
         user = User(
             email=email,
             name=name,
-            role=data.get('role', 'provider')
+            role=role,
         )
         user.set_password(password)
         db.session.add(user)

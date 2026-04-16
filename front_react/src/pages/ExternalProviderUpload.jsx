@@ -121,7 +121,7 @@ export default function ExternalProviderUpload() {
       </header>
 
       <div className="container mx-auto py-8 px-4 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">External Provider Upload</h1>
+        <h1 className="text-3xl font-bold mb-2">Document Upload</h1>
         <p className="text-muted-foreground mb-8">
           Submit patient information and medical documents
         </p>

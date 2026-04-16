@@ -4,9 +4,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import eligioLogo from "@/assets/eligio-logo.png";
+import {
+  canAccessChat,
+  canAccessUpload,
+  getDefaultRouteForRole,
+} from "@/lib/roles";
 
 const Index = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const chatEnabled = canAccessChat(user?.role);
+  const uploadEnabled = canAccessUpload(user?.role);
+  const primaryRoute = getDefaultRouteForRole(user?.role);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -20,12 +28,16 @@ const Index = () => {
           <nav className="hidden md:flex items-center space-x-8">
             {isAuthenticated ? (
               <>
-                <Link to="/chat" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-                  Patient Triage Chat
-                </Link>
-                <Link to="/external-provider-upload" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-                  Document Upload
-                </Link>
+                {chatEnabled && (
+                  <Link to="/chat" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                    Patient Triage Chat
+                  </Link>
+                )}
+                {uploadEnabled && (
+                  <Link to="/external-provider-upload" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                    Document Upload
+                  </Link>
+                )}
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
                   <Button 
@@ -66,12 +78,12 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {isAuthenticated ? (
-                <Link to="/chat">
+                <Link to={primaryRoute}>
                   <Button 
                     size="lg" 
                     className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
                   >
-                    Go to Patient Triage Chat
+                    {chatEnabled ? "Go to Patient Triage Chat" : "Go to Document Upload"}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -276,13 +288,13 @@ const Index = () => {
             the future of AI-powered medical practice management with Eligio AI.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/chat">
+            <Link to={isAuthenticated ? primaryRoute : "/login"}>
               <Button 
                 size="lg" 
                 variant="outline" 
                 className="border-white text-blue-600 hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
               >
-                Eligio AI chat
+                {isAuthenticated && !chatEnabled ? "Document Upload" : "Eligio AI chat"}
               </Button>
             </Link>
           </div>

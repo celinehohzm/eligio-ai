@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 import ExternalProviderUpload from "./pages/ExternalProviderUpload";
 import NotFound from "./pages/NotFound";
+import { CHAT_ALLOWED_ROLES, UPLOAD_ALLOWED_ROLES } from "@/lib/roles";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +29,7 @@ const App = () => (
             <Route 
               path="/chat" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={CHAT_ALLOWED_ROLES}>
                   <Chat />
                 </ProtectedRoute>
               } 
@@ -36,7 +37,7 @@ const App = () => (
             <Route 
               path="/external-provider-upload" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={UPLOAD_ALLOWED_ROLES}>
                   <ExternalProviderUpload />
                 </ProtectedRoute>
               } 

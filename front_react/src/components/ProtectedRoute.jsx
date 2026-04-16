@@ -2,9 +2,10 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { getDefaultRouteForRole, normalizeRole } from '@/lib/roles';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = null }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -19,6 +20,10 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(normalizeRole(user?.role))) {
+    return <Navigate to={getDefaultRouteForRole(user?.role)} replace />;
   }
 
   return children;

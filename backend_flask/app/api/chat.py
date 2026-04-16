@@ -1,8 +1,11 @@
 from flask import Blueprint, request, jsonify, Response
 import json
 import logging
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import limiter
+from app.models import User
+from app.roles import can_access_chat
 from app.services.ai_service import AIService, AIServiceInitError
 
 chat_bp = Blueprint('chat', __name__)
@@ -47,10 +50,18 @@ def _openai_init_failure_response():
 
 
 @chat_bp.route('/ai-chat', methods=['POST'])
+@jwt_required()
 @limiter.limit("30 per minute")
 def ai_chat():
     """Handle AI chat requests for patient triaging"""
     try:
+        current_email = get_jwt_identity()
+        user = User.query.filter_by(email=current_email).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        if not can_access_chat(user.role):
+            return jsonify({'error': 'Chat access is not available for your role'}), 403
+
         data = request.get_json(silent=True)
 
         if not data or 'messages' not in data:
