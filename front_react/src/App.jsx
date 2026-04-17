@@ -10,8 +10,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 import ExternalProviderUpload from "./pages/ExternalProviderUpload";
+import ReferralQueue from "./pages/ReferralQueue";
 import NotFound from "./pages/NotFound";
-import { CHAT_ALLOWED_ROLES, UPLOAD_ALLOWED_ROLES } from "@/lib/roles";
+import { CHAT_ALLOWED_ROLES, REFERRAL_SEARCH_ALLOWED_ROLES, UPLOAD_ALLOWED_ROLES } from "@/lib/roles";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,14 @@ const App = () => (
                   <ExternalProviderUpload />
                 </ProtectedRoute>
               } 
+            />
+            <Route
+              path="/referral-queue"
+              element={
+                <ProtectedRoute allowedRoles={REFERRAL_SEARCH_ALLOWED_ROLES}>
+                  <ReferralQueue />
+                </ProtectedRoute>
+              }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

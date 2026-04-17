@@ -10,6 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.extensions import db, jwt, limiter, migrate
 from app.models import TokenBlocklist, User
 from app.roles import ROLE_PATIENT_SCHEDULER
+from app.services.ai_service import AIService
 from app.services.storage_service import StorageService
 
 
@@ -75,6 +76,7 @@ def create_app(test_config=None):
     limiter.init_app(app)
     migrate.init_app(app, db)
     app.storage_service = StorageService(app.config)
+    app.ai_service = AIService()
 
     @jwt.token_in_blocklist_loader
     def is_token_revoked(jwt_header, jwt_payload):
@@ -85,10 +87,12 @@ def create_app(test_config=None):
     
     # Register blueprints
     from app.api.chat import chat_bp
+    from app.api.referrals import referrals_bp
     from app.api.upload import upload_bp
     from app.api.auth import auth_bp
     
     app.register_blueprint(chat_bp, url_prefix='/api')
+    app.register_blueprint(referrals_bp, url_prefix='/api')
     app.register_blueprint(upload_bp, url_prefix='/api')
     app.register_blueprint(auth_bp, url_prefix='/api')
     

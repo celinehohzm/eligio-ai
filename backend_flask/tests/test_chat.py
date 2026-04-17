@@ -4,7 +4,6 @@ import tempfile
 import os
 
 from app import create_app
-from app.api import chat as chat_api
 from app.services import ai_service as ai_service_module
 from app.roles import ROLE_REFERRING_PROVIDER
 
@@ -115,7 +114,7 @@ def test_ai_chat_returns_quota_error_when_openai_fails(client, monkeypatch):
         chat = _Chat()
 
     monkeypatch.setattr(ai_service_module.Config, 'OPENAI_API_KEY', 'sk-test')
-    monkeypatch.setattr(chat_api.ai_service, 'client', DummyClient())
+    monkeypatch.setattr(client.application.ai_service, 'client', DummyClient())
     access_token = login_demo_user(client)
 
     response = client.post('/api/ai-chat',

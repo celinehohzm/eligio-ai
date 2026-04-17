@@ -1,47 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { DocumentUploadSection } from "@/components/DocumentUploadSection";
 import eligioLogo from "@/assets/eligio-logo.png";
 import apiService from "@/services/api";
 import { toast } from "sonner";
-
-const documentSections = [
-  {
-    title: "Referral Note",
-    subtypes: ["General", "Specialist", "Emergency"],
-  },
-  {
-    title: "Clinical Notes",
-    subtypes: ["Progress Note", "Discharge Summary", "Admission Note"],
-  },
-  {
-    title: "Imaging Notes",
-    subtypes: ["MRI", "CT", "PET", "Ultrasound"],
-  },
-  {
-    title: "Lab Results",
-    subtypes: ["CBC", "CMP", "CSF", "Genetic Test", "Other"],
-  },
-  {
-    title: "Other Test Results",
-    subtypes: ["EEG", "EMG", "Sleep Study", "Other"],
-  },
-];
+import { extractPdfText } from "@/lib/pdf";
 
 export default function ExternalProviderUpload() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [documentFiles, setDocumentFiles] = useState({});
+  const [referralPdf, setReferralPdf] = useState(null);
   const [formData, setFormData] = useState({
     fullName: "",
-    age: "",
     dateOfBirth: "",
     address: "",
     phoneNumber: "",
+    doctorName: "",
+    reasonForReferral: "",
   });
 
   const handleInputChange = (field, value) => {
@@ -51,44 +29,58 @@ export default function ExternalProviderUpload() {
     }));
   };
 
-  const handleDocumentFilesChange = (title, files) => {
-    setDocumentFiles((prev) => ({
-      ...prev,
-      [title]: files,
-    }));
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) {
+      setReferralPdf(null);
+      return;
+    }
+
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Only PDF files are allowed.");
+      event.target.value = "";
+      return;
+    }
+
+    setReferralPdf(file);
+  };
+
+  const removeFile = () => {
+    setReferralPdf(null);
+    const fileInput = document.getElementById("referral-pdf-upload");
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (!referralPdf) {
+      toast.error("Please attach one PDF before submitting.");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
-      // Prepare files for upload
-      const filesToUpload = [];
+      const referralPacketText = await extractPdfText(referralPdf);
+      const response = await apiService.uploadDocuments(formData, referralPdf, referralPacketText);
       
-      Object.entries(documentFiles).forEach(([category, files]) => {
-        if (files && files.length > 0) {
-          filesToUpload.push({
-            category,
-            files: files
-          });
-        }
-      });
-
-      // Submit to backend
-      const response = await apiService.uploadDocuments(formData, filesToUpload);
-      
-      // Reset form on successful submission
       setFormData({
         fullName: "",
-        age: "",
         dateOfBirth: "",
         address: "",
         phoneNumber: "",
+        doctorName: "",
+        reasonForReferral: "",
       });
-      setDocumentFiles({});
+      setReferralPdf(null);
+      const fileInput = document.getElementById("referral-pdf-upload");
+      if (fileInput) {
+        fileInput.value = "";
+      }
       
-      toast.success("Patient information submitted successfully!", {
+      toast.success("Referral submitted successfully!", {
         description: `Submission ID: ${response.submissionId}`
       });
     } catch (error) {
@@ -121,22 +113,19 @@ export default function ExternalProviderUpload() {
       </header>
 
       <div className="container mx-auto py-8 px-4 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">Document Upload</h1>
+        <h1 className="text-3xl font-bold mb-2">Referral Upload</h1>
         <p className="text-muted-foreground mb-8">
-          Submit patient information and medical documents
+          Submit a referral with one PDF attachment
         </p>
 
         <form onSubmit={onSubmit} className="space-y-8">
-          {/* Patient Information */}
           <Card className="p-6 border border-gray-200 border-l-4 border-l-blue-600 shadow-md hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-semibold mb-6 text-gray-900">
-              Patient Information
-            </h2>
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">Patient Information</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium mb-2">Full Name</label>
-                <Input 
-                  placeholder="John Doe" 
+                <label className="block text-sm font-medium mb-2">Patient's Name</label>
+                <Input
+                  placeholder="Jane Doe"
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
                   required
@@ -144,32 +133,11 @@ export default function ExternalProviderUpload() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Age</label>
-                <Input 
-                  type="number" 
-                  placeholder="30" 
-                  value={formData.age}
-                  onChange={(e) => handleInputChange('age', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium mb-2">Date of Birth</label>
-                <Input 
-                  type="date" 
+                <Input
+                  type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Phone Number</label>
-                <Input
-                  placeholder="(555) 123-4567"
-                  value={formData.phoneNumber}
-                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                   required
                 />
               </div>
@@ -185,23 +153,80 @@ export default function ExternalProviderUpload() {
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Phone Number</label>
+                <Input
+                  placeholder="(555) 123-4567"
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Referring Dr</label>
+                <Input
+                  placeholder="Dr. Jane Smith"
+                  value={formData.doctorName}
+                  onChange={(e) => handleInputChange('doctorName', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Reason for Referral</label>
+                <Input
+                  placeholder="One-line reason for referral"
+                  value={formData.reasonForReferral}
+                  onChange={(e) => handleInputChange('reasonForReferral', e.target.value)}
+                  required
+                />
+              </div>
             </div>
           </Card>
 
-          {/* Document Upload Sections */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900">Medical Documents</h2>
-            {documentSections.map((section) => (
-              <DocumentUploadSection
-                key={section.title}
-                title={section.title}
-                subtypes={section.subtypes}
-                onFilesChange={(files) =>
-                  handleDocumentFilesChange(section.title, files)
-                }
+          <Card className="p-6 border border-gray-200 border-l-4 border-l-blue-600 shadow-md hover:shadow-lg transition-shadow">
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">Referral PDF</h2>
+            <div className="space-y-4">
+              <input
+                id="referral-pdf-upload"
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
               />
-            ))}
-          </div>
+              <label htmlFor="referral-pdf-upload">
+                <Button type="button" variant="outline" asChild>
+                  <span className="cursor-pointer">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Select PDF
+                  </span>
+                </Button>
+              </label>
+
+              <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center">
+                <FileText className="mx-auto mb-3 h-10 w-10 text-gray-400" />
+                <p className="text-sm text-gray-600">Upload one PDF referral packet.</p>
+                <p className="mt-1 text-xs text-gray-500">PDF only</p>
+              </div>
+
+              {referralPdf && (
+                <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
+                  <FileText className="h-5 w-5 text-gray-500" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{referralPdf.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {(referralPdf.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={removeFile}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
 
           <Button 
             type="submit" 
@@ -209,7 +234,7 @@ export default function ExternalProviderUpload() {
             disabled={isSubmitting}
             className="bg-blue-600 hover:bg-blue-700 text-white shadow-md"
           >
-            {isSubmitting ? "Submitting..." : "Submit Patient Information"}
+            {isSubmitting ? "Submitting..." : "Submit Referral"}
           </Button>
         </form>
       </div>

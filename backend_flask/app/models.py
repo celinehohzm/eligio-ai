@@ -40,10 +40,15 @@ class Submission(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=new_uuid)
     full_name = db.Column(db.String(255), nullable=False)
-    age = db.Column(db.String(20), nullable=False)
+    age = db.Column(db.String(20), nullable=True)
     date_of_birth = db.Column(db.String(20), nullable=False)
     address = db.Column(db.Text, nullable=False)
     phone_number = db.Column(db.String(50), nullable=False)
+    doctor_name = db.Column(db.String(255), nullable=True)
+    reason_for_referral = db.Column(db.Text, nullable=True)
+    chief_complaint = db.Column(db.Text, nullable=True)
+    evaluation = db.Column(db.Text, nullable=True)
+    diagnosis = db.Column(db.Text, nullable=True)
     submitted_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(db.String(50), nullable=False, default="received")
     documents = db.relationship(
@@ -62,10 +67,51 @@ class Submission(db.Model):
                 "dateOfBirth": self.date_of_birth,
                 "address": self.address,
                 "phoneNumber": self.phone_number,
+                "doctorName": self.doctor_name,
+                "reasonForReferral": self.reason_for_referral,
             },
+            "referralInsights": {
+                "chiefComplaint": self.chief_complaint,
+                "evaluation": self.evaluation,
+                "diagnosis": self.diagnosis,
+            },
+            "summaryLine": self.build_scheduler_summary(),
             "documents": [document.to_dict() for document in self.documents],
             "submittedAt": self.submitted_at.isoformat(),
             "status": self.status,
+        }
+
+    def _formatted_referring_doctor(self):
+        doctor_name = (self.doctor_name or "").strip()
+        if not doctor_name:
+            return "an unknown referring physician"
+        if doctor_name.lower().startswith("dr"):
+            return doctor_name
+        return f"Dr {doctor_name}"
+
+    def _summary_value(self, value, fallback):
+        cleaned = (value or "").strip()
+        if cleaned:
+            return cleaned
+        return fallback
+
+    def build_scheduler_summary(self):
+        return (
+            f"Patient {self.full_name}, referred by {self._formatted_referring_doctor()}, "
+            f"chief complaint is {self._summary_value(self.chief_complaint, self.reason_for_referral or 'not available in the referral packet')}, "
+            f"evaluation is {self._summary_value(self.evaluation, 'not available in the referral packet')}, "
+            f"and diagnosis is {self._summary_value(self.diagnosis, 'not available in the referral packet')}."
+        )
+
+    def to_referral_list_item(self):
+        return {
+            "id": self.id,
+            "fullName": self.full_name,
+            "dateOfBirth": self.date_of_birth,
+            "doctorName": self.doctor_name,
+            "reasonForReferral": self.reason_for_referral,
+            "submittedAt": self.submitted_at.isoformat(),
+            "summaryLine": self.build_scheduler_summary(),
         }
 
 

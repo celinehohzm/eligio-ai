@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, current_app
 import json
 import logging
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -6,10 +6,9 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from app.extensions import limiter
 from app.models import User
 from app.roles import can_access_chat
-from app.services.ai_service import AIService, AIServiceInitError
+from app.services.ai_service import AIServiceInitError
 
 chat_bp = Blueprint('chat', __name__)
-ai_service = AIService()
 
 
 def _openai_failure_response(exc):
@@ -89,7 +88,7 @@ def ai_chat():
 def generate_streaming_response(messages):
     """Generate streaming response using the shared AI service."""
     try:
-        response = ai_service.generate_chat_response(messages, stream=True)
+        response = current_app.ai_service.generate_chat_response(messages, stream=True)
         if isinstance(response, str):
             return generate_mock_streaming_response(response)
 
@@ -134,7 +133,7 @@ def generate_mock_streaming_response(mock_response):
 def generate_regular_response(messages):
     """Generate regular JSON response."""
     try:
-        content = ai_service.generate_chat_response(messages, stream=False)
+        content = current_app.ai_service.generate_chat_response(messages, stream=False)
         return jsonify({'content': content})
     except AIServiceInitError:
         return _openai_init_failure_response()
@@ -150,5 +149,5 @@ def chat_health():
     return jsonify({
         'status': 'healthy',
         'service': 'AI Chat Service',
-        'openai_configured': bool(ai_service.client)
+        'openai_configured': bool(current_app.ai_service.client)
     })

@@ -18,6 +18,10 @@ CHAT_ALLOWED_ROLES = {
     ROLE_ADMIN,
 }
 
+REFERRAL_SEARCH_ALLOWED_ROLES = {
+    ROLE_PATIENT_SCHEDULER,
+}
+
 UPLOAD_ALLOWED_ROLES = {
     ROLE_PATIENT_SCHEDULER,
     ROLE_REFERRING_PROVIDER,
@@ -47,6 +51,10 @@ def normalize_role(raw_role, default=DEFAULT_REGISTRATION_ROLE):
 
 def can_access_chat(role):
     return normalize_role(role) in CHAT_ALLOWED_ROLES
+
+
+def can_access_referral_search(role):
+    return normalize_role(role) in REFERRAL_SEARCH_ALLOWED_ROLES
 
 
 def can_access_upload(role):

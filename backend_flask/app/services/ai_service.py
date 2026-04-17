@@ -1,6 +1,8 @@
 from openai import OpenAI
 from config.config import Config
 import logging
+import json
+import re
 
 
 class AIServiceInitError(RuntimeError):
@@ -72,6 +74,54 @@ class AIService:
         response = self.client.chat.completions.create(**params)
         return response.choices[0].message.content
 
+    def extract_referral_summary(self, text_content, reason_for_referral=None):
+        """Extract chief complaint, evaluation, and diagnosis from a referral packet."""
+        normalized_text = (text_content or "").strip()
+        if not normalized_text:
+            return self._heuristic_referral_summary("", reason_for_referral)
+
+        if not self.is_openai_configured() or not self.client:
+            return self._heuristic_referral_summary(normalized_text, reason_for_referral)
+
+        try:
+            truncated_text = normalized_text[:15000]
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content":
+                        """
+                            You extract structured intake information from medical referral packets.
+                            Return strict JSON with exactly these keys:
+                            - chiefComplaint
+                            - evaluation
+                            - diagnosis
+                            Use null if a field is not stated. Do not invent details.
+                        """
+                    },
+                    {
+                        "role": "user",
+                        "content":
+                        f"""
+                        Reason for referral: {reason_for_referral or 'Not provided'}
+
+                        Referral packet text:
+                        {truncated_text}
+                        """
+                    }
+                ],
+                temperature=0.1,
+                max_tokens=400,
+            )
+
+            content = response.choices[0].message.content or "{}"
+            parsed = self._parse_json_object(content)
+            return self._normalize_referral_summary(parsed, reason_for_referral)
+        except Exception as exc:
+            logging.warning("Falling back to heuristic referral extraction: %s", exc)
+            return self._heuristic_referral_summary(normalized_text, reason_for_referral)
+
     def _get_system_prompt(self):
         """Get system prompt for patient triaging"""
         return {
@@ -121,6 +171,67 @@ class AIService:
 
                 **Disclaimer**: I am an AI assistant and cannot provide medical diagnoses. Please consult with a qualified healthcare professional for proper medical advice and treatment.
                 """
+
+    def _parse_json_object(self, raw_content):
+        cleaned = (raw_content or "").strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+            cleaned = re.sub(r"\s*```$", "", cleaned)
+        return json.loads(cleaned)
+
+    def _normalize_referral_summary(self, payload, reason_for_referral=None):
+        def clean_value(*keys):
+            for key in keys:
+                value = payload.get(key) if isinstance(payload, dict) else None
+                if value is None:
+                    continue
+                cleaned = str(value).strip()
+                if cleaned and cleaned.lower() != "null":
+                    return cleaned
+            return None
+
+        chief_complaint = clean_value("chiefComplaint", "chief_complaint")
+        evaluation = clean_value("evaluation")
+        diagnosis = clean_value("diagnosis")
+
+        if not chief_complaint:
+            chief_complaint = (reason_for_referral or "").strip() or None
+
+        return {
+            "chiefComplaint": chief_complaint,
+            "evaluation": evaluation,
+            "diagnosis": diagnosis,
+        }
+
+    def _extract_section_value(self, text_content, label):
+        patterns = [
+            rf"{label}\s*[:\-]\s*(.+?)(?=\s+[A-Z][A-Za-z ]{{2,30}}\s*[:\-]|$)",
+            rf"{label}\s+(.+?)(?=\s+[A-Z][A-Za-z ]{{2,30}}\s*[:\-]|$)",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, text_content, flags=re.IGNORECASE | re.DOTALL)
+            if not match:
+                continue
+
+            value = re.sub(r"\s+", " ", match.group(1)).strip(" .;")
+            if value:
+                return value
+
+        return None
+
+    def _heuristic_referral_summary(self, text_content, reason_for_referral=None):
+        flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
+        return {
+            "chiefComplaint": self._extract_section_value(flattened_text, "chief complaint")
+            or self._extract_section_value(flattened_text, "chief concern")
+            or (reason_for_referral or "").strip()
+            or None,
+            "evaluation": self._extract_section_value(flattened_text, "evaluation")
+            or self._extract_section_value(flattened_text, "assessment"),
+            "diagnosis": self._extract_section_value(flattened_text, "diagnosis")
+            or self._extract_section_value(flattened_text, "impression"),
+        }
 
     def analyze_document_content(self, text_content):
         """Analyze document content for medical information"""

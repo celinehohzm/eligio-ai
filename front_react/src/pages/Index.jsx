@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import eligioLogo from "@/assets/eligio-logo.png";
 import {
   canAccessChat,
+  canAccessReferralSearch,
   canAccessUpload,
   getDefaultRouteForRole,
 } from "@/lib/roles";
@@ -13,6 +14,7 @@ import {
 const Index = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const chatEnabled = canAccessChat(user?.role);
+  const referralSearchEnabled = canAccessReferralSearch(user?.role);
   const uploadEnabled = canAccessUpload(user?.role);
   const primaryRoute = getDefaultRouteForRole(user?.role);
 
@@ -31,6 +33,11 @@ const Index = () => {
                 {chatEnabled && (
                   <Link to="/chat" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
                     Patient Triage Chat
+                  </Link>
+                )}
+                {referralSearchEnabled && (
+                  <Link to="/referral-queue" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                    Referral Search
                   </Link>
                 )}
                 {uploadEnabled && (

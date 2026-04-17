@@ -124,22 +124,20 @@ class ApiService {
   }
 
   // Document upload methods
-  async uploadDocuments(patientData, files) {
+  async uploadDocuments(patientData, referralPdf, referralPacketText = '') {
     const formData = new FormData();
     
-    // Add patient data
     Object.keys(patientData).forEach(key => {
       formData.append(key, patientData[key]);
     });
 
-    // Add files with metadata
-    files.forEach((fileGroup, categoryIndex) => {
-      fileGroup.files.forEach((file, fileIndex) => {
-        formData.append(`file_${categoryIndex}_${fileIndex}`, file.file);
-        formData.append(`category_${categoryIndex}_${fileIndex}`, fileGroup.category);
-        formData.append(`subtype_${categoryIndex}_${fileIndex}`, file.subtype);
-      });
-    });
+    if (referralPdf) {
+      formData.append('referralPdf', referralPdf);
+    }
+
+    if (referralPacketText) {
+      formData.append('referralPacketText', referralPacketText);
+    }
 
     try {
       const response = await fetch(`${this.baseURL}/upload-documents`, {
@@ -166,6 +164,15 @@ class ApiService {
 
   async getSubmission(submissionId) {
     return this.request(`/submissions/${submissionId}`);
+  }
+
+  async getReferrals(query = '') {
+    const search = query ? `?q=${encodeURIComponent(query)}` : '';
+    return this.request(`/referrals${search}`);
+  }
+
+  async getReferral(submissionId) {
+    return this.request(`/referrals/${submissionId}`);
   }
 
   // Authentication methods

@@ -5,9 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Send, ArrowLeft, Paperclip, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import * as pdfjsLib from 'pdfjs-dist';
 import eligioLogo from '@/assets/eligio-logo.png';
 import apiService from '@/services/api';
+import { extractPdfText } from '@/lib/pdf';
 
 const Chat = () => {
   const [messages, setMessages] = useState(() => {
@@ -23,14 +23,6 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
-
-  // Set up PDF.js worker
-  useEffect(() => {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
-  }, []);
 
   // Save messages to sessionStorage whenever they change
   useEffect(() => {
@@ -64,17 +56,7 @@ const Chat = () => {
 
     // Extract text from PDF
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item) => item.str).join(' ');
-        fullText += pageText + '\n';
-      }
-
+      const fullText = await extractPdfText(file);
       setPdfText(fullText);
     } catch (err) {
       console.error('Error parsing PDF:', err);

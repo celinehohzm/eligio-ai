@@ -11,6 +11,10 @@ export const CHAT_ALLOWED_ROLES = [
   ROLE_ADMIN,
 ];
 
+export const REFERRAL_SEARCH_ALLOWED_ROLES = [
+  ROLE_PATIENT_SCHEDULER,
+];
+
 export const UPLOAD_ALLOWED_ROLES = [
   ROLE_PATIENT_SCHEDULER,
   ROLE_REFERRING_PROVIDER,
@@ -28,6 +32,9 @@ export const normalizeRole = (role) => {
 
 export const canAccessChat = (role) =>
   CHAT_ALLOWED_ROLES.includes(normalizeRole(role));
+
+export const canAccessReferralSearch = (role) =>
+  REFERRAL_SEARCH_ALLOWED_ROLES.includes(normalizeRole(role));
 
 export const canAccessUpload = (role) =>
   UPLOAD_ALLOWED_ROLES.includes(normalizeRole(role));

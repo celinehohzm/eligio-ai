@@ -14,19 +14,12 @@ from app.roles import can_access_upload
 
 upload_bp = Blueprint('upload', __name__)
 
-# Document categories and subtypes
-DOCUMENT_CATEGORIES = {
-    "Referral Note": ["General", "Specialist", "Emergency"],
-    "Clinical Notes": ["Progress Note", "Discharge Summary", "Admission Note"],
-    "Imaging Notes": ["MRI", "CT", "PET", "Ultrasound"],
-    "Lab Results": ["CBC", "CMP", "CSF", "Genetic Test", "Other"],
-    "Other Test Results": ["EEG", "EMG", "Sleep Study", "Other"]
-}
+REFERRAL_DOCUMENT_CATEGORY = "Referral PDF"
+REFERRAL_DOCUMENT_SUBTYPE = "Referral Intake"
 
-def allowed_file(filename):
-    """Check if file has allowed extension"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
+
+def allowed_referral_pdf(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() == "pdf"
 
 def authorize_upload_request():
     """Allow either a trusted external upload API key or an authenticated user JWT."""
@@ -63,93 +56,86 @@ def upload_documents():
             return jsonify({'error': auth_error or 'Unauthorized upload request'}), status_code
 
         # Parse form data
-        patient_data = {
+        referral_data = {
             'fullName': request.form.get('fullName'),
-            'age': request.form.get('age'),
             'dateOfBirth': request.form.get('dateOfBirth'),
             'address': request.form.get('address'),
-            'phoneNumber': request.form.get('phoneNumber')
+            'phoneNumber': request.form.get('phoneNumber'),
+            'doctorName': request.form.get('doctorName'),
+            'reasonForReferral': request.form.get('reasonForReferral'),
         }
-        
-        # Validate required patient fields
-        missing_fields = [k for k, v in patient_data.items() if not v]
+        referral_packet_text = request.form.get('referralPacketText', '')
+
+        missing_fields = [k for k, v in referral_data.items() if not v]
         if missing_fields:
             return jsonify({
                 'error': f'Missing required fields: {", ".join(missing_fields)}'
             }), 400
-        
-        # Process uploaded files
-        uploaded_files = []
-        file_keys = [key for key in request.files.keys() if key.startswith('file_')]
+
+        if len(request.files) != 1:
+            return jsonify({'error': 'Exactly one PDF file is required'}), 400
+
+        file = request.files.get('referralPdf') or next(iter(request.files.values()), None)
+        if not file or not file.filename:
+            return jsonify({'error': 'A referral PDF is required'}), 400
+
+        if not allowed_referral_pdf(file.filename):
+            return jsonify({'error': 'Only PDF files are allowed'}), 400
+
         submission_id = str(uuid.uuid4())
 
         submission = Submission(
             id=submission_id,
-            full_name=patient_data['fullName'],
-            age=patient_data['age'],
-            date_of_birth=patient_data['dateOfBirth'],
-            address=patient_data['address'],
-            phone_number=patient_data['phoneNumber'],
+            full_name=referral_data['fullName'],
+            date_of_birth=referral_data['dateOfBirth'],
+            address=referral_data['address'],
+            phone_number=referral_data['phoneNumber'],
+            doctor_name=referral_data['doctorName'],
+            reason_for_referral=referral_data['reasonForReferral'],
             status='received'
         )
 
+        extracted_summary = current_app.ai_service.extract_referral_summary(
+            referral_packet_text,
+            reason_for_referral=referral_data['reasonForReferral'],
+        )
+        submission.chief_complaint = extracted_summary.get('chiefComplaint')
+        submission.evaluation = extracted_summary.get('evaluation')
+        submission.diagnosis = extracted_summary.get('diagnosis')
+
         db.session.add(submission)
-        
-        for file_key in file_keys:
-            file = request.files[file_key]
-            
-            if file and file.filename and allowed_file(file.filename):
-                # Generate unique filename
-                original_filename = secure_filename(file.filename)
-                unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
-                file.stream.seek(0, os.SEEK_END)
-                file_size = file.stream.tell()
-                file.stream.seek(0)
-                
-                # Save file
-                relative_dir = datetime.now().strftime('%Y-%m-%d')
-                relative_path = os.path.join(relative_dir, unique_filename)
-                storage_result = current_app.storage_service.save_file(
-                    file,
-                    relative_path,
-                    content_type=file.mimetype,
-                )
-                saved_keys.append(storage_result['storage_key'])
-                
-                # Extract metadata from form.
-                # Supports both:
-                # - category_file_0_0 / subtype_file_0_0
-                # - category_0_0 / subtype_0_0 (frontend format)
-                key_suffix = file_key[5:] if file_key.startswith('file_') else file_key
-                category = (
-                    request.form.get(f'category_{file_key}')
-                    or request.form.get(f'category_{key_suffix}')
-                    or 'Unknown'
-                )
-                subtype = (
-                    request.form.get(f'subtype_{file_key}')
-                    or request.form.get(f'subtype_{key_suffix}')
-                    or 'Unknown'
-                )
-                
-                document = Document(
-                    id=str(uuid.uuid4()),
-                    submission_id=submission_id,
-                    original_name=original_filename,
-                    filename=unique_filename,
-                    file_path=storage_result['file_path'],
-                    category=category,
-                    subtype=subtype,
-                    size=file_size,
-                    status='uploaded',
-                    storage_provider=storage_result['provider'],
-                    storage_key=storage_result['storage_key'],
-                )
-                db.session.add(document)
-                
-                uploaded_files.append(document)
-            else:
-                logging.warning(f"Invalid file skipped: {file.filename}")
+
+        uploaded_files = []
+        original_filename = secure_filename(file.filename)
+        unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+        file.stream.seek(0, os.SEEK_END)
+        file_size = file.stream.tell()
+        file.stream.seek(0)
+
+        relative_dir = datetime.now().strftime('%Y-%m-%d')
+        relative_path = os.path.join(relative_dir, unique_filename)
+        storage_result = current_app.storage_service.save_file(
+            file,
+            relative_path,
+            content_type=file.mimetype,
+        )
+        saved_keys.append(storage_result['storage_key'])
+
+        document = Document(
+            id=str(uuid.uuid4()),
+            submission_id=submission_id,
+            original_name=original_filename,
+            filename=unique_filename,
+            file_path=storage_result['file_path'],
+            category=REFERRAL_DOCUMENT_CATEGORY,
+            subtype=REFERRAL_DOCUMENT_SUBTYPE,
+            size=file_size,
+            status='uploaded',
+            storage_provider=storage_result['provider'],
+            storage_key=storage_result['storage_key'],
+        )
+        db.session.add(document)
+        uploaded_files.append(document)
 
         db.session.commit()
         
@@ -172,8 +158,10 @@ def upload_documents():
 
 @upload_bp.route('/document-categories', methods=['GET'])
 def get_document_categories():
-    """Return available document categories and subtypes"""
-    return jsonify(DOCUMENT_CATEGORIES)
+    """Return the single supported referral upload type."""
+    return jsonify({
+        REFERRAL_DOCUMENT_CATEGORY: [REFERRAL_DOCUMENT_SUBTYPE]
+    })
 
 @upload_bp.route('/upload/health', methods=['GET'])
 def upload_health():
