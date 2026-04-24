@@ -6,6 +6,61 @@ EXTRACT_ROOT="${APP_EXTRACT_ROOT:-/tmp/eligio-app}"
 PORT="${WEBSITES_PORT:-${PORT:-8000}}"
 WORKERS="${GUNICORN_WORKERS:-2}"
 TIMEOUT="${GUNICORN_TIMEOUT:-600}"
+INSTALL_PDF_OCR_SYSTEM_PACKAGES_ON_STARTUP="${INSTALL_PDF_OCR_SYSTEM_PACKAGES_ON_STARTUP:-true}"
+
+run_privileged() {
+  if [[ "$(id -u)" == "0" ]]; then
+    "$@"
+    return
+  fi
+
+  if command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+    return
+  fi
+
+  return 1
+}
+
+ensure_pdf_ocr_system_dependencies() {
+  local enable_pdf_ocr="${ENABLE_PDF_OCR:-true}"
+  enable_pdf_ocr="$(printf '%s' "$enable_pdf_ocr" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ "$enable_pdf_ocr" != "1" && "$enable_pdf_ocr" != "true" && "$enable_pdf_ocr" != "yes" && "$enable_pdf_ocr" != "on" ]]; then
+    echo "PDF OCR disabled; skipping system dependency install." >&2
+    return
+  fi
+
+  local install_flag
+  install_flag="$(printf '%s' "$INSTALL_PDF_OCR_SYSTEM_PACKAGES_ON_STARTUP" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$install_flag" != "1" && "$install_flag" != "true" && "$install_flag" != "yes" && "$install_flag" != "on" ]]; then
+    echo "Startup OCR package installation disabled by app setting." >&2
+    return
+  fi
+
+  if command -v tesseract >/dev/null 2>&1 && command -v gs >/dev/null 2>&1; then
+    echo "OCR system dependencies already available." >&2
+    return
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    echo "apt-get is unavailable; cannot install OCR system dependencies automatically." >&2
+    return
+  fi
+
+  if ! run_privileged true >/dev/null 2>&1; then
+    echo "No privileged execution path available; cannot install OCR system dependencies automatically." >&2
+    return
+  fi
+
+  echo "Installing OCR system dependencies (tesseract-ocr, tesseract-ocr-eng, ghostscript)..." >&2
+  export DEBIAN_FRONTEND=noninteractive
+  run_privileged apt-get update -y
+  run_privileged apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    ghostscript
+}
 
 resolve_runtime_root() {
   if [[ -f "$APP_ROOT/wsgi.py" && -d "$APP_ROOT/app" ]]; then
@@ -42,6 +97,8 @@ resolve_runtime_root() {
 
 RUNTIME_ROOT="$(resolve_runtime_root)"
 cd "$RUNTIME_ROOT"
+
+ensure_pdf_ocr_system_dependencies
 
 PYTHON_BIN="${PYTHON_BIN:-python}"
 

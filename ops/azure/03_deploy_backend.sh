@@ -48,6 +48,22 @@ az webapp deploy \
   --clean true \
   --output none
 
+log "Syncing startup.sh to the App Service wwwroot launcher path"
+publishing_username="$(az webapp deployment list-publishing-credentials \
+  --resource-group "$AZ_RESOURCE_GROUP" \
+  --name "$AZ_BACKEND_WEBAPP" \
+  --query publishingUserName -o tsv)"
+publishing_password="$(az webapp deployment list-publishing-credentials \
+  --resource-group "$AZ_RESOURCE_GROUP" \
+  --name "$AZ_BACKEND_WEBAPP" \
+  --query publishingPassword -o tsv)"
+
+curl -fsS \
+  --user "$publishing_username:$publishing_password" \
+  --upload-file "$backend_dir/startup.sh" \
+  "https://${AZ_BACKEND_WEBAPP}.scm.azurewebsites.net/api/vfs/site/wwwroot/startup.sh" \
+  >/dev/null
+
 log "Ensuring backend startup command points to startup.sh"
 az webapp config set \
   --resource-group "$AZ_RESOURCE_GROUP" \
