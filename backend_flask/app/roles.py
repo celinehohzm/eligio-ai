@@ -32,6 +32,8 @@ UPLOAD_ALLOWED_ROLES = {
 ROLE_ALIASES = {
     "patient scheduler": ROLE_PATIENT_SCHEDULER,
     "patient-scheduler": ROLE_PATIENT_SCHEDULER,
+    "receiving provider and scheduler": ROLE_PATIENT_SCHEDULER,
+    "receiving_provider_and_scheduler": ROLE_PATIENT_SCHEDULER,
     ROLE_PATIENT_SCHEDULER: ROLE_PATIENT_SCHEDULER,
     "referring provider": ROLE_REFERRING_PROVIDER,
     "referring-provider": ROLE_REFERRING_PROVIDER,

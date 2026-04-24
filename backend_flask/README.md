@@ -33,6 +33,8 @@ Flask API for auth, AI chat, and medical document upload.
 1. Install dependencies
 ```bash
 cd backend_flask
+sudo apt-get update
+sudo apt-get install -y tesseract-ocr ghostscript
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -77,6 +79,22 @@ Required for Azure Blob mode:
 ```env
 AZURE_STORAGE_CONNECTION_STRING=...
 AZURE_STORAGE_CONTAINER=uploads
+```
+
+## OCR for Scanned PDFs
+
+- Native PDF text extraction is attempted first.
+- If the extracted text is missing or very short, the backend can fall back to OCRmyPDF + Tesseract and store the searchable OCR-enhanced PDF.
+- OCR requires both the Python package in `requirements.txt` and system binaries for Tesseract + Ghostscript.
+
+Relevant environment variables:
+
+```env
+ENABLE_PDF_OCR=true
+PDF_OCR_LANGUAGE=eng
+PDF_OCR_TRIGGER_MIN_CHARS=32
+PDF_OCR_TESSERACT_TIMEOUT=180
+PDF_OCR_PROCESS_TIMEOUT=240
 ```
 
 ## Production Notes

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import RoleTabs from "@/components/RoleTabs";
 import eligioLogo from "@/assets/eligio-logo.png";
 import apiService from "@/services/api";
 import { toast } from "sonner";
-import { extractPdfText } from "@/lib/pdf";
 
 export default function ExternalProviderUpload() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,8 +63,7 @@ export default function ExternalProviderUpload() {
     setIsSubmitting(true);
 
     try {
-      const referralPacketText = await extractPdfText(referralPdf);
-      const response = await apiService.uploadDocuments(formData, referralPdf, referralPacketText);
+      const response = await apiService.uploadDocuments(formData, referralPdf);
       
       setFormData({
         fullName: "",
@@ -109,6 +108,7 @@ export default function ExternalProviderUpload() {
               <h1 className="text-xl font-bold text-gray-900">Eligio AI</h1>
             </div>
           </div>
+          <RoleTabs />
         </div>
       </header>
 
@@ -165,9 +165,9 @@ export default function ExternalProviderUpload() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Referring Dr</label>
+                <label className="block text-sm font-medium mb-2">Referring Provider</label>
                 <Input
-                  placeholder="Dr. Jane Smith"
+                  placeholder="Jane Smith"
                   value={formData.doctorName}
                   onChange={(e) => handleInputChange('doctorName', e.target.value)}
                   required

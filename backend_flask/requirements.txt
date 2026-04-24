@@ -12,6 +12,7 @@ psycopg2-binary==2.9.10
 azure-storage-blob==12.24.0
 gunicorn==23.0.0
 PyPDF2==3.0.1
+ocrmypdf==15.4.4
 Pillow==10.2.0
 python-magic==0.4.27
 marshmallow==3.20.2

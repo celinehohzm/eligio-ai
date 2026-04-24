@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 import ExternalProviderUpload from "./pages/ExternalProviderUpload";
 import ReferralQueue from "./pages/ReferralQueue";
+import SpecialistsList from "./pages/SpecialistsList";
 import NotFound from "./pages/NotFound";
 import { CHAT_ALLOWED_ROLES, REFERRAL_SEARCH_ALLOWED_ROLES, UPLOAD_ALLOWED_ROLES } from "@/lib/roles";
 
@@ -48,6 +49,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={REFERRAL_SEARCH_ALLOWED_ROLES}>
                   <ReferralQueue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/specialists-list"
+              element={
+                <ProtectedRoute allowedRoles={REFERRAL_SEARCH_ALLOWED_ROLES}>
+                  <SpecialistsList />
                 </ProtectedRoute>
               }
             />

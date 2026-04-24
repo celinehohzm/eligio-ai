@@ -17,6 +17,13 @@ def _env_bool(name, default=False):
     return raw_value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_int(name, default):
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+    return int(raw_value.strip())
+
+
 def _env_stripped(name, default=None, empty_as_none=False):
     raw_value = os.environ.get(name)
     if raw_value is None:
@@ -89,12 +96,17 @@ class Config:
     
     # File Upload Configuration
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
-    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB
+    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 50 * 1024 * 1024))  # 50MB
     ALLOWED_EXTENSIONS = set(os.environ.get('ALLOWED_EXTENSIONS', 'pdf,doc,docx,jpg,jpeg,png').split(','))
     UPLOAD_API_KEY = os.environ.get("UPLOAD_API_KEY")
     STORAGE_PROVIDER = os.environ.get("STORAGE_PROVIDER", "local").lower()
     AZURE_STORAGE_CONNECTION_STRING = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
     AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER", "uploads")
+    ENABLE_PDF_OCR = _env_bool("ENABLE_PDF_OCR", True)
+    PDF_OCR_LANGUAGE = _env_stripped("PDF_OCR_LANGUAGE", default="eng") or "eng"
+    PDF_OCR_TRIGGER_MIN_CHARS = _env_int("PDF_OCR_TRIGGER_MIN_CHARS", 32)
+    PDF_OCR_TESSERACT_TIMEOUT = _env_int("PDF_OCR_TESSERACT_TIMEOUT", 180)
+    PDF_OCR_PROCESS_TIMEOUT = _env_int("PDF_OCR_PROCESS_TIMEOUT", 240)
     
     # Rate limiting
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")

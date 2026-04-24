@@ -6,11 +6,13 @@ import logging
 
 from sqlalchemy import inspect, text
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from app.extensions import db, jwt, limiter, migrate
 from app.models import TokenBlocklist, User
 from app.roles import ROLE_PATIENT_SCHEDULER
 from app.services.ai_service import AIService
+from app.services.pdf_ocr_service import PDFOCRService
 from app.services.storage_service import StorageService
 
 
@@ -77,6 +79,7 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     app.storage_service = StorageService(app.config)
     app.ai_service = AIService()
+    app.pdf_ocr_service = PDFOCRService(app.config)
 
     @jwt.token_in_blocklist_loader
     def is_token_revoked(jwt_header, jwt_payload):
@@ -139,6 +142,13 @@ def create_app(test_config=None):
         if app.config.get("FORCE_HTTPS"):
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         return response
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_request_entity_too_large(_error):
+        max_mb = max(1, int(app.config.get("MAX_CONTENT_LENGTH", 0) / (1024 * 1024)))
+        return jsonify({
+            "error": f"Uploaded PDF is too large. Maximum allowed size is {max_mb} MB."
+        }), 413
     
     @app.route('/health')
     def health_check():

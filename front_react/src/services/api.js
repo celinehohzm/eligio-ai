@@ -59,6 +59,28 @@ class ApiService {
     }
   }
 
+  async requestBlob(endpoint, options = {}) {
+    const url = `${this.baseURL}${endpoint}`;
+    const config = {
+      headers: this.getHeaders(),
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.blob();
+    } catch (error) {
+      console.error('API blob request failed:', error);
+      throw error;
+    }
+  }
+
   // Chat API methods
   async sendChatMessage(messages) {
     return this.request('/ai-chat', {
@@ -124,7 +146,7 @@ class ApiService {
   }
 
   // Document upload methods
-  async uploadDocuments(patientData, referralPdf, referralPacketText = '') {
+  async uploadDocuments(patientData, referralPdf) {
     const formData = new FormData();
     
     Object.keys(patientData).forEach(key => {
@@ -133,10 +155,6 @@ class ApiService {
 
     if (referralPdf) {
       formData.append('referralPdf', referralPdf);
-    }
-
-    if (referralPacketText) {
-      formData.append('referralPacketText', referralPacketText);
     }
 
     try {
@@ -173,6 +191,10 @@ class ApiService {
 
   async getReferral(submissionId) {
     return this.request(`/referrals/${submissionId}`);
+  }
+
+  async getReferralDocumentContent(submissionId, documentId) {
+    return this.requestBlob(`/referrals/${submissionId}/documents/${documentId}/content`);
   }
 
   // Authentication methods

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Send, ArrowLeft, Paperclip, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import RoleTabs from '@/components/RoleTabs';
 import eligioLogo from '@/assets/eligio-logo.png';
 import apiService from '@/services/api';
 import { extractPdfText } from '@/lib/pdf';
@@ -174,6 +175,7 @@ const Chat = () => {
               <span className="hidden sm:inline text-sm md:text-lg font-medium text-gray-700">Patient Triaging Chat</span>
             </div>
           </div>
+          <RoleTabs className="space-x-4 lg:space-x-8" />
         </div>
       </header>
 

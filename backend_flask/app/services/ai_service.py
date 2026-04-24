@@ -122,6 +122,59 @@ class AIService:
             logging.warning("Falling back to heuristic referral extraction: %s", exc)
             return self._heuristic_referral_summary(normalized_text, reason_for_referral)
 
+    def extract_referral_triage_profile(self, text_content, reason_for_referral=None):
+        """Extract scheduling-facing triage details from a referral packet."""
+        normalized_text = (text_content or "").strip()
+        if not normalized_text:
+            return self._heuristic_referral_triage_profile("", reason_for_referral)
+
+        if not self.is_openai_configured() or not self.client:
+            return self._heuristic_referral_triage_profile(normalized_text, reason_for_referral)
+
+        try:
+            truncated_text = normalized_text[:18000]
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content":
+                        """
+                            You extract structured neurology referral intake details for patient schedulers.
+                            Return strict JSON with exactly these keys:
+                            - insurance
+                            - medicalRecordNumber
+                            - chiefComplaint
+                            - historyOfPresentIllness
+                            - physicalExam
+                            - imagingResults
+                            - labResults
+                            - otherProviders
+                            Use null if a field is not clearly stated. Do not invent any details.
+                        """,
+                    },
+                    {
+                        "role": "user",
+                        "content":
+                        f"""
+                        Reason for referral: {reason_for_referral or 'Not provided'}
+
+                        Referral packet text:
+                        {truncated_text}
+                        """,
+                    },
+                ],
+                temperature=0.1,
+                max_tokens=700,
+            )
+
+            content = response.choices[0].message.content or "{}"
+            parsed = self._parse_json_object(content)
+            return self._normalize_referral_triage_profile(parsed, reason_for_referral)
+        except Exception as exc:
+            logging.warning("Falling back to heuristic triage extraction: %s", exc)
+            return self._heuristic_referral_triage_profile(normalized_text, reason_for_referral)
+
     def _get_system_prompt(self):
         """Get system prompt for patient triaging"""
         return {
@@ -179,20 +232,20 @@ class AIService:
             cleaned = re.sub(r"\s*```$", "", cleaned)
         return json.loads(cleaned)
 
-    def _normalize_referral_summary(self, payload, reason_for_referral=None):
-        def clean_value(*keys):
-            for key in keys:
-                value = payload.get(key) if isinstance(payload, dict) else None
-                if value is None:
-                    continue
-                cleaned = str(value).strip()
-                if cleaned and cleaned.lower() != "null":
-                    return cleaned
-            return None
+    def _clean_payload_value(self, payload, *keys):
+        for key in keys:
+            value = payload.get(key) if isinstance(payload, dict) else None
+            if value is None:
+                continue
+            cleaned = str(value).strip()
+            if cleaned and cleaned.lower() != "null":
+                return cleaned
+        return None
 
-        chief_complaint = clean_value("chiefComplaint", "chief_complaint")
-        evaluation = clean_value("evaluation")
-        diagnosis = clean_value("diagnosis")
+    def _normalize_referral_summary(self, payload, reason_for_referral=None):
+        chief_complaint = self._clean_payload_value(payload, "chiefComplaint", "chief_complaint")
+        evaluation = self._clean_payload_value(payload, "evaluation")
+        diagnosis = self._clean_payload_value(payload, "diagnosis")
 
         if not chief_complaint:
             chief_complaint = (reason_for_referral or "").strip() or None
@@ -201,6 +254,50 @@ class AIService:
             "chiefComplaint": chief_complaint,
             "evaluation": evaluation,
             "diagnosis": diagnosis,
+        }
+
+    def _normalize_referral_triage_profile(self, payload, reason_for_referral=None):
+        return {
+            "insurance": self._clean_payload_value(payload, "insurance"),
+            "medicalRecordNumber": self._clean_payload_value(
+                payload,
+                "medicalRecordNumber",
+                "medical_record_number",
+                "mrn",
+            ),
+            "chiefComplaint": self._clean_payload_value(
+                payload,
+                "chiefComplaint",
+                "chief_complaint",
+            )
+            or (reason_for_referral or "").strip()
+            or None,
+            "historyOfPresentIllness": self._clean_payload_value(
+                payload,
+                "historyOfPresentIllness",
+                "history_of_present_illness",
+                "hpi",
+            ),
+            "physicalExam": self._clean_payload_value(
+                payload,
+                "physicalExam",
+                "physical_exam",
+            ),
+            "imagingResults": self._clean_payload_value(
+                payload,
+                "imagingResults",
+                "imaging_results",
+            ),
+            "labResults": self._clean_payload_value(
+                payload,
+                "labResults",
+                "lab_results",
+            ),
+            "otherProviders": self._clean_payload_value(
+                payload,
+                "otherProviders",
+                "other_providers",
+            ),
         }
 
     def _extract_section_value(self, text_content, label):
@@ -231,6 +328,133 @@ class AIService:
             or self._extract_section_value(flattened_text, "assessment"),
             "diagnosis": self._extract_section_value(flattened_text, "diagnosis")
             or self._extract_section_value(flattened_text, "impression"),
+        }
+
+    def _extract_pattern_value(self, text_content, patterns):
+        for pattern in patterns:
+            match = re.search(pattern, text_content, flags=re.IGNORECASE)
+            if not match:
+                continue
+            value = re.sub(r"\s+", " ", match.group(1)).strip(" .;,:")
+            if value:
+                return value
+        return None
+
+    def _split_sentences(self, text_content):
+        flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
+        if not flattened_text:
+            return []
+        return [
+            sentence.strip()
+            for sentence in re.split(r"(?<=[.!?])\s+", flattened_text)
+            if sentence.strip()
+        ]
+
+    def _extract_sentences_by_keywords(self, text_content, keywords, max_sentences=2):
+        sentences = self._split_sentences(text_content)
+        matches = []
+
+        for sentence in sentences:
+            lowered = sentence.lower()
+            if any(keyword in lowered for keyword in keywords):
+                matches.append(sentence)
+            if len(matches) >= max_sentences:
+                break
+
+        if matches:
+            return " ".join(matches)
+        return None
+
+    def _heuristic_referral_triage_profile(self, text_content, reason_for_referral=None):
+        flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
+
+        insurance = self._extract_pattern_value(
+            flattened_text,
+            [
+                r"(?:insurance|payer|plan)\s*[:#-]?\s*([A-Za-z][A-Za-z0-9 &/()\-]{2,80})",
+            ],
+        )
+        medical_record_number = self._extract_pattern_value(
+            flattened_text,
+            [
+                r"(?:medical record number|mrn)\s*[:#-]?\s*([A-Za-z0-9\-]+)",
+            ],
+        )
+
+        chief_complaint = (
+            self._extract_section_value(flattened_text, "chief complaint")
+            or self._extract_section_value(flattened_text, "chief concern")
+            or self._extract_section_value(flattened_text, "reason for referral")
+            or (reason_for_referral or "").strip()
+            or None
+        )
+
+        history_of_present_illness = (
+            self._extract_section_value(flattened_text, "history of present illness")
+            or self._extract_section_value(flattened_text, "hpi")
+            or self._extract_sentences_by_keywords(
+                flattened_text,
+                ["presents with", "reports", "history of", "symptoms began", "worsening"],
+            )
+        )
+
+        physical_exam = (
+            self._extract_section_value(flattened_text, "physical exam")
+            or self._extract_section_value(flattened_text, "neurological exam")
+            or self._extract_section_value(flattened_text, "exam")
+            or self._extract_sentences_by_keywords(
+                flattened_text,
+                [
+                    "exam",
+                    "strength",
+                    "reflex",
+                    "gait",
+                    "cranial nerve",
+                    "sensation",
+                    "weakness",
+                    "numbness",
+                ],
+            )
+        )
+
+        imaging_results = (
+            self._extract_section_value(flattened_text, "imaging")
+            or self._extract_section_value(flattened_text, "imaging results")
+            or self._extract_section_value(flattened_text, "radiology")
+            or self._extract_sentences_by_keywords(
+                flattened_text,
+                ["mri", "ct", "scan", "imaging", "radiology", "x-ray"],
+            )
+        )
+
+        lab_results = (
+            self._extract_section_value(flattened_text, "lab results")
+            or self._extract_section_value(flattened_text, "labs")
+            or self._extract_section_value(flattened_text, "laboratory")
+            or self._extract_sentences_by_keywords(
+                flattened_text,
+                ["lab", "cbc", "cmp", "tsh", "b12", "esr", "crp", "a1c", "ck", "csf"],
+            )
+        )
+
+        other_providers = (
+            self._extract_section_value(flattened_text, "other providers")
+            or self._extract_section_value(flattened_text, "care team")
+            or self._extract_sentences_by_keywords(
+                flattened_text,
+                ["dr.", "provider", "specialist", "follows with", "seeing", "referred to"],
+            )
+        )
+
+        return {
+            "insurance": insurance,
+            "medicalRecordNumber": medical_record_number,
+            "chiefComplaint": chief_complaint,
+            "historyOfPresentIllness": history_of_present_illness,
+            "physicalExam": physical_exam,
+            "imagingResults": imaging_results,
+            "labResults": lab_results,
+            "otherProviders": other_providers,
         }
 
     def analyze_document_content(self, text_content):

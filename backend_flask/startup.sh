@@ -8,6 +8,11 @@ WORKERS="${GUNICORN_WORKERS:-2}"
 TIMEOUT="${GUNICORN_TIMEOUT:-600}"
 
 resolve_runtime_root() {
+  if [[ -f "$APP_ROOT/wsgi.py" && -d "$APP_ROOT/app" ]]; then
+    printf '%s\n' "$APP_ROOT"
+    return
+  fi
+
   if [[ -f "$APP_ROOT/output.tar.zst" ]]; then
     echo "Extracting Oryx build artifact to $EXTRACT_ROOT" >&2
     rm -rf "$EXTRACT_ROOT"

@@ -8,7 +8,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import eligioLogo from "@/assets/eligio-logo.png";
 import {
   ROLE_PATIENT_SCHEDULER,
+  ROLE_PATIENT_SCHEDULER_LABEL,
   ROLE_REFERRING_PROVIDER,
+  ROLE_REFERRING_PROVIDER_LABEL,
 } from "@/lib/roles";
 
 export default function Register() {
@@ -106,8 +108,8 @@ export default function Register() {
                 onChange={(e) => handleInputChange('role', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
               >
-                <option value={ROLE_PATIENT_SCHEDULER}>Patient Scheduler</option>
-                <option value={ROLE_REFERRING_PROVIDER}>Referring Provider</option>
+                <option value={ROLE_PATIENT_SCHEDULER}>{ROLE_PATIENT_SCHEDULER_LABEL}</option>
+                <option value={ROLE_REFERRING_PROVIDER}>{ROLE_REFERRING_PROVIDER_LABEL}</option>
               </select>
             </div>
 

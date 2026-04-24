@@ -3,20 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import RoleTabs from "@/components/RoleTabs";
 import eligioLogo from "@/assets/eligio-logo.png";
 import {
-  canAccessChat,
-  canAccessReferralSearch,
-  canAccessUpload,
   getDefaultRouteForRole,
+  getPrimaryActionLabelForRole,
 } from "@/lib/roles";
 
 const Index = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const chatEnabled = canAccessChat(user?.role);
-  const referralSearchEnabled = canAccessReferralSearch(user?.role);
-  const uploadEnabled = canAccessUpload(user?.role);
   const primaryRoute = getDefaultRouteForRole(user?.role);
+  const primaryActionLabel = getPrimaryActionLabelForRole(user?.role);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -27,24 +24,10 @@ const Index = () => {
             <img src={eligioLogo} alt="Eligio AI" className="w-16 h-16 object-contain" />
             <span className="text-xl font-bold text-gray-900">Eligio AI</span>
           </div>
-          <nav className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             {isAuthenticated ? (
               <>
-                {chatEnabled && (
-                  <Link to="/chat" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-                    Patient Triage Chat
-                  </Link>
-                )}
-                {referralSearchEnabled && (
-                  <Link to="/referral-queue" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-                    Referral Search
-                  </Link>
-                )}
-                {uploadEnabled && (
-                  <Link to="/external-provider-upload" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-                    Document Upload
-                  </Link>
-                )}
+                <RoleTabs />
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
                   <Button 
@@ -67,7 +50,7 @@ const Index = () => {
                 </Link>
               </>
             )}
-          </nav>
+          </div>
         </div>
       </header>
 
@@ -90,7 +73,7 @@ const Index = () => {
                     size="lg" 
                     className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
                   >
-                    {chatEnabled ? "Go to Patient Triage Chat" : "Go to Document Upload"}
+                    {primaryActionLabel}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -301,7 +284,7 @@ const Index = () => {
                 variant="outline" 
                 className="border-white text-blue-600 hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
               >
-                {isAuthenticated && !chatEnabled ? "Document Upload" : "Eligio AI chat"}
+                {isAuthenticated ? primaryActionLabel : "Eligio AI chat"}
               </Button>
             </Link>
           </div>

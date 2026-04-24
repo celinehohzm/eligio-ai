@@ -156,3 +156,19 @@ def test_register_invalid_role_rejected(client):
         }
     )
     assert response.status_code == 400
+
+
+def test_register_receiving_provider_and_scheduler_alias(client):
+    response = client.post(
+        '/api/auth/register',
+        json={
+            'email': 'receivingscheduler@example.com',
+            'password': 'secret123',
+            'name': 'Receiving Scheduler',
+            'role': 'Receiving provider and scheduler',
+        }
+    )
+
+    assert response.status_code == 201
+    data = json.loads(response.data)
+    assert data['user']['role'] == ROLE_PATIENT_SCHEDULER

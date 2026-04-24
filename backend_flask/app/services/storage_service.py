@@ -78,3 +78,14 @@ class StorageService:
                 os.remove(storage_key)
             except Exception:
                 pass
+
+    def read_file(self, storage_key):
+        if not storage_key:
+            raise FileNotFoundError("Storage key is required")
+
+        if self.provider == "azure":
+            blob_client = self.container_client.get_blob_client(storage_key)
+            return blob_client.download_blob().readall()
+
+        with open(storage_key, "rb") as file_handle:
+            return file_handle.read()
