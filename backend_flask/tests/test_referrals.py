@@ -6,6 +6,7 @@ import tempfile
 import pytest
 
 from app import create_app
+from app.models import Document, Submission
 from app.roles import ROLE_PATIENT_SCHEDULER, ROLE_REFERRING_PROVIDER
 
 
@@ -221,3 +222,57 @@ def test_patient_scheduler_can_fetch_original_referral_pdf(app, client):
     assert document_response.status_code == 200
     assert document_response.mimetype == 'application/pdf'
     assert document_response.data.startswith(b'%PDF-')
+
+
+def test_patient_scheduler_can_delete_referral_and_document_file(app, client):
+    app.ai_service.extract_referral_summary = lambda text_content, reason_for_referral=None: {
+        'chiefComplaint': 'Persistent headaches',
+        'evaluation': 'MRI recommended',
+        'diagnosis': 'Migraine',
+    }
+
+    upload_token = register_and_login(client, 'referrer_delete@example.com', ROLE_REFERRING_PROVIDER)
+    submission_id = upload_referral(client, upload_token)
+    scheduler_token = register_and_login(client, 'scheduler_delete@example.com', ROLE_PATIENT_SCHEDULER)
+
+    with app.app_context():
+        submission = Submission.query.filter_by(id=submission_id).first()
+        assert submission is not None
+        document = Document.query.filter_by(submission_id=submission_id).first()
+        assert document is not None
+        document_path = document.file_path
+        assert os.path.exists(document_path)
+
+    delete_response = client.delete(
+        f'/api/referrals/{submission_id}',
+        headers={'Authorization': f'Bearer {scheduler_token}'},
+    )
+
+    assert delete_response.status_code == 200
+    assert json.loads(delete_response.data)['message'] == 'Referral deleted successfully'
+
+    with app.app_context():
+        assert Submission.query.filter_by(id=submission_id).first() is None
+        assert Document.query.filter_by(submission_id=submission_id).count() == 0
+        assert not os.path.exists(document_path)
+
+
+def test_referring_provider_cannot_delete_referral(app, client):
+    app.ai_service.extract_referral_summary = lambda text_content, reason_for_referral=None: {
+        'chiefComplaint': 'Persistent headaches',
+        'evaluation': 'MRI recommended',
+        'diagnosis': 'Migraine',
+    }
+
+    upload_token = register_and_login(client, 'referrer_cannot_delete@example.com', ROLE_REFERRING_PROVIDER)
+    submission_id = upload_referral(client, upload_token)
+
+    delete_response = client.delete(
+        f'/api/referrals/{submission_id}',
+        headers={'Authorization': f'Bearer {upload_token}'},
+    )
+
+    assert delete_response.status_code == 403
+
+    with app.app_context():
+        assert Submission.query.filter_by(id=submission_id).first() is not None

@@ -193,6 +193,12 @@ class ApiService {
     return this.request(`/referrals/${submissionId}`);
   }
 
+  async deleteReferral(submissionId) {
+    return this.request(`/referrals/${submissionId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getReferralDocumentContent(submissionId, documentId) {
     return this.requestBlob(`/referrals/${submissionId}/documents/${documentId}/content`);
   }

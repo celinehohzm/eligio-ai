@@ -4,7 +4,7 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import or_
 
-from app.extensions import limiter
+from app.extensions import db, limiter
 from app.models import Document, Submission, User
 from app.roles import can_access_referral_search
 
@@ -118,6 +118,29 @@ def get_referral(submission_id):
         return jsonify({'error': 'Referral not found'}), 404
 
     return jsonify(_serialize_referral(submission))
+
+
+@referrals_bp.route('/referrals/<submission_id>', methods=['DELETE'])
+@jwt_required()
+@limiter.limit('30 per minute')
+def delete_referral(submission_id):
+    user = _get_scheduler_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    if not can_access_referral_search(user.role):
+        return jsonify({'error': 'Referral search is not available for your role'}), 403
+
+    submission = Submission.query.filter_by(id=submission_id).first()
+    if not submission:
+        return jsonify({'error': 'Referral not found'}), 404
+
+    for document in submission.documents:
+        current_app.storage_service.delete_file(document.storage_key or document.file_path)
+
+    db.session.delete(submission)
+    db.session.commit()
+
+    return jsonify({'message': 'Referral deleted successfully'})
 
 
 @referrals_bp.route('/referrals/<submission_id>/documents/<document_id>/content', methods=['GET'])

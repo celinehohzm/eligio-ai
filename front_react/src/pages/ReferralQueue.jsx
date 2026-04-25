@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ClipboardList, FileText, Search, Send, UserRound } from "lucide-react";
+import { ArrowLeft, ClipboardList, FileText, Search, Send, Trash2, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -386,6 +386,7 @@ export default function ReferralQueue() {
   const [patientListMode, setPatientListMode] = useState("default");
   const [isLoadingList, setIsLoadingList] = useState(true);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [deletingReferralId, setDeletingReferralId] = useState(null);
   const [chatSessions, setChatSessions] = useState({});
   const [chatInput, setChatInput] = useState("");
   const [isSendingChat, setIsSendingChat] = useState(false);
@@ -670,6 +671,51 @@ export default function ReferralQueue() {
     }
   };
 
+  const handleDeleteReferral = async (referral) => {
+    if (!referral?.id || deletingReferralId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${referral.fullName || "this patient referral"} from the database? This also removes the uploaded referral PDF.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingReferralId(referral.id);
+
+    try {
+      await apiService.deleteReferral(referral.id);
+
+      const nextReferrals = referrals.filter((item) => item.id !== referral.id);
+      setReferrals(nextReferrals);
+      if (selectedId === referral.id) {
+        setSelectedId(nextReferrals[0]?.id || null);
+        setSelectedReferral(null);
+      }
+      setChatSessions((previous) => {
+        if (!previous[referral.id]) {
+          return previous;
+        }
+
+        const nextSessions = { ...previous };
+        delete nextSessions[referral.id];
+        return nextSessions;
+      });
+
+      toast.success("Referral deleted", {
+        description: `${referral.fullName || "The selected patient"} was removed from the queue.`,
+      });
+    } catch (error) {
+      toast.error("Failed to delete referral", {
+        description: error.message || "Please try again.",
+      });
+    } finally {
+      setDeletingReferralId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -762,25 +808,46 @@ export default function ReferralQueue() {
                   )}
                   {referrals.map((referral) => {
                     const isSelected = referral.id === selectedId;
+                    const isDeleting = deletingReferralId === referral.id;
                     return (
-                      <button
+                      <div
                         key={referral.id}
-                        type="button"
-                        onClick={() => setSelectedId(referral.id)}
                         className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                           isSelected
                             ? "border-blue-600 bg-blue-50"
                             : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
                         }`}
                       >
-                        <p className="font-semibold text-gray-900">{referral.fullName}</p>
-                        <p className="mt-1 text-sm text-gray-600">
-                          {referral.doctorName || "No referring provider listed"}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          Uploaded {formatTimestamp(referral.submittedAt)}
-                        </p>
-                      </button>
+                        <div className="flex items-start gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedId(referral.id)}
+                            className="flex-1 text-left"
+                            disabled={isDeleting}
+                          >
+                            <p className="font-semibold text-gray-900">{referral.fullName}</p>
+                            <p className="mt-1 text-sm text-gray-600">
+                              {referral.doctorName || "No referring provider listed"}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              Uploaded {formatTimestamp(referral.submittedAt)}
+                            </p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReferral(referral)}
+                            disabled={isDeleting}
+                            className="inline-flex shrink-0 items-center rounded-md border border-red-200 bg-white px-2.5 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label={`Delete ${referral.fullName}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">
+                              {isDeleting ? "Deleting referral" : `Delete ${referral.fullName}`}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
