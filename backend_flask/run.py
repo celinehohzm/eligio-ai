@@ -6,15 +6,23 @@ Main entry point for the Flask application
 
 import os
 import sys
+
+# Backend root (directory containing this file). Set path and .env before importing
+# the app so `config.config.Config` reads the correct environment.
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(_ROOT, ".env"))
+
 from app import create_app
+
 
 def main():
     """Main function to run the Flask application"""
-    
-    # Add the project root to Python path
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    
-    # Create Flask app
+
     app = create_app()
     
     # Get configuration
