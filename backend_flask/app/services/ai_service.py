@@ -170,7 +170,12 @@ class AIService:
 
             content = response.choices[0].message.content or "{}"
             parsed = self._parse_json_object(content)
-            return self._normalize_referral_triage_profile(parsed, reason_for_referral)
+            normalized_profile = self._normalize_referral_triage_profile(parsed, reason_for_referral)
+            normalized_profile["medicalRecordNumber"] = self._select_best_mrn_candidate(
+                normalized_text,
+                normalized_profile.get("medicalRecordNumber"),
+            )
+            return normalized_profile
         except Exception as exc:
             logging.warning("Falling back to heuristic triage extraction: %s", exc)
             return self._heuristic_referral_triage_profile(normalized_text, reason_for_referral)
@@ -317,16 +322,101 @@ class AIService:
 
         return None
 
+    def _extract_labeled_value(self, text_content, labels, max_words=32):
+        content = str(text_content or "")
+        if not content.strip():
+            return None
+
+        escaped_labels = [re.escape(label) for label in labels]
+        label_group = "|".join(escaped_labels)
+        boundary_labels = [
+            "chief complaint",
+            "chief concern",
+            "reason for referral",
+            "history of present illness",
+            "hpi",
+            "evaluation",
+            "assessment",
+            "diagnosis",
+            "impression",
+            "physical exam",
+            "neurological exam",
+            "imaging",
+            "imaging results",
+            "lab results",
+            "labs",
+            "other providers",
+            "insurance",
+            "payer",
+            "plan",
+            "medical record number",
+            "medical record #",
+            "mrn",
+        ]
+        boundary_group = "|".join(re.escape(label) for label in boundary_labels)
+
+        pattern = re.compile(
+            rf"(?:{label_group})\s*[:\-]\s*(.+?)(?=(?:\s+(?:{boundary_group})\s*[:\-])|[\n\r]|$)",
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        match = pattern.search(content)
+        if not match:
+            return None
+
+        raw_value = re.sub(r"\s+", " ", match.group(1)).strip(" .;,:-")
+        if not raw_value:
+            return None
+
+        words = raw_value.split()
+        if len(words) > max_words:
+            raw_value = " ".join(words[:max_words]).strip(" .;,:-")
+        return raw_value or None
+
+    def _normalize_insurance_value(self, value):
+        cleaned = re.sub(r"\s+", " ", str(value or "")).strip(" .;,:-")
+        if not cleaned:
+            return None
+
+        # Remove trailing card metadata that often follows payer names in OCR text.
+        cleaned = re.split(
+            r"\b(?:member id|subscriber id|policy|id|auth|notes?|urgency|referring provider|pcp)\b",
+            cleaned,
+            maxsplit=1,
+            flags=re.IGNORECASE,
+        )[0].strip(" .;,:-")
+        cleaned = cleaned.rstrip(" -\u2013\u2014")
+
+        words = cleaned.split()
+        if len(words) > 8:
+            cleaned = " ".join(words[:8]).strip(" .;,:-")
+        cleaned = cleaned.rstrip(" -\u2013\u2014")
+        return cleaned or None
+
     def _heuristic_referral_summary(self, text_content, reason_for_referral=None):
         flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
         return {
-            "chiefComplaint": self._extract_section_value(flattened_text, "chief complaint")
+            "chiefComplaint": self._extract_labeled_value(
+                text_content,
+                ["chief complaint", "chief concern"],
+                max_words=20,
+            )
+            or self._extract_section_value(flattened_text, "chief complaint")
             or self._extract_section_value(flattened_text, "chief concern")
             or (reason_for_referral or "").strip()
             or None,
-            "evaluation": self._extract_section_value(flattened_text, "evaluation")
+            "evaluation": self._extract_labeled_value(
+                text_content,
+                ["evaluation", "assessment"],
+                max_words=36,
+            )
+            or self._extract_section_value(flattened_text, "evaluation")
             or self._extract_section_value(flattened_text, "assessment"),
-            "diagnosis": self._extract_section_value(flattened_text, "diagnosis")
+            "diagnosis": self._extract_labeled_value(
+                text_content,
+                ["diagnosis", "impression"],
+                max_words=24,
+            )
+            or self._extract_section_value(flattened_text, "diagnosis")
             or self._extract_section_value(flattened_text, "impression"),
         }
 
@@ -339,6 +429,50 @@ class AIService:
             if value:
                 return value
         return None
+
+    def _normalize_mrn_candidate(self, value):
+        candidate = re.sub(r"\s+", " ", str(value or "")).strip(" .;,:")
+        if not candidate:
+            return None
+
+        # Normalize OCR spacing around separators while preserving the token.
+        candidate = re.sub(r"\s*-\s*", "-", candidate)
+        candidate = re.sub(r"\s*/\s*", "/", candidate)
+        return candidate
+
+    def _extract_mrn_candidate(self, text_content):
+        raw_candidate = self._extract_pattern_value(
+            text_content,
+            [
+                r"(?:medical record number|medical record #|mrn)\s*[:#-]?\s*([A-Za-z0-9]+(?:\s*[-/]\s*[A-Za-z0-9]+)+)",
+                r"(?:medical record number|medical record #|mrn)\s*[:#-]?\s*([A-Za-z]*\d[A-Za-z0-9\-\/]*)",
+            ],
+        )
+        return self._normalize_mrn_candidate(raw_candidate)
+
+    def _has_digits(self, value):
+        return bool(re.search(r"\d", value or ""))
+
+    def _select_best_mrn_candidate(self, text_content, ai_candidate):
+        normalized_ai_candidate = self._normalize_mrn_candidate(ai_candidate)
+        pattern_candidate = self._extract_mrn_candidate(text_content)
+
+        if not pattern_candidate:
+            return normalized_ai_candidate
+        if not normalized_ai_candidate:
+            return pattern_candidate
+
+        # Prefer the candidate that preserves the numeric segment.
+        if self._has_digits(pattern_candidate) and not self._has_digits(normalized_ai_candidate):
+            return pattern_candidate
+
+        # If the AI returned a truncated prefix (e.g., CRMA), prefer the longer OCR match.
+        ai_lower = normalized_ai_candidate.lower()
+        pattern_lower = pattern_candidate.lower()
+        if pattern_lower.startswith(ai_lower) and len(pattern_candidate) > len(normalized_ai_candidate):
+            return pattern_candidate
+
+        return normalized_ai_candidate
 
     def _split_sentences(self, text_content):
         flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
@@ -374,12 +508,21 @@ class AIService:
                 r"(?:insurance|payer|plan)\s*[:#-]?\s*([A-Za-z][A-Za-z0-9 &/()\-]{2,80})",
             ],
         )
+        insurance = (
+            self._normalize_insurance_value(
+                self._extract_labeled_value(text_content, ["insurance", "payer", "plan"], max_words=8)
+            )
+            or self._normalize_insurance_value(insurance)
+        )
         medical_record_number = self._extract_pattern_value(
             flattened_text,
             [
-                r"(?:medical record number|mrn)\s*[:#-]?\s*([A-Za-z0-9\-]+)",
+                r"(?:medical record number|medical record #|mrn)\s*[:#-]?\s*([A-Za-z0-9]+(?:\s*[-/]\s*[A-Za-z0-9]+)+)",
+                r"(?:medical record number|medical record #|mrn)\s*[:#-]?\s*([A-Za-z]*\d[A-Za-z0-9\-\/]*)",
             ],
         )
+        medical_record_number = self._normalize_mrn_candidate(medical_record_number)
+        medical_record_number = self._select_best_mrn_candidate(flattened_text, medical_record_number)
 
         chief_complaint = (
             self._extract_section_value(flattened_text, "chief complaint")
