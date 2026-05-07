@@ -800,6 +800,7 @@ function buildEvidenceSources(referral) {
   ].filter((item) => String(item.text || "").trim());
 }
 
+// Deprecated for routing: backend LLM now owns primary clinic routing decisions.
 function collectCaseSignals(referral) {
   const evidenceSources = buildEvidenceSources(referral);
   const fullCorpus = evidenceSources.map((item) => item.text).join(" ");
@@ -820,6 +821,7 @@ function collectCaseSignals(referral) {
   };
 }
 
+// Deprecated for routing: retained temporarily for heuristic scheduler context.
 function inferRecommendedDepartment(matchedFeatures) {
   if (matchedFeatures.concussionRehab && !matchedFeatures.stroke && !matchedFeatures.headache) {
     return "Physical Medicine and Rehabilitation";
@@ -1075,6 +1077,7 @@ export function getSpecialistDirectoryGroups() {
     });
 }
 
+// Deprecated for routing: kept for specialist directory display until LLM routing is fully validated.
 export function getSpecialistMatches(referral, count = 3) {
   if (!referral?.id) {
     return [];

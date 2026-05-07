@@ -28,6 +28,7 @@ def _build_referral_triage_data(submission):
         "imagingResults": None,
         "labResults": None,
         "otherProviders": None,
+        "routingRecommendation": None,
     }
 
     referral_document = next(
@@ -47,6 +48,10 @@ def _build_referral_triage_data(submission):
                 processed_pdf.extracted_text or "",
                 reason_for_referral=submission.reason_for_referral,
             )
+        )
+        triage_profile["routingRecommendation"] = current_app.ai_service.get_routing_recommendation(
+            triage_profile,
+            reason_for_referral=submission.reason_for_referral,
         )
     except Exception:
         current_app.logger.warning(
@@ -71,6 +76,7 @@ def _serialize_referral(submission):
         "labResults": triage_profile.get("labResults"),
         "otherProviders": triage_profile.get("otherProviders"),
     }
+    payload["routingRecommendation"] = triage_profile.get("routingRecommendation")
     return payload
 
 

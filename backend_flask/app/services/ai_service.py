@@ -140,21 +140,30 @@ class AIService:
                         "role": "system",
                         "content":
                         """
-                            You extract structured neurology referral intake details for patient schedulers.
-                            Return strict JSON with exactly these keys:
-                            - insurance
-                            - medicalRecordNumber
-                            - chiefComplaint
-                            - historyOfPresentIllness
-                            - physicalExam
-                            - imagingResults
-                            - labResults
-                            - otherProviders
-                            For imagingResults, include only:
-                            1) the report Impression, and
-                            2) key positive imaging findings.
-                            Do not copy full findings sections, and do not include purely negative statements.
-                            Use null if a field is not clearly stated. Do not invent any details.
+You extract structured neurology referral intake details for patient schedulers.
+This packet may contain multiple documents — prioritize the referral cover sheet
+and the stated reason for referral over background medical notes.
+Do NOT extract cardiovascular or primary care content unless directly relevant
+to the neurological presentation.
+
+Return strict JSON with exactly these keys:
+- insurance
+- medicalRecordNumber
+- chiefComplaint
+- historyOfPresentIllness      (neurological presentation only)
+- physicalExam                  (neurological exam findings only)
+- imagingResults
+- labResults
+- otherProviders
+- urgency                       (emergent / urgent / routine — check cover sheet checkboxes)
+- urgencyFlags                  (array — any red flag language or checked urgency boxes)
+- symptomOnset                  (acute / subacute / chronic / null)
+- symptomProgression            (episodic / worsening / stable / improving / null)
+- laterality                    (unilateral / bilateral / unclear / null)
+- symptomDuration               (how long each episode lasts if episodic, else null)
+- priorWorkup                   (imaging or labs already done and their results)
+- referringProviderSpecialty    (specialty of referring doctor if stated, else null)
+Use null if a field is not clearly stated. Do not invent any details.
                         """,
                     },
                     {
@@ -187,6 +196,144 @@ class AIService:
         except Exception as exc:
             logging.warning("Falling back to heuristic triage extraction: %s", exc)
             return self._heuristic_referral_triage_profile(normalized_text, reason_for_referral)
+
+    def _load_knowledge_base(self):
+        if hasattr(self, "_kb_cache"):
+            return self._kb_cache
+        import os
+        kb_dir = os.path.join(os.path.dirname(__file__), "..", "knowledge_base")
+        with open(os.path.join(kb_dir, "clinics.json"), encoding="utf-8") as f:
+            clinics_raw = f.read()
+        clinics = json.loads(clinics_raw)
+        with open(os.path.join(kb_dir, "routing_rules.md"), encoding="utf-8") as f:
+            routing_rules = f.read()
+        self._kb_cache = {
+            "clinics": clinics,
+            "clinics_raw": clinics_raw,
+            "routing_rules": routing_rules,
+        }
+        return self._kb_cache
+
+    def get_routing_recommendation(self, triage_profile, reason_for_referral=None):
+        if not self.is_openai_configured() or not self.client:
+            return self._fallback_routing()
+        try:
+            kb = self._load_knowledge_base()
+            clinics = kb.get("clinics") if isinstance(kb.get("clinics"), list) else []
+            clinics_text = kb.get("clinics_raw") or json.dumps(clinics, ensure_ascii=False, indent=2)
+            clinic_id_map = {
+                str(clinic.get("id")): clinic
+                for clinic in clinics
+                if isinstance(clinic, dict) and clinic.get("id")
+            }
+            clinic_name_to_id = {
+                str(clinic.get("name", "")).strip().lower(): str(clinic.get("id"))
+                for clinic in clinics
+                if isinstance(clinic, dict) and clinic.get("id") and clinic.get("name")
+            }
+            clinical_summary = f"""
+Chief complaint: {triage_profile.get('chiefComplaint') or 'Not specified'}
+HPI: {triage_profile.get('historyOfPresentIllness') or 'Not specified'}
+Symptom onset: {triage_profile.get('symptomOnset') or 'Unknown'}
+Symptom progression: {triage_profile.get('symptomProgression') or 'Unknown'}
+Laterality: {triage_profile.get('laterality') or 'Unknown'}
+Symptom duration: {triage_profile.get('symptomDuration') or 'Unknown'}
+Physical exam: {triage_profile.get('physicalExam') or 'Not documented'}
+Imaging: {triage_profile.get('imagingResults') or 'None documented'}
+Labs: {triage_profile.get('labResults') or 'None documented'}
+Prior workup: {triage_profile.get('priorWorkup') or 'None documented'}
+Urgency (from cover sheet): {triage_profile.get('urgency') or 'Not specified'}
+Urgency flags: {', '.join(triage_profile.get('urgencyFlags') or []) or 'None'}
+Referring provider specialty: {triage_profile.get('referringProviderSpecialty') or 'Unknown'}
+Reason for referral: {reason_for_referral or 'Not provided'}
+            """
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """
+You are a neurology referral routing assistant at Johns Hopkins Medicine.
+Recommend which neurology subspecialty clinic a patient should be routed to.
+Return strict JSON with exactly these keys:
+- recommendedClinic (full clinic name)
+- recommendedClinicId (id from the clinic list)
+- confidenceScore (float 0.0 to 1.0)
+- rationale (2-3 sentences citing specific clinical features from the referral)
+- alternativeClinics (array of {name, id, reason} — top 2 alternatives)
+- urgency (emergent / urgent / routine)
+- escalateForReview (boolean)
+- escalationReason (string if escalateForReview true, else null)
+- recommendedProviders (array of up to 3 provider names from the Hopkins list)
+Set escalateForReview true if: confidenceScore < 0.65, urgency is emergent,
+top two clinic scores are within 0.15, or referral is too incomplete to route.
+Return only valid JSON. No preamble or markdown.
+                        """,
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            "Use the following Hopkins clinic knowledge base JSON exactly as the source of truth "
+                            "for clinic IDs, conditions, routing exclusions, urgency flags, intake requirements, "
+                            "age restrictions, and provider names.\n\n"
+                            f"Clinics knowledge base JSON:\n{clinics_text}\n\n"
+                            f"Routing guidelines:\n{kb['routing_rules']}\n\n"
+                            f"Patient:\n{clinical_summary}"
+                        ),
+                    },
+                ],
+                temperature=0.1,
+                max_tokens=800,
+                response_format={"type": "json_object"},
+            )
+            parsed = self._parse_json_object(response.choices[0].message.content or "{}")
+            score = float(parsed.get("confidenceScore", 0.5))
+            recommended_clinic = parsed.get("recommendedClinic", "General Neurology")
+            recommended_clinic_id = parsed.get("recommendedClinicId", "general-neurology")
+            if recommended_clinic_id not in clinic_id_map:
+                guessed_id = clinic_name_to_id.get(str(recommended_clinic).strip().lower())
+                if guessed_id:
+                    recommended_clinic_id = guessed_id
+                else:
+                    recommended_clinic_id = "general-neurology"
+
+            recommended_providers = parsed.get("recommendedProviders", [])
+            if not isinstance(recommended_providers, list):
+                recommended_providers = []
+            if not recommended_providers and recommended_clinic_id in clinic_id_map:
+                fallback_providers = clinic_id_map[recommended_clinic_id].get("providers") or []
+                if isinstance(fallback_providers, list):
+                    recommended_providers = fallback_providers[:3]
+
+            return {
+                "recommendedClinic": recommended_clinic,
+                "recommendedClinicId": recommended_clinic_id,
+                "confidenceScore": score,
+                "confidenceLevel": "high" if score >= 0.80 else "medium" if score >= 0.60 else "low",
+                "rationale": parsed.get("rationale", ""),
+                "alternativeClinics": parsed.get("alternativeClinics", []),
+                "urgency": parsed.get("urgency", "routine"),
+                "escalateForReview": parsed.get("escalateForReview", score < 0.65),
+                "escalationReason": parsed.get("escalationReason"),
+                "recommendedProviders": recommended_providers[:3],
+            }
+        except Exception as exc:
+            logging.warning("Routing recommendation failed: %s", exc)
+            return self._fallback_routing()
+
+    def _fallback_routing(self):
+        return {
+            "recommendedClinic": "General Neurology",
+            "recommendedClinicId": "general-neurology",
+            "confidenceScore": 0.0,
+            "confidenceLevel": "low",
+            "rationale": "Automatic routing unavailable — please review manually.",
+            "alternativeClinics": [],
+            "urgency": "routine",
+            "escalateForReview": True,
+            "escalationReason": "Routing system unavailable",
+            "recommendedProviders": [],
+        }
 
     def _get_system_prompt(self):
         """Get system prompt for patient triaging"""
@@ -290,6 +437,26 @@ class AIService:
             if source_text
             else self._normalize_clinical_phrase(imaging_candidate)
         )
+        lab_candidate = self._clean_payload_value(
+            payload,
+            "labResults",
+            "lab_results",
+        )
+        other_providers_candidate = self._clean_payload_value(
+            payload,
+            "otherProviders",
+            "other_providers",
+        )
+        lab_results = (
+            self._build_lab_results_summary(source_text, lab_candidate)
+            if source_text
+            else self._normalize_clinical_phrase(lab_candidate)
+        )
+        other_providers = (
+            self._build_other_providers_summary(source_text, other_providers_candidate)
+            if source_text
+            else self._normalize_clinical_phrase(other_providers_candidate)
+        )
         return {
             "insurance": self._clean_payload_value(payload, "insurance"),
             "medicalRecordNumber": self._clean_payload_value(
@@ -313,15 +480,37 @@ class AIService:
             ),
             "physicalExam": physical_exam,
             "imagingResults": imaging_results,
-            "labResults": self._clean_payload_value(
+            "labResults": lab_results,
+            "otherProviders": other_providers,
+            "urgency": self._clean_payload_value(payload, "urgency"),
+            "urgencyFlags": payload.get("urgencyFlags")
+            if isinstance(payload.get("urgencyFlags"), list)
+            else [],
+            "symptomOnset": self._clean_payload_value(
                 payload,
-                "labResults",
-                "lab_results",
+                "symptomOnset",
+                "symptom_onset",
             ),
-            "otherProviders": self._clean_payload_value(
+            "symptomProgression": self._clean_payload_value(
                 payload,
-                "otherProviders",
-                "other_providers",
+                "symptomProgression",
+                "symptom_progression",
+            ),
+            "laterality": self._clean_payload_value(payload, "laterality"),
+            "symptomDuration": self._clean_payload_value(
+                payload,
+                "symptomDuration",
+                "symptom_duration",
+            ),
+            "priorWorkup": self._clean_payload_value(
+                payload,
+                "priorWorkup",
+                "prior_workup",
+            ),
+            "referringProviderSpecialty": self._clean_payload_value(
+                payload,
+                "referringProviderSpecialty",
+                "referring_provider_specialty",
             ),
         }
 
@@ -589,6 +778,24 @@ class AIService:
         cleaned = cleaned.strip("\"'`")
         return cleaned or None
 
+    def _format_clinical_list(self, values, max_items=3):
+        normalized_items = []
+        seen = set()
+        for value in values:
+            normalized = self._normalize_clinical_phrase(value)
+            if not normalized:
+                continue
+            key = normalized.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            normalized_items.append(normalized)
+            if len(normalized_items) >= max_items:
+                break
+        if not normalized_items:
+            return None
+        return "; ".join(normalized_items)
+
     def _first_sentence(self, text):
         normalized = self._normalize_clinical_phrase(text)
         if not normalized:
@@ -599,7 +806,7 @@ class AIService:
     def _build_physical_exam_summary(self, text_content, candidate_value=None):
         source = str(text_content or "")
         section_candidates = []
-        for label in ["neurological exam", "neuro exam", "physical exam", "exam"]:
+        for label in ["neurological exam", "neurologic exam", "neuro exam", "physical exam"]:
             section_candidates.extend(self._extract_section_values(source, label))
 
         sentence_candidates = []
@@ -635,8 +842,28 @@ class AIService:
 
         meaningful = [item for item in ordered_candidates if not self._is_vitals_only_exam(item)]
         if meaningful:
-            # Use the last meaningful candidate to favor the most recent exam block.
-            return meaningful[-1]
+            exam_priority_markers = [
+                "strength",
+                "reflex",
+                "gait",
+                "cranial nerve",
+                "motor",
+                "sensory",
+                "sensation",
+                "coordination",
+                "romberg",
+                "ataxia",
+                "nystagmus",
+                "focal deficit",
+            ]
+            meaningful.sort(
+                key=lambda item: (
+                    sum(marker in item.lower() for marker in exam_priority_markers),
+                    len(item),
+                ),
+                reverse=True,
+            )
+            return meaningful[0]
 
         candidate_normalized = self._first_sentence(candidate_value)
         if candidate_normalized and not self._is_vitals_only_exam(candidate_normalized):
@@ -731,6 +958,44 @@ class AIService:
             return f"Key positive finding: {positives[0]}."
         return None
 
+    def _build_lab_results_summary(self, text_content, candidate_value=None):
+        source = str(text_content or "")
+        section_candidates = []
+        for label in ["lab results", "labs", "laboratory", "laboratory data"]:
+            section_candidates.extend(self._extract_section_values(source, label))
+
+        sentence_candidates = []
+        for sentence in self._split_sentences(source):
+            lowered = sentence.lower()
+            if any(keyword in lowered for keyword in ["cbc", "cmp", "esr", "crp", "tsh", "a1c", "csf", "lab"]):
+                sentence_candidates.append(sentence)
+
+        values = []
+        if candidate_value:
+            values.append(candidate_value)
+        values.extend(section_candidates)
+        values.extend(sentence_candidates)
+        return self._format_clinical_list(values, max_items=2)
+
+    def _build_other_providers_summary(self, text_content, candidate_value=None):
+        source = str(text_content or "")
+        section_candidates = []
+        for label in ["other providers", "care team", "referring provider", "consulting provider"]:
+            section_candidates.extend(self._extract_section_values(source, label))
+
+        sentence_candidates = []
+        for sentence in self._split_sentences(source):
+            lowered = sentence.lower()
+            if any(keyword in lowered for keyword in ["dr.", "provider", "specialist", "referred to", "follows with"]):
+                sentence_candidates.append(sentence)
+
+        values = []
+        if candidate_value:
+            values.append(candidate_value)
+        values.extend(section_candidates)
+        values.extend(sentence_candidates)
+        return self._format_clinical_list(values, max_items=2)
+
     def _heuristic_referral_triage_profile(self, text_content, reason_for_referral=None):
         flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
 
@@ -776,7 +1041,6 @@ class AIService:
         physical_exam_candidate = (
             self._extract_section_value(flattened_text, "physical exam")
             or self._extract_section_value(flattened_text, "neurological exam")
-            or self._extract_section_value(flattened_text, "exam")
             or self._extract_sentences_by_keywords(
                 flattened_text,
                 [
@@ -813,6 +1077,7 @@ class AIService:
                 ["lab", "cbc", "cmp", "tsh", "b12", "esr", "crp", "a1c", "ck", "csf"],
             )
         )
+        lab_results = self._build_lab_results_summary(text_content, lab_results)
 
         other_providers = (
             self._extract_section_value(flattened_text, "other providers")
@@ -822,6 +1087,7 @@ class AIService:
                 ["dr.", "provider", "specialist", "follows with", "seeing", "referred to"],
             )
         )
+        other_providers = self._build_other_providers_summary(text_content, other_providers)
 
         return {
             "insurance": insurance,
@@ -832,6 +1098,14 @@ class AIService:
             "imagingResults": imaging_results,
             "labResults": lab_results,
             "otherProviders": other_providers,
+            "urgency": None,
+            "urgencyFlags": [],
+            "symptomOnset": None,
+            "symptomProgression": None,
+            "laterality": None,
+            "symptomDuration": None,
+            "priorWorkup": None,
+            "referringProviderSpecialty": None,
         }
 
     def analyze_document_content(self, text_content):

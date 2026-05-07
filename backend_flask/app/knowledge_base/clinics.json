@@ -1,0 +1,589 @@
+[
+    {
+      "id": "movement-disorders",
+      "name": "Movement Disorders / Parkinson's Disease Center",
+      "description": "Parkinson's disease, essential tremor, dystonia, atypical parkinsonism, functional movement disorders, and related conditions. Also handles Botox injections and Deep Brain Stimulation (DBS) evaluations.",
+      "conditions": [
+        "Parkinson's Disease (PD)",
+        "Essential Tremor (ET)",
+        "Dystonia",
+        "Cervical Dystonia",
+        "Atypical Parkinsonism",
+        "Corticobasal Degeneration (CBD)",
+        "Corticobasal Syndrome (CBS)",
+        "Multiple System Atrophy (MSA)",
+        "Progressive Supranuclear Palsy (PSP)",
+        "Secondary Parkinsonism",
+        "Parkinson Plus Syndromes",
+        "Lewy Body Dementia (LBD)",
+        "Dyskinesia",
+        "Tardive Dyskinesia (TD)",
+        "Functional Movement Disorder (FMD)",
+        "Myoclonus",
+        "Hemifacial Spasm (HFS)",
+        "Blepharospasm",
+        "Sialorrhea",
+        "Tic Disorder",
+        "Tourette's Syndrome",
+        "Wilson's Disease",
+        "Spasticity",
+        "Restless Leg Syndrome (RLS)",
+        "Torticollis",
+        "Spasmodic Torticollis",
+        "Choreas (non-Huntington's)",
+        "Paroxysmal Movement Disorders",
+        "Tremors",
+        "Abnormal Involuntary Movements (AIM)",
+        "Tardive Dyskinesia",
+        "Hemidystonia",
+        "Idiopathic Torsion Dystonia"
+      ],
+      "key_symptoms": [
+        "tremor at rest",
+        "pill-rolling tremor",
+        "bradykinesia",
+        "rigidity",
+        "shuffling gait",
+        "involuntary movements",
+        "action tremor",
+        "dystonic posturing",
+        "facial spasms",
+        "slowness of movement"
+      ],
+      "intake_requirements": "Patient must have been previously evaluated by a PCP or other specialist before referral. Last 3 clinical notes and MRI reports required. Some diagnoses require referral triage review before scheduling.",
+      "urgency_flags": [],
+      "procedures": ["Botox injection", "Deep Brain Stimulation (DBS) evaluation", "Duopa"],
+      "age_restrictions": "Adults (18+). Pediatric movement disorders may route to Kennedy Krieger Institute.",
+      "providers": [
+        "MILLS, KELLY ALEXANDER",
+        "MOUKHEIBER, EMILE SAMI",
+        "PANTELYAT, ALEXANDER YURYEVICH",
+        "RICAURTE, GEORGE A JR.",
+        "SCHMIDT, MARIA TERESA",
+        "WAKSMUNSKI, REBECCA",
+        "PAUL, ASHLEY MARY",
+        "ROSENTHAL, LIANA ISA",
+        "SCHOLZ, SONJA WALTRAUD",
+        "BANG, JEE YUN AGNES"
+      ],
+      "do_not_route_here": [
+        "Huntington's Disease — route to Huntington's Disease Center",
+        "Acute unilateral weakness — route to Cerebrovascular",
+        "Concussion or TBI — route to PM&R"
+      ]
+    },
+    {
+      "id": "epilepsy",
+      "name": "Epilepsy Center",
+      "description": "New and established epilepsy, first-time seizures, drug-resistant epilepsy, epilepsy surgery evaluation, dietary therapy for seizures, and neurostimulator management.",
+      "conditions": [
+        "Epilepsy",
+        "Intractable Epilepsy",
+        "Drug-Resistant Epilepsy",
+        "First-Time Seizure",
+        "Seizures",
+        "Possible Seizures",
+        "Convulsions",
+        "Grand Mal / Tonic-Clonic Seizures",
+        "Petit Mal / Absence Seizures",
+        "Psychogenic Nonepileptic Seizures (PNES)",
+        "Pseudo Seizures",
+        "Pregnancy and Epilepsy",
+        "Ketogenic Diet for Epilepsy",
+        "Modified Atkins Diet (MAD)",
+        "Epilepsy Surgical Candidate",
+        "Vagus Nerve Stimulator (VNS)",
+        "Responsive Neurostimulator (RNS)",
+        "Neurostimulator Adjustment",
+        "Seizures with Brain Tumor",
+        "Status Epilepticus",
+        "Juvenile Myoclonic Epilepsy (JME)",
+        "Temporal Lobe Epilepsy"
+      ],
+      "key_symptoms": [
+        "seizures",
+        "convulsions",
+        "loss of consciousness",
+        "staring spells",
+        "post-ictal confusion",
+        "jerking movements",
+        "absence episodes",
+        "aura before episodes",
+        "tongue biting",
+        "incontinence during episode"
+      ],
+      "intake_requirements": "Last 3 clinical notes + MRI and EEG reports. Records required at least 14 days before appointment for general epilepsy. First-time seizure pathway available for new-onset seizures within the last 14 days.",
+      "urgency_flags": [
+        "status epilepticus",
+        "first seizure within the last 14 days",
+        "rapidly increasing seizure frequency"
+      ],
+      "age_restrictions": "Adults (18+) for adult epilepsy center. Pediatric epilepsy has separate pathway.",
+      "providers": [
+        "KRAUSS, GREGORY LEWIS",
+        "KANG, JOON-YI",
+        "MCDONALD, TANYA JOELLE WILLIAMS",
+        "NORTON, LAURA"
+      ],
+      "do_not_route_here": [
+        "Syncope — route to Cardiology first",
+        "TIA / episodic unilateral weakness — route to Cerebrovascular",
+        "Dizziness without seizure features — route to Vestibular or General Neurology"
+      ]
+    },
+    {
+      "id": "stroke-cerebrovascular",
+      "name": "Stroke and Cerebrovascular Neurology",
+      "description": "Stroke, TIA, cerebrovascular disease, vascular malformations, carotid disease, and related vascular conditions affecting the brain and spinal cord.",
+      "conditions": [
+        "Stroke (ischemic)",
+        "Stroke (hemorrhagic)",
+        "Transient Ischemic Attack (TIA)",
+        "Cerebrovascular Accident (CVA)",
+        "Brain Bleed",
+        "Intracerebral Hemorrhage",
+        "Subarachnoid Hemorrhage",
+        "Cerebral Venous Sinus Thrombosis (CSVT)",
+        "Carotid Stenosis",
+        "Carotid Artery Dissection",
+        "Vertebral Artery Disease",
+        "Vertebral Artery Dissection",
+        "Arteriovenous Malformation (AVM)",
+        "Moya Moya Disease",
+        "CADASIL",
+        "Central Nervous System Vasculitis (CNSV)",
+        "Cerebral Small Vessel Disease (CSVD)",
+        "Microvascular Ischemia on MRI",
+        "Stroke Prevention",
+        "Aphasia / Dysphasia (stroke-related)",
+        "Primary Progressive Aphasia (stroke-related)",
+        "Sickle Cell Disease with Stroke or TIA",
+        "Superficial Siderosis",
+        "Amaurosis Fugax (if TIA concern)",
+        "Transient Vision Loss (if vascular etiology)"
+      ],
+      "key_symptoms": [
+        "episodic unilateral weakness fully resolving",
+        "sudden onset unilateral weakness",
+        "speech difficulty sudden onset",
+        "facial droop",
+        "acute vision loss",
+        "sudden worst headache",
+        "episodic focal neurological deficits",
+        "transient visual loss",
+        "aphasia",
+        "dysarthria"
+      ],
+      "intake_requirements": "Referring physician note + MRI/MRA and CT or cerebrovascular angiograms. Upload imaging to portal. Records needed at least 7 days before appointment. Some presentations require referral triage review.",
+      "urgency_flags": [
+        "TIA within the last 48 hours",
+        "acute stroke symptoms",
+        "new hemorrhage on imaging",
+        "episodic unilateral weakness in patient with vascular risk factors",
+        "sudden onset worst headache of life",
+        "acute vision loss"
+      ],
+      "age_restrictions": "Adults (18+) for adult cerebrovascular. Pediatric stroke routes to Dr. Lisa Sun.",
+      "providers": [
+        "URRUTIA, VICTOR CRUZ",
+        "LLINAS, RAFAEL H",
+        "MARSH, ELISABETH BREESE",
+        "ZEILER, STEVEN ROBERT",
+        "SAFONOVA, ALEKSANDRA SERGEYEVNA",
+        "FRACICA, ELIZABETH ANN",
+        "STERN, BARNEY JOEL",
+        "MERBACH, DAWN"
+      ],
+      "do_not_route_here": [
+        "Aneurysm/AVM not seen by neurosurgeon — route to Neurosurgery first",
+        "Memory loss not related to stroke — route to Memory Center",
+        "Memory loss after concussion — route to PM&R",
+        "Ataxia due to stroke — still route here, not Ataxia Center"
+      ]
+    },
+    {
+      "id": "headache",
+      "name": "Headache Center",
+      "description": "All primary headache disorders including migraine, cluster headache, trigeminal neuralgia, and refractory daily headache.",
+      "conditions": [
+        "Migraine",
+        "Vestibular Migraine",
+        "Hemiplegic Migraine",
+        "Cluster Headache",
+        "Chronic Daily Headache",
+        "New Daily Persistent Headache (NDPH)",
+        "Tension-Type Headache",
+        "Trigeminal Neuralgia / Facial Pain",
+        "Occipital Neuralgia",
+        "Post-Traumatic Headache (PTH)",
+        "Hemicrania Continua",
+        "Sinus Headache",
+        "Atypical Facial Pain",
+        "Post-Herpetic Neuralgia"
+      ],
+      "key_symptoms": [
+        "unilateral headache",
+        "pulsating headache",
+        "photophobia",
+        "phonophobia",
+        "nausea with headache",
+        "visual aura",
+        "facial pain",
+        "headache with autonomic features",
+        "refractory daily headache",
+        "trigeminal distribution pain"
+      ],
+      "intake_requirements": "Adult Headache Questionnaire must be sent to patient and returned before appointment. Records faxed at least 7 days prior. Cannot prescribe opioids or benzodiazepines.",
+      "urgency_flags": [
+        "thunderclap headache (worst headache of life, sudden onset) — rule out SAH before routing",
+        "headache with fever and stiff neck",
+        "new headache in cancer patient",
+        "headache with focal neurological deficit"
+      ],
+      "age_restrictions": "Adult Headache Center (18+). Pediatric Headache Center for patients under 18.",
+      "providers": [
+        "YACOUB, ANNE DAMIAN",
+        "GRALEY, CHRISTINA RENEE",
+        "NAYAK, KATRINA MARIE",
+        "GRANDISON, DIAN PATRICIA"
+      ],
+      "do_not_route_here": [
+        "Concussion or traumatic brain injury — route to PM&R",
+        "Thunderclap headache — urgent, rule out SAH first",
+        "Patient currently on opioids/benzodiazepines who will not taper — denied"
+      ]
+    },
+    {
+      "id": "ms-neuroimmunology",
+      "name": "Multiple Sclerosis and Neuroimmunology",
+      "description": "Multiple sclerosis, demyelinating diseases, autoimmune neurological conditions, neuromyelitis optica, transverse myelitis, and neuroinfectious diseases.",
+      "conditions": [
+        "Multiple Sclerosis (MS) — all types",
+        "Relapsing-Remitting MS (RRMS)",
+        "Primary Progressive MS (PPMS)",
+        "Secondary Progressive MS (SPMS)",
+        "Possible MS",
+        "Newly Diagnosed MS",
+        "Neuromyelitis Optica Spectrum Disorder (NMOSD)",
+        "Myelin Oligodendrocyte Glycoprotein Associated Disorder (MOGAD)",
+        "Optic Neuritis",
+        "Transverse Myelitis",
+        "Acute Disseminated Encephalomyelitis (ADEM)",
+        "Autoimmune Encephalitis",
+        "Demyelinating Disease",
+        "Demyelinating Myelopathy",
+        "Leukoencephalopathy",
+        "Lupus (neurological)",
+        "Neurosarcoidosis",
+        "Stiff Person Syndrome (SPS)",
+        "Rare Neuroimmune Disorders",
+        "Paraneoplastic Encephalitis",
+        "Myelopathy (if autoimmune or demyelinating)",
+        "Spinal Cord Disease (autoimmune)"
+      ],
+      "key_symptoms": [
+        "optic neuritis",
+        "internuclear ophthalmoplegia",
+        "relapsing neurological symptoms",
+        "spasticity",
+        "Lhermitte's sign",
+        "spinal cord symptoms",
+        "bilateral leg weakness",
+        "sensory level on trunk",
+        "bladder dysfunction with neurological symptoms",
+        "visual loss one eye"
+      ],
+      "intake_requirements": "Patient must have been previously evaluated by a neurologist or ophthalmologist. MRI of brain and spine required before scheduling. CSF results and relevant labwork if available. Records required 7 days before appointment.",
+      "urgency_flags": [
+        "acute optic neuritis",
+        "acute transverse myelitis",
+        "suspected autoimmune encephalitis",
+        "rapidly progressive MS symptoms"
+      ],
+      "age_restrictions": "Adults (18+) for adult neuroimmunology. Pediatric neuroimmunology has separate pathway.",
+      "providers": [
+        "NEWSOME, SCOTT DOUGLAS",
+        "SAIDHA, SHIV",
+        "MOWRY, ELLEN MAHAR",
+        "SOTIRCHOS, ELIAS S",
+        "NOURBAKHSH, BARDIA",
+        "BHARGAVA, PAVAN",
+        "KORNBERG, MICHAEL DAVIN",
+        "MCARTHUR, JUSTIN CHARLES",
+        "PARDO-VILLAMIZAR, CARLOS A",
+        "VENKATESAN, ARUN",
+        "FILIPPATOU, ANGELIKI"
+      ],
+      "do_not_route_here": [
+        "Patient without prior neurologist or ophthalmologist evaluation — denied",
+        "Patient without MRI confirming diagnosis — denied",
+        "Ataxia due to MS — route here, not Ataxia Center",
+        "Myelopathy of vascular or structural cause — route to Cerebrovascular or Neurosurgery"
+      ]
+    },
+    {
+      "id": "neuromuscular",
+      "name": "Neuromuscular Medicine (Drachman Division)",
+      "description": "ALS, myasthenia gravis, peripheral neuropathy, myopathy, muscular dystrophy, CIDP, Guillain-Barré syndrome, and related neuromuscular conditions.",
+      "conditions": [
+        "ALS (Amyotrophic Lateral Sclerosis)",
+        "Motor Neuron Disease",
+        "Primary Lateral Sclerosis (PLS)",
+        "Myasthenia Gravis (MG)",
+        "Lambert-Eaton Myasthenic Syndrome (LEMS)",
+        "Peripheral Neuropathy",
+        "Diabetic Neuropathy",
+        "CIDP (Chronic Inflammatory Demyelinating Polyneuropathy)",
+        "Guillain-Barré Syndrome (GBS)",
+        "Small Fiber Neuropathy",
+        "Charcot-Marie-Tooth Disease (CMT)",
+        "Multifocal Motor Neuropathy",
+        "Myopathy",
+        "Muscular Dystrophy (MD)",
+        "Inclusion Body Myositis",
+        "Dermatomyositis / Polymyositis",
+        "Necrotizing Myopathy",
+        "Spinal Muscular Atrophy (SMA)",
+        "Post-Polio Syndrome",
+        "Mitochondrial Disease",
+        "Myotonia Congenita (MC)",
+        "Facioscapulohumeral Muscular Dystrophy (FSHD)"
+      ],
+      "key_symptoms": [
+        "progressive bilateral proximal weakness",
+        "distal weakness with sensory loss",
+        "stocking-glove numbness and tingling",
+        "fasciculations",
+        "muscle wasting",
+        "fatigable weakness",
+        "ptosis",
+        "diplopia with fatigability",
+        "dysphagia with weakness",
+        "elevated CK or CPK"
+      ],
+      "intake_requirements": "Last 3 clinical notes + MRI + relevant labwork + genetic testing if applicable + EMG/NCS results. EMG is required for most neuropathy and myopathy referrals before scheduling. Motor neuron disease and SMA may be scheduled without EMG. Records reviewed within 7-10 business days.",
+      "urgency_flags": [
+        "rapidly progressive weakness",
+        "respiratory compromise",
+        "bulbar symptoms (dysphagia, dysarthria)",
+        "suspected GBS with ascending weakness"
+      ],
+      "age_restrictions": "Adults (18+). Pediatric neuromuscular has separate pathway.",
+      "providers": [
+        "HOKE, AHMET",
+        "MARAGAKIS, NICHOLAS JOHN",
+        "MORRISON, BRETT MICHAEL",
+        "MOHASSEL, PAYAM",
+        "POLYDEFKIS, MICHAEL JAMES",
+        "RODA, RICARDO HORACIO",
+        "ROTHSTEIN, JEFFREY DAVID",
+        "SUMNER, CHARLOTTE JANE",
+        "MUKHERJEE-CLAVIN, BIPASHA",
+        "TAGA, ARENS",
+        "UCHIL, ALPA"
+      ],
+      "do_not_route_here": [
+        "Acute unilateral weakness — route to Cerebrovascular (TIA)",
+        "Episodic weakness fully resolving in minutes — route to Cerebrovascular",
+        "Spinal cord disease from MS — route to Neuroimmunology",
+        "Patient without EMG (for neuropathy/myopathy) — will be denied, request EMG first"
+      ]
+    },
+    {
+      "id": "sleep-neurology",
+      "name": "Sleep Neurology",
+      "description": "Neurologically-based sleep disorders including narcolepsy, REM sleep behavior disorder, restless legs syndrome, and insomnia not managed by pulmonary sleep.",
+      "conditions": [
+        "Narcolepsy",
+        "REM Sleep Behavior Disorder",
+        "Restless Legs Syndrome (RLS)",
+        "Periodic Limb Movement Disorder (PLMD)",
+        "Parasomnias",
+        "Night Terrors",
+        "Sleepwalking",
+        "Hypersomnia",
+        "Circadian Rhythm Disorders",
+        "Daytime Sleepiness",
+        "Insomnia (not previously managed by Pulmonary Sleep)",
+        "Obstructive Sleep Apnea (if new to Hopkins sleep services)"
+      ],
+      "key_symptoms": [
+        "excessive daytime sleepiness",
+        "cataplexy",
+        "sleep paralysis",
+        "acting out dreams",
+        "uncomfortable leg sensations at rest",
+        "periodic limb movements",
+        "abnormal nighttime behaviors",
+        "difficulty falling or staying asleep"
+      ],
+      "intake_requirements": "Last 3 clinical notes + all previous sleep studies. Records required 7 days before appointment. Cannot prescribe opioids or benzodiazepines.",
+      "urgency_flags": [],
+      "age_restrictions": "Adults (18+). Pediatric sleep has separate pathway via HCMA.",
+      "providers": [
+        "SALAS, RACHEL MARIE E",
+        "EXAR, ELLIOTT NICHOLAS"
+      ],
+      "do_not_route_here": [
+        "Patient previously seen by Pulmonary Sleep — return to Pulmonary Sleep",
+        "CPAP/BiPAP management — route to Pulmonary Sleep or HCMA Sleep Lab",
+        "Sleep study scheduling — route to HCMA Sleep Lab directly"
+      ]
+    },
+    {
+      "id": "cognitive-memory",
+      "name": "Cognitive Neurology / Memory Center",
+      "description": "Alzheimer's disease, dementia, mild cognitive impairment, and memory disorders. Age determines routing between Memory Center and Young-Onset Dementias Clinic.",
+      "conditions": [
+        "Alzheimer's Disease",
+        "Dementia",
+        "Mild Cognitive Impairment (MCI)",
+        "Memory Loss",
+        "Confusion (non-vascular)",
+        "Vascular Dementia"
+      ],
+      "key_symptoms": [
+        "progressive memory loss",
+        "word-finding difficulty",
+        "executive dysfunction",
+        "personality or behavioral changes",
+        "getting lost in familiar places",
+        "repeating questions",
+        "difficulty with daily tasks"
+      ],
+      "intake_requirements": "Last 3 clinical notes + MRI + labwork + genetic testing if applicable.",
+      "urgency_flags": [
+        "rapidly progressive dementia",
+        "suspected Creutzfeldt-Jakob Disease (CJD)",
+        "new psychosis in elderly patient"
+      ],
+      "age_restrictions": "Memory Center: age 55 or older. Young-Onset Dementias Clinic: under 55 (call 410-955-5147). Frontotemporal Dementia (FTD) routes to Young-Onset Dementias Clinic regardless of age.",
+      "providers": [
+        "MOGHEKAR, ABHAY RAJESHWAR"
+      ],
+      "do_not_route_here": [
+        "Memory loss that began after stroke — route to Cerebrovascular",
+        "Memory loss that began after concussion/TBI — route to PM&R",
+        "Huntington's Disease — route to Huntington's Disease Center (410-955-2398)",
+        "Lewy Body Dementia — route to Movement Disorders"
+      ]
+    },
+    {
+      "id": "vestibular-neurovisual",
+      "name": "Vestibular and Neuro-Visual Disorders",
+      "description": "Chronic dizziness, vertigo, nystagmus, diplopia, and visual disturbances of neurological origin.",
+      "conditions": [
+        "Dizziness (chronic, > 6 months)",
+        "Vertigo (chronic)",
+        "Nystagmus",
+        "Diplopia (Double Vision)",
+        "Vision Loss (if not stroke-related)",
+        "Change in Vision (if not stroke-related)",
+        "Visual Disturbance",
+        "Ptosis",
+        "Anisocoria (pupil problem)",
+        "Unusual Eye Movements",
+        "Gait Imbalance (if vestibular etiology)",
+        "Visual Aura (vestibular migraine component)"
+      ],
+      "key_symptoms": [
+        "chronic dizziness",
+        "spinning sensation",
+        "nystagmus",
+        "double vision",
+        "oscillopsia",
+        "balance problems",
+        "visual blurring",
+        "ptosis",
+        "pupil asymmetry"
+      ],
+      "intake_requirements": "Clinical notes + visual, vestibular, or audiology testing + MRI/MRA. Two appointments may be required: first for vestibular function testing, second with neurologist. Referral triage review required for some presentations. Records required 7 days before appointment.",
+      "urgency_flags": [
+        "sudden onset vision loss — rule out stroke",
+        "diplopia with other neurological symptoms",
+        "acute vestibular syndrome with new MRI lesion"
+      ],
+      "age_restrictions": "Adults (18+). Pediatric nystagmus has separate pathway.",
+      "providers": [
+        "RASTALL, DAVID PATRIC WERNER",
+        "TEVZADZE, NANA",
+        "HALE, DAVID EDWARD"
+      ],
+      "do_not_route_here": [
+        "BPPV (Benign Paroxysmal Positional Vertigo) — route to PM&R",
+        "Vision loss with stroke concern — route to Cerebrovascular",
+        "Meniere's Disease — route to Otolaryngology",
+        "Dizziness < 6 months with stroke concern — route to Cerebrovascular"
+      ]
+    },
+    {
+      "id": "ataxia-center",
+      "name": "Ataxia Center",
+      "description": "Cerebellar and spinocerebellar ataxias, hereditary ataxia, and isolated gait ataxia of non-stroke, non-MS origin.",
+      "conditions": [
+        "Ataxia",
+        "Cerebellar Ataxia",
+        "Spinocerebellar Ataxia (SCA)",
+        "Friedreich's Ataxia",
+        "Isolated Gait Ataxia",
+        "Cerebellar Degeneration / Atrophy on MRI"
+      ],
+      "key_symptoms": [
+        "unsteady gait",
+        "balance problems",
+        "incoordination",
+        "dysmetria",
+        "slurred speech with ataxia",
+        "cerebellar findings on exam"
+      ],
+      "intake_requirements": "Last 3 clinical notes + MRI + genetic testing results if applicable. Records required 21 days before appointment. Record review required — up to 14 business days for response.",
+      "urgency_flags": [],
+      "age_restrictions": "Adults (18+). Ataxia Telangiectasia routes to ATCC (410-614-1922). Friedreich's Ataxia routes to MDA (410-955-6435).",
+      "providers": [
+        "ROSENTHAL, LIANA ISA",
+        "BARANANO, KRISTIN WHITFORD"
+      ],
+      "do_not_route_here": [
+        "Ataxia due to stroke — route to Cerebrovascular",
+        "Ataxia due to MS — route to Neuroimmunology",
+        "Ataxia Telangiectasia — route to ATCC",
+        "Friedreich's Ataxia — route to MDA"
+      ]
+    },
+    {
+      "id": "general-neurology",
+      "name": "General Neurology",
+      "description": "Undifferentiated neurological presentations that do not clearly fit a subspecialty, and conditions requiring initial neurological evaluation.",
+      "conditions": [
+        "General Neurology",
+        "Numbness / Tingling (undifferentiated)",
+        "Unspecified Weakness",
+        "Back / Neck Pain with neurological symptoms",
+        "Radiculopathy",
+        "Sciatica",
+        "Pinched Nerve",
+        "Facial Neuropathy",
+        "Other Cranial Neuropathy",
+        "Muscle Cramps / Spasms",
+        "Functional Neurologic Disorder (FND)",
+        "Unlisted Diagnosis",
+        "Dizziness (undifferentiated)",
+        "Post-hospital discharge follow-up"
+      ],
+      "key_symptoms": [
+        "nonspecific neurological symptoms",
+        "undifferentiated presentation",
+        "symptoms not clearly fitting one subspecialty",
+        "general follow-up after hospitalization"
+      ],
+      "intake_requirements": "Relevant clinical notes and any diagnostic testing if applicable. Prior PCP or specialist evaluation required. If symptoms began within 4 weeks, may qualify for expedited scheduling.",
+      "urgency_flags": [],
+      "age_restrictions": "Adults and pediatric pathways available.",
+      "providers": [],
+      "do_not_route_here": [
+        "Presentations that clearly fit a subspecialty — use the appropriate subspecialty clinic",
+        "Patient without prior PCP or specialist evaluation — return to PCP first"
+      ]
+    }
+  ]
+  

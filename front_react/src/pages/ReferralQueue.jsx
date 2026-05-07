@@ -742,6 +742,10 @@ export default function ReferralQueue() {
     () => selectedReferral?.triageHighlights || {},
     [selectedReferral],
   );
+  const routingRecommendation = useMemo(
+    () => selectedReferral?.routingRecommendation || null,
+    [selectedReferral],
+  );
   const demographicItems = useMemo(
     () => [
       { label: "Name", value: formatDisplayValue(selectedMeta.fullName, "Not provided") },
@@ -758,14 +762,6 @@ export default function ReferralQueue() {
   );
   const specialistMatches = useMemo(() => getSpecialistMatches(selectedReferral, 3), [selectedReferral]);
   const specialistScoreExplanation = useMemo(() => getSpecialistScoreExplanation(), []);
-  const schedulerProtocol = useMemo(
-    () => buildSchedulerProtocol(selectedReferral),
-    [selectedReferral],
-  );
-  const caseSummary = useMemo(
-    () => buildCaseSummary(selectedReferral, schedulerProtocol.routeGuidance),
-    [selectedReferral, schedulerProtocol.routeGuidance],
-  );
   const selectedReferralDocument = useMemo(() => {
     const documents = selectedReferral?.documents || [];
     return (
@@ -1201,37 +1197,112 @@ export default function ReferralQueue() {
                   <div className="flex items-start gap-3">
                     <ClipboardList className="mt-0.5 h-5 w-5 text-blue-600" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Routing Guidance</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Routing Recommendation</h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        Recommended department routing plus the key clinical highlights extracted from the uploaded packet.
+                        Primary clinic routing generated from extracted triage details and Hopkins routing rules.
                       </p>
                     </div>
                   </div>
 
+                  {routingRecommendation?.escalateForReview && (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-sm font-semibold text-amber-900">Physician review recommended</p>
+                      <p className="mt-1 text-sm text-amber-800">
+                        {formatDisplayValue(routingRecommendation?.escalationReason, "Routing confidence is low.")}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="mt-4 grid gap-4 xl:grid-cols-[300px,minmax(0,1fr)]">
-                    <div
-                      className={`rounded-xl border p-5 ${
-                        schedulerProtocol.routeGuidance.label === "Needs clarification"
-                          ? "border-yellow-200 bg-yellow-50"
-                          : "border-blue-200 bg-blue-50"
-                      }`}
-                    >
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
-                        Recommended Department
+                        Recommended Clinic
                       </p>
                       <p className="mt-3 text-2xl font-semibold text-gray-900">
-                        {schedulerProtocol.routeGuidance.label}
+                        {formatDisplayValue(routingRecommendation?.recommendedClinic)}
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-gray-700">
-                        {schedulerProtocol.routeGuidance.detail}
-                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${
+                            routingRecommendation?.confidenceLevel === "high"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : routingRecommendation?.confidenceLevel === "medium"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {String(routingRecommendation?.confidenceLevel || "low")} confidence
+                        </span>
+                        {routingRecommendation?.urgency &&
+                          routingRecommendation.urgency !== "routine" && (
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${
+                                routingRecommendation.urgency === "emergent"
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {routingRecommendation.urgency}
+                            </span>
+                          )}
+                      </div>
                     </div>
 
                     <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
-                        Case Summary
+                        Recommendation Rationale
                       </p>
-                      <p className="mt-3 text-sm leading-7 text-gray-900">{caseSummary}</p>
+                      <p className="mt-3 text-sm leading-7 text-gray-900">
+                        {formatDisplayValue(routingRecommendation?.rationale)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
+                      <p className="text-sm font-semibold text-gray-900">Alternative Clinics</p>
+                      {(routingRecommendation?.alternativeClinics || []).length > 0 ? (
+                        <ul className="mt-3 space-y-2 text-sm text-gray-700">
+                          {(routingRecommendation?.alternativeClinics || []).map((clinic, index) => (
+                            <li key={`${clinic?.id || clinic?.name || index}`}>
+                              <span className="font-medium text-gray-900">
+                                {clinic?.name || "Unknown clinic"}
+                              </span>
+                              {clinic?.reason ? ` - ${clinic.reason}` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-2 text-sm text-gray-600">No alternatives provided.</p>
+                      )}
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">Recommended Specialists</p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Ranked specialist matches from referral evidence and department fit.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 grid gap-3">
+                        {specialistMatches.map((match) => (
+                          <div
+                            key={match.id}
+                            className="rounded-lg border border-gray-200 bg-white p-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">{match.displayName}</p>
+                                <p className="text-xs font-medium text-blue-700">{match.subspecialty}</p>
+                              </div>
+                              <div className="inline-flex items-center rounded-full bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white">
+                                {match.score}%
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -1318,46 +1389,12 @@ export default function ReferralQueue() {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Recommended Specialists</h3>
-                      <p className="text-sm text-gray-500">
-                        The top three specialist matches based on referral content, age fit, and department alignment.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-3">
-                    {specialistMatches.map((match) => (
-                      <div
-                        key={match.id}
-                        className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <p className="text-base font-semibold text-gray-900">{match.displayName}</p>
-                            <p className="mt-1 text-sm font-medium text-blue-700">
-                              {match.subspecialty}
-                            </p>
-                            <p className="mt-1 text-sm text-gray-500">{match.clinic}</p>
-                            <p className="mt-1 text-sm leading-6 text-gray-600">{match.rationale}</p>
-                          </div>
-                          <div className="inline-flex w-fit items-center rounded-full bg-blue-600 px-3 py-1 text-sm font-semibold text-white">
-                            {match.score}%
-                          </div>
-                        </div>
-                      </div>
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                  <p className="text-sm font-semibold text-gray-900">How the match percentages are determined</p>
+                  <div className="mt-2 space-y-2 text-sm leading-6 text-gray-600">
+                    {specialistScoreExplanation.map((line) => (
+                      <p key={line}>{line}</p>
                     ))}
-                  </div>
-
-                  <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
-                    <p className="text-sm font-semibold text-gray-900">How the match percentages are determined</p>
-                    <div className="mt-2 space-y-2 text-sm leading-6 text-gray-600">
-                      {specialistScoreExplanation.map((line) => (
-                        <p key={line}>{line}</p>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
