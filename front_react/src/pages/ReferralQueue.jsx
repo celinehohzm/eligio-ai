@@ -308,6 +308,7 @@ const inferDepartmentGuidance = (referral) => {
       detail:
         "No specialty-specific clinical signals were detected in the packet, so the correct department is not yet clear.",
       value: "Clarify the intended department before routing.",
+      departmentSignals,
     };
   }
 
@@ -320,6 +321,7 @@ const inferDepartmentGuidance = (referral) => {
         `and ${runnerUp.label} (${formatSignalGroups(runnerUp.matchedGroups)}). ` +
         "Confirm the correct department on the call before scheduling.",
       value: `Mixed signals between ${leader.label} and ${runnerUp.label}.`,
+      departmentSignals,
     };
   }
 
@@ -342,7 +344,144 @@ const inferDepartmentGuidance = (referral) => {
     status: "Review",
     detail,
     value: `Likely ${leader.label} based on ${leaderSummary}.`,
+    departmentSignals,
   };
+};
+
+const computeAgeFromDateOfBirth = (dateOfBirth) => {
+  const cleaned = cleanValue(dateOfBirth);
+  if (!cleaned) return null;
+  const parsed = new Date(cleaned);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - parsed.getFullYear();
+  const monthDelta = now.getMonth() - parsed.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < parsed.getDate())) {
+    age -= 1;
+  }
+  return age >= 0 && age < 130 ? age : null;
+};
+
+const formatProvider = (doctorName) => {
+  const cleaned = cleanValue(doctorName);
+  if (!cleaned) return null;
+  if (/^dr\.?\s/i.test(cleaned)) return cleaned;
+  return `Dr. ${cleaned}`;
+};
+
+const condenseChiefComplaint = (raw) => {
+  const cleaned = cleanValue(raw);
+  if (!cleaned) return "";
+  // The heuristic extractor sometimes glues the chief complaint together with
+  // the next labeled section; trim at the first sentence break or section
+  // header so the case summary stays one tidy clause instead of a paragraph.
+  const firstSegment = cleaned.split(
+    /(?:\s\bplan\b\s*[:.-]|\s\breason\b\s*[:.-]|\s\bevaluation\b\s*[:.-]|\s\bassessment\b\s*[:.-]|[.;])/i,
+  )[0];
+  const stripped = firstSegment
+    .replace(/^["“'?\s-]+/, "")
+    .replace(/["”'?\s-]+$/, "")
+    .trim();
+  if (!stripped) return "";
+  const words = stripped.split(/\s+/);
+  const truncated = words.length > 24 ? `${words.slice(0, 24).join(" ")}…` : stripped;
+  return truncated.charAt(0).toLowerCase() + truncated.slice(1);
+};
+
+const normalizeChiefComplaintInput = (value) => {
+  // Some extractors return an array of quoted snippets; coerce them into a
+  // single string before running the condensing heuristic.
+  const stripDoubleQuotes = (text) => String(text ?? "").replace(/["“”]/g, "").trim();
+
+  if (Array.isArray(value)) {
+    const parts = value
+      .map((item) =>
+        stripDoubleQuotes(
+          cleanValue(item)
+            .replace(/^["“'?\s-]+/, "")
+            .replace(/["”'?\s-]+$/, "")
+            .trim(),
+        ),
+      )
+      .filter(Boolean);
+    return parts.join("; ");
+  }
+
+  return stripDoubleQuotes(value);
+};
+
+const formatChiefComplaintCardValue = (raw, fallback = "Not identified in the uploaded document.") => {
+  const normalized = normalizeChiefComplaintInput(raw);
+  const condensed = condenseChiefComplaint(normalized);
+  if (!condensed) return fallback;
+  // `condenseChiefComplaint` lowercases the first letter to fit the sentence
+  // template used in `buildCaseSummary`; for the card we want sentence casing.
+  return condensed.charAt(0).toUpperCase() + condensed.slice(1);
+};
+
+const buildCaseSummary = (referral, routeGuidance) => {
+  if (!referral) {
+    return "Select a referral to see a synthesized case summary.";
+  }
+
+  const patientInfo = referral.patientInfo || {};
+  const triageHighlights = referral.triageHighlights || {};
+  const referralInsights = referral.referralInsights || {};
+
+  const fullName = cleanValue(patientInfo.fullName);
+  const age = computeAgeFromDateOfBirth(patientInfo.dateOfBirth);
+  const provider = formatProvider(patientInfo.doctorName);
+  const concern = condenseChiefComplaint(
+    triageHighlights.chiefComplaint ||
+      referralInsights.chiefComplaint ||
+      patientInfo.reasonForReferral,
+  );
+
+  const subjectParts = [];
+  if (age != null) {
+    subjectParts.push(`${age}-year-old patient`);
+  } else {
+    subjectParts.push("Patient");
+  }
+  if (fullName) {
+    subjectParts[0] = `${subjectParts[0]} ${fullName}`;
+  }
+
+  let sentenceOne = subjectParts.join("");
+  sentenceOne = sentenceOne.charAt(0).toUpperCase() + sentenceOne.slice(1);
+  if (provider) {
+    sentenceOne += ` was referred by ${provider}`;
+  }
+  if (concern) {
+    sentenceOne += `${provider ? " for " : " presenting with "}${concern}`;
+  }
+  sentenceOne += ".";
+
+  let sentenceTwo = "";
+  const signals = routeGuidance?.departmentSignals || [];
+  const positive = signals.filter((signal) => signal.totalHits > 0);
+
+  if (routeGuidance?.label === "Needs clarification") {
+    if (positive.length > 1) {
+      const labels = joinPhrases(positive.map((signal) => signal.label));
+      sentenceTwo = `Packet contains balanced clinical cues across ${labels}; the scheduler should confirm the intended department on the call.`;
+    } else {
+      sentenceTwo =
+        "Packet does not yet contain specialty-specific clinical cues, so the scheduler should confirm the intended department before routing.";
+    }
+  } else if (positive.length > 0) {
+    const leader = positive[0];
+    const subAreaPhrase = joinPhrases(leader.matchedGroups.map((group) => group.category));
+    sentenceTwo = `Clinical content aligns with ${leader.label}, primarily covering ${subAreaPhrase}`;
+    const others = positive.slice(1);
+    if (others.length > 0) {
+      const competingPhrase = joinPhrases(others.map((signal) => signal.label));
+      sentenceTwo += `; lower-priority cues also point to ${competingPhrase}, so verify routing on the call`;
+    }
+    sentenceTwo += ".";
+  }
+
+  return [sentenceOne, sentenceTwo].filter(Boolean).join(" ");
 };
 
 const buildSchedulerProtocol = (referral) => {
@@ -623,6 +762,10 @@ export default function ReferralQueue() {
     () => buildSchedulerProtocol(selectedReferral),
     [selectedReferral],
   );
+  const caseSummary = useMemo(
+    () => buildCaseSummary(selectedReferral, schedulerProtocol.routeGuidance),
+    [selectedReferral, schedulerProtocol.routeGuidance],
+  );
   const selectedReferralDocument = useMemo(() => {
     const documents = selectedReferral?.documents || [];
     return (
@@ -642,7 +785,7 @@ export default function ReferralQueue() {
         ...field,
         value:
           field.key === "chiefComplaint"
-            ? formatDisplayValue(
+            ? formatChiefComplaintCardValue(
                 selectedTriageHighlights[field.key] || selectedMeta.reasonForReferral,
               )
             : formatDisplayValue(selectedTriageHighlights[field.key]),
@@ -1084,8 +1227,11 @@ export default function ReferralQueue() {
                       </p>
                     </div>
 
-                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-7 text-gray-900">
-                      {selectedReferral.summaryLine}
+                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
+                        Case Summary
+                      </p>
+                      <p className="mt-3 text-sm leading-7 text-gray-900">{caseSummary}</p>
                     </div>
                   </div>
 
