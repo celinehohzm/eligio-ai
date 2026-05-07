@@ -11,6 +11,20 @@ from app.roles import can_access_referral_search
 referrals_bp = Blueprint('referrals', __name__)
 
 
+@referrals_bp.route('/clinics', methods=['GET'])
+@jwt_required()
+@limiter.limit('60 per minute')
+def list_clinics():
+    user = _get_scheduler_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    if not can_access_referral_search(user.role):
+        return jsonify({'error': 'Referral search is not available for your role'}), 403
+
+    clinics = current_app.ai_service.get_clinics_catalog()
+    return jsonify({'clinics': clinics})
+
+
 def _get_scheduler_user():
     current_email = get_jwt_identity()
     if not current_email:

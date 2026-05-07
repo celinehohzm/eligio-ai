@@ -276,3 +276,35 @@ def test_referring_provider_cannot_delete_referral(app, client):
 
     with app.app_context():
         assert Submission.query.filter_by(id=submission_id).first() is not None
+
+
+def test_clinics_requires_authentication(client):
+    response = client.get('/api/clinics')
+    assert response.status_code == 401
+
+
+def test_clinics_forbidden_for_referring_provider(client):
+    token = register_and_login(client, 'rp_clinics@example.com', ROLE_REFERRING_PROVIDER)
+
+    response = client.get(
+        '/api/clinics',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == 403
+
+
+def test_patient_scheduler_receives_clinics_catalog(client):
+    token = register_and_login(client, 'scheduler_clinics@example.com', ROLE_PATIENT_SCHEDULER)
+
+    response = client.get(
+        '/api/clinics',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert isinstance(data.get('clinics'), list)
+    assert len(data['clinics']) >= 1
+    clinic_ids = {c['id'] for c in data['clinics'] if isinstance(c, dict) and c.get('id')}
+    assert 'general-neurology' in clinic_ids

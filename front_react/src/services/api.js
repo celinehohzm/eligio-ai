@@ -189,6 +189,10 @@ class ApiService {
     return this.request(`/referrals${search}`);
   }
 
+  async getClinics() {
+    return this.request('/clinics');
+  }
+
   async getReferral(submissionId) {
     return this.request(`/referrals/${submissionId}`);
   }

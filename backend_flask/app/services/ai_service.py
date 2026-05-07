@@ -259,6 +259,11 @@ Referral packet text:
         }
         return self._kb_cache
 
+    def get_clinics_catalog(self):
+        kb = self._load_knowledge_base()
+        clinics = kb.get("clinics")
+        return clinics if isinstance(clinics, list) else []
+
     def get_routing_recommendation(self, triage_profile, reason_for_referral=None):
         if not self.is_openai_configured() or not self.client:
             return self._fallback_routing()
