@@ -1324,7 +1324,7 @@ export default function ReferralQueue() {
                         >
                           <p className="text-sm font-semibold text-gray-900">{item.label}</p>
                           <p className="mt-1 text-xs leading-5 text-gray-500">{item.description}</p>
-                          <p className="mt-3 text-sm leading-6 text-gray-700">{item.value}</p>
+                          <p className="mt-3 whitespace-pre-line text-sm leading-6 text-gray-700">{item.value}</p>
                         </div>
                       ))}
                     </div>

@@ -1,5 +1,6 @@
 from openai import OpenAI
 from config.config import Config
+import ast
 import logging
 import json
 import re
@@ -133,53 +134,88 @@ class AIService:
 
         try:
             truncated_text = normalized_text[:18000]
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content":
-                        """
-You extract structured neurology referral intake details for patient schedulers.
-This packet may contain multiple documents — prioritize the referral cover sheet
-and the stated reason for referral over background medical notes.
-Do NOT extract cardiovascular or primary care content unless directly relevant
-to the neurological presentation.
+            system_prompt = """
+You extract neurology referral intake facts for schedulers. The packet may include
+multiple OCR'd documents. Prioritize the referral cover sheet, reason for referral,
+and the attending note that documents the visit leading to this referral.
 
-Return strict JSON with exactly these keys:
+Rules:
+- Copy findings from the chart when they are written there; paraphrase only lightly for brevity.
+- If something is not documented, use null or empty arrays — never invent imaging, exam, or labs.
+- imagingStudies must list only studies that appear in the packet; use one object per distinct study
+  (modality + region). If a single report discusses multiple regions under one combined impression,
+  use one object with a clear study title and that impression verbatim or lightly shortened.
+- Ignore unrelated primary-care filler unless it changes neurologic triage.
+- imagingStudies and physicalExamSystems are the primary outputs for imaging and exam.
+  Use imagingResults / physicalExam only when you cannot fit content into those arrays (otherwise null).
+
+Return a single JSON object with exactly these keys:
+
+Core scheduling fields (strings or null):
 - insurance
 - medicalRecordNumber
 - chiefComplaint
-- historyOfPresentIllness      (neurological presentation only)
-- physicalExam                  (neurological exam findings only)
-- imagingResults
-- labResults
+- historyOfPresentIllness   (neurologic HPI only; no exam or imaging)
+- labResults              (plain text: one line per test "Name: value", or a short paragraph)
 - otherProviders
-- urgency                       (emergent / urgent / routine — check cover sheet checkboxes)
-- urgencyFlags                  (array — any red flag language or checked urgency boxes)
-- symptomOnset                  (acute / subacute / chronic / null)
-- symptomProgression            (episodic / worsening / stable / improving / null)
-- laterality                    (unilateral / bilateral / unclear / null)
-- symptomDuration               (how long each episode lasts if episodic, else null)
-- priorWorkup                   (imaging or labs already done and their results)
-- referringProviderSpecialty    (specialty of referring doctor if stated, else null)
-Use null if a field is not clearly stated. Do not invent any details.
-                        """,
-                    },
-                    {
-                        "role": "user",
-                        "content":
-                        f"""
-                        Reason for referral: {reason_for_referral or 'Not provided'}
+- urgency                 ("emergent" | "urgent" | "routine" | null)
+- urgencyFlags            (array of short strings; [] if none)
+- symptomOnset            ("acute" | "subacute" | "chronic" | null)
+- symptomProgression      ("episodic" | "worsening" | "stable" | "improving" | null)
+- laterality              ("unilateral" | "bilateral" | "unclear" | null)
+- symptomDuration         (string or null)
+- priorWorkup             (short string summary or null)
+- referringProviderSpecialty (string or null)
 
-                        Referral packet text:
-                        {truncated_text}
-                        """,
-                    },
-                ],
-                temperature=0.1,
-                max_tokens=700,
-            )
+imagingStudies (array, required — use [] if no completed imaging is documented):
+Each element must be an object with:
+- "study": string (e.g. "MRI Brain without contrast")
+- "date": string or null (e.g. "03/2026" or "Feb 2025" if explicitly stated)
+- "impression": string — radiology or clinician impression/findings for that study only
+
+physicalExamSystems (array, required — use [] if no objective exam is documented):
+Each element: { "system": string, "findings": string }
+Use concise system labels: Vitals, General, Mental Status, Cranial Nerves, Motor,
+Sensory, Reflexes, Gait, Coordination, Other. Only objective exam lines — exclude
+symptom history, Assessment, Impression, and Plan.
+
+Legacy string fields (prefer null; filled only if arrays above are empty and you need one string):
+- imagingResults
+- physicalExam
+
+Example shape (illustrative only):
+{"imagingStudies":[{"study":"CT Head","date":"02/2025","impression":"No acute hemorrhage."}],
+ "physicalExamSystems":[{"system":"Vitals","findings":"BP 120/80, HR 72, RR 16"},
+  {"system":"Neuro","findings":"CN II-XII intact; strength 5/5 throughout."}]}
+""".strip()
+            user_message = f"""
+Reason for referral (cover sheet): {reason_for_referral or 'Not provided'}
+
+Referral packet text:
+{truncated_text}
+""".strip()
+
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    temperature=0.05,
+                    max_tokens=1400,
+                    response_format={"type": "json_object"},
+                )
+            except Exception:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    temperature=0.05,
+                    max_tokens=1400,
+                )
 
             content = response.choices[0].message.content or "{}"
             parsed = self._parse_json_object(content)
@@ -402,6 +438,427 @@ Return only valid JSON. No preamble or markdown.
                 return cleaned
         return None
 
+    def _triage_mixed_field(self, payload, *keys):
+        """Scalar string, dict, or list for fields the model may return structured."""
+        for key in keys:
+            value = payload.get(key) if isinstance(payload, dict) else None
+            if value is None:
+                continue
+            if isinstance(value, (dict, list)):
+                return value
+            cleaned = str(value).strip()
+            if cleaned and cleaned.lower() != "null":
+                return cleaned
+        return None
+
+    def _balanced_delimiter_segment(self, text, open_ch="{", close_ch="}"):
+        if not text:
+            return None
+        start = text.find(open_ch)
+        if start < 0:
+            return None
+        depth = 0
+        for idx in range(start, len(text)):
+            ch = text[idx]
+            if ch == open_ch:
+                depth += 1
+            elif ch == close_ch:
+                depth -= 1
+                if depth == 0:
+                    return text[start : idx + 1]
+        return None
+
+    def _try_parse_structured(self, value):
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, list):
+            return value
+        if value is None or not isinstance(value, str):
+            return None
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if stripped.startswith("{") or stripped.startswith("["):
+            try:
+                return json.loads(stripped)
+            except json.JSONDecodeError:
+                pass
+            try:
+                return ast.literal_eval(stripped)
+            except (ValueError, SyntaxError, TypeError):
+                pass
+        return None
+
+    def _try_parse_structured_loose(self, value):
+        parsed = self._try_parse_structured(value)
+        if parsed is not None:
+            return parsed
+        if not isinstance(value, str) or "{" not in value:
+            return None
+        segment = self._balanced_delimiter_segment(value, "{", "}")
+        if not segment:
+            return None
+        try:
+            return ast.literal_eval(segment)
+        except (ValueError, SyntaxError, TypeError):
+            pass
+        try:
+            return json.loads(segment)
+        except json.JSONDecodeError:
+            return None
+
+    def _looks_like_serialized_mapping(self, text):
+        if not text or not isinstance(text, str):
+            return False
+        s = text.strip()
+        return s.startswith("{") and ":" in s and s.endswith("}")
+
+    def _strip_lab_report_headers(self, text):
+        cleaned = re.sub(r"\s*\(\s*compiled\s*\)\s*", " ", str(text or ""), flags=re.IGNORECASE)
+        cleaned = re.sub(
+            r"\bprinted\s+\d{1,2}/\d{1,2}/\d{2,4}\b",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(r"\s+", " ", cleaned)
+        return cleaned.strip(" ;,:-")
+
+    def _format_laboratory_mapping(self, data):
+        if not isinstance(data, dict) or not data:
+            return None
+        lines = []
+        for raw_key, raw_val in data.items():
+            key = str(raw_key).strip()
+            if not key:
+                continue
+            val = self._strip_lab_report_headers(str(raw_val).strip())
+            val = re.sub(r"\s*\(\s*normal\s*\)\s*$", "", val, flags=re.IGNORECASE).strip()
+            val = re.sub(r"\s*\(\s*nl\s*\)\s*$", "", val, flags=re.IGNORECASE).strip()
+            if val:
+                lines.append(f"{key}: {val}")
+        return "\n".join(lines) if lines else None
+
+    def _format_imaging_study_blocks_from_dict(self, payload):
+        if not isinstance(payload, dict) or not payload:
+            return None
+        blocks = []
+        for study_name, impression in sorted(payload.items(), key=lambda item: str(item[0]).lower()):
+            study = str(study_name).strip()
+            if impression is None:
+                continue
+            body = str(impression).strip()
+            if not body:
+                continue
+            if re.match(r"^impression\s*:", body, flags=re.IGNORECASE):
+                blocks.append(f"{study}:\n{body}")
+            else:
+                blocks.append(f"{study}:\nImpression: {body}")
+        return "\n\n".join(blocks) if blocks else None
+
+    def _format_imaging_study_blocks_from_list(self, rows):
+        if not isinstance(rows, list) or not rows:
+            return None
+        blocks = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            study_raw = (
+                row.get("study")
+                or row.get("name")
+                or row.get("modality")
+                or row.get("exam")
+                or row.get("title")
+            )
+            study = str(study_raw or "").strip()
+            dt_raw = row.get("date") or row.get("studyDate") or row.get("performed")
+            dt = str(dt_raw or "").strip()
+            impression = (
+                row.get("impression")
+                or row.get("findings")
+                or row.get("summary")
+                or row.get("result")
+                or row.get("report")
+            )
+            if impression is None:
+                continue
+            body = str(impression).strip()
+            if not body:
+                continue
+            if study and dt:
+                header = f"{study} ({dt})"
+            elif study:
+                header = study
+            elif dt:
+                header = dt
+            else:
+                header = "Imaging"
+            if re.match(r"^impression\s*:", body, flags=re.IGNORECASE):
+                blocks.append(f"{header}:\n{body}")
+            else:
+                blocks.append(f"{header}:\nImpression: {body}")
+        return "\n\n".join(blocks) if blocks else None
+
+    def _format_imaging_candidate_value(self, candidate_value):
+        structured = None
+        if isinstance(candidate_value, (dict, list)):
+            structured = candidate_value
+        elif isinstance(candidate_value, str):
+            structured = self._try_parse_structured_loose(candidate_value)
+        if isinstance(structured, dict):
+            return self._format_imaging_study_blocks_from_dict(structured)
+        if isinstance(structured, list):
+            formatted = self._format_imaging_study_blocks_from_list(structured)
+            if formatted:
+                return formatted
+        return None
+
+    def _normalize_physical_exam_display(self, text):
+        if text is None:
+            return None
+        s = re.sub(r"\s+", " ", str(text)).strip()
+        if not s:
+            return None
+
+        tail_split = re.split(r"\b(?:assessment|plan|impression)\s*:", s, maxsplit=1, flags=re.IGNORECASE)
+        s = tail_split[0].strip(" -:\u2013\u2014")
+
+        s = re.sub(r"^\([^)]{1,360}\)\s*[-\u2013\u2014:]?\s*", "", s)
+
+        anchor = re.search(
+            r"\b(?:exam|vitals|neurologic(?:al)?\s+exam|physical\s+exam)\s*:",
+            s,
+            flags=re.IGNORECASE,
+        )
+        if anchor and anchor.start() > 100:
+            anchor_lo = re.search(
+                r"\b(?:neuro|cn|motor|reflexes|gait|vitals)\s*:",
+                s,
+                flags=re.IGNORECASE,
+            )
+            if not anchor_lo or anchor_lo.start() > anchor.start():
+                s = s[anchor.start() :]
+
+        break_labels = (
+            "Vitals",
+            "Neuro",
+            "Neurologic",
+            "Neurological",
+            "CN",
+            "Cranial Nerves",
+            "Motor",
+            "Sensory",
+            "Reflexes",
+            "Gait",
+            "Coordination",
+            "Cerebellar",
+            "Mental Status",
+            "Exam",
+        )
+        pattern = (
+            r"(?<=[^\n])\s+(?=("
+            + "|".join(re.escape(label) for label in break_labels)
+            + r")\s*:)"
+        )
+        s = re.sub(pattern, "\n", s, flags=re.IGNORECASE)
+
+        s = re.sub(r"^Exam:\s*", "", s, flags=re.IGNORECASE)
+        s = re.sub(r"\nExam:\s*", "\n", s, flags=re.IGNORECASE)
+        s = re.sub(r"[ \t]*\n[ \t]*", "\n", s)
+        return s.strip() or None
+
+    def _multiline_clinical_cleanup(self, text):
+        if text is None:
+            return None
+        lines = []
+        for line in str(text).splitlines():
+            cleaned = re.sub(r"[ \t]+", " ", line).strip()
+            if cleaned:
+                lines.append(cleaned)
+        if not lines:
+            return None
+        return "\n".join(lines)
+
+    def _strip_assessment_plan_tail(self, text):
+        if not text or not isinstance(text, str):
+            return text
+        parts = re.split(r"(?im)^\s*(?:assessment|plan)\s*:", text, maxsplit=1)
+        return parts[0].strip()
+
+    def _is_substantial_freeform_physical(self, text):
+        stripped = (text or "").strip()
+        if len(stripped) < 12:
+            return False
+        lowered = stripped.lower()
+        concise = (
+            "nonfocal",
+            "unremarkable",
+            "wnl",
+            "within normal limits",
+            "grossly intact",
+            "alert and oriented",
+            "negative exam",
+            "benign",
+        )
+        if any(token in lowered for token in concise):
+            return True
+        if len(stripped) < 30:
+            return False
+        markers = (
+            "vital",
+            "neuro",
+            "motor",
+            "reflex",
+            "gait",
+            "cranial",
+            "cn ",
+            "cn:",
+            "strength",
+            "sensation",
+            "exam:",
+            "mental status",
+            "coordination",
+            "tone",
+        )
+        return any(marker in lowered for marker in markers)
+
+    def _is_substantial_freeform_imaging(self, text):
+        stripped = (text or "").strip()
+        if len(stripped) < 12:
+            return False
+        lowered = stripped.lower()
+        concise = (
+            "unremarkable",
+            "no acute",
+            "no hemorrhage",
+            "normal ",
+            "negative",
+            "within normal limits",
+            "unchanged",
+            "stable",
+        )
+        if any(token in lowered for token in concise):
+            return True
+        if "impression:" in lowered or "\n" in text:
+            return True
+        if len(stripped) < 22:
+            return False
+        modality_markers = (
+            "mri",
+            "ct head",
+            "ct scan",
+            "pet ",
+            " cta",
+            "cta ",
+            "mra ",
+            " mra",
+            "x-ray",
+            "xr ",
+            "us ",
+            "ultrasound",
+            "imaging",
+            "radiograph",
+            "radiology",
+        )
+        return any(marker in lowered for marker in modality_markers)
+
+    def _physical_exam_from_structured_payload(self, payload):
+        rows = payload.get("physicalExamSystems")
+        if rows is None:
+            rows = payload.get("physical_exam_systems")
+        if not isinstance(rows, list) or not rows:
+            return None
+        lines = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            system = (row.get("system") or row.get("name") or row.get("heading") or "").strip()
+            findings = (
+                row.get("findings") or row.get("text") or row.get("exam") or row.get("value") or ""
+            ).strip()
+            if not findings:
+                continue
+            if system:
+                lines.append(f"{system}: {findings}")
+            else:
+                lines.append(findings)
+        if not lines:
+            return None
+        return self._multiline_clinical_cleanup("\n".join(lines))
+
+    def _imaging_from_structured_payload(self, payload):
+        rows = payload.get("imagingStudies")
+        if rows is None:
+            rows = payload.get("imaging_studies")
+        if not isinstance(rows, list) or not rows:
+            return None
+        formatted = self._format_imaging_study_blocks_from_list(rows)
+        return formatted
+
+    def _resolve_physical_exam_for_triage(self, payload, source_text, physical_candidate):
+        structured = self._physical_exam_from_structured_payload(payload)
+        if structured:
+            return structured[:2000]
+
+        if physical_candidate is not None:
+            if isinstance(physical_candidate, dict):
+                line_parts = []
+                for key, val in physical_candidate.items():
+                    kk = str(key).strip()
+                    vv = str(val).strip() if val is not None else ""
+                    if not vv:
+                        continue
+                    line_parts.append(f"{kk}: {vv}" if kk else vv)
+                merged = self._multiline_clinical_cleanup("\n".join(line_parts))
+                if merged:
+                    return merged[:2000]
+            elif isinstance(physical_candidate, list):
+                line_parts = []
+                for item in physical_candidate:
+                    if isinstance(item, dict):
+                        label = item.get("system") or item.get("label") or item.get("name")
+                        detail = item.get("findings") or item.get("value") or item.get("text")
+                        label = str(label or "").strip()
+                        detail = str(detail or "").strip()
+                        if detail:
+                            line_parts.append(f"{label}: {detail}" if label else detail)
+                    elif item:
+                        line_parts.append(str(item).strip())
+                merged = self._multiline_clinical_cleanup("\n".join(line_parts))
+                if merged:
+                    return merged[:2000]
+            elif isinstance(physical_candidate, str):
+                trimmed = self._strip_assessment_plan_tail(physical_candidate)
+                cleaned = self._multiline_clinical_cleanup(trimmed)
+                if cleaned and self._is_substantial_freeform_physical(cleaned):
+                    return cleaned[:2000]
+
+        if source_text:
+            return self._build_physical_exam_summary(source_text, None)
+
+        if isinstance(physical_candidate, str):
+            return self._first_sentence(physical_candidate)
+        return None
+
+    def _resolve_imaging_for_triage(self, payload, source_text, imaging_candidate):
+        structured = self._imaging_from_structured_payload(payload)
+        if structured:
+            return structured[:4000]
+
+        formatted = self._format_imaging_candidate_value(imaging_candidate)
+        if formatted:
+            return formatted[:4000]
+
+        if isinstance(imaging_candidate, str):
+            cleaned = self._multiline_clinical_cleanup(imaging_candidate.strip())
+            if cleaned and self._is_substantial_freeform_imaging(cleaned):
+                return cleaned[:4000]
+
+        if source_text:
+            return self._build_imaging_results_summary(source_text, None)
+
+        return self._normalize_clinical_phrase(imaging_candidate)
+
     def _normalize_referral_summary(self, payload, reason_for_referral=None):
         chief_complaint = self._clean_payload_value(payload, "chiefComplaint", "chief_complaint")
         evaluation = self._clean_payload_value(payload, "evaluation")
@@ -417,27 +874,27 @@ Return only valid JSON. No preamble or markdown.
         }
 
     def _normalize_referral_triage_profile(self, payload, reason_for_referral=None, source_text=None):
-        physical_exam_candidate = self._clean_payload_value(
+        physical_exam_candidate = self._triage_mixed_field(
             payload,
             "physicalExam",
             "physical_exam",
         )
-        imaging_candidate = self._clean_payload_value(
+        imaging_candidate = self._triage_mixed_field(
             payload,
             "imagingResults",
             "imaging_results",
         )
-        physical_exam = (
-            self._build_physical_exam_summary(source_text, physical_exam_candidate)
-            if source_text
-            else self._first_sentence(physical_exam_candidate)
+        physical_exam = self._resolve_physical_exam_for_triage(
+            payload,
+            source_text,
+            physical_exam_candidate,
         )
-        imaging_results = (
-            self._build_imaging_results_summary(source_text, imaging_candidate)
-            if source_text
-            else self._normalize_clinical_phrase(imaging_candidate)
+        imaging_results = self._resolve_imaging_for_triage(
+            payload,
+            source_text,
+            imaging_candidate,
         )
-        lab_candidate = self._clean_payload_value(
+        lab_candidate = self._triage_mixed_field(
             payload,
             "labResults",
             "lab_results",
@@ -828,25 +1285,17 @@ Return only valid JSON. No preamble or markdown.
                 continue
             sentence_candidates.append(sentence)
 
-        ordered_candidates = []
-        seen = set()
-        for raw in [*section_candidates, *sentence_candidates]:
-            normalized = self._first_sentence(raw)
-            if not normalized:
-                continue
-            key = normalized.lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            ordered_candidates.append(normalized)
-
-        meaningful = [item for item in ordered_candidates if not self._is_vitals_only_exam(item)]
-        if meaningful:
-            exam_priority_markers = [
+        def exam_anchor_score(blob):
+            if not blob:
+                return 0
+            lowered = str(blob).lower()
+            markers = (
                 "strength",
                 "reflex",
                 "gait",
                 "cranial nerve",
+                "cn ",
+                "cn:",
                 "motor",
                 "sensory",
                 "sensation",
@@ -855,19 +1304,55 @@ Return only valid JSON. No preamble or markdown.
                 "ataxia",
                 "nystagmus",
                 "focal deficit",
-            ]
-            meaningful.sort(
-                key=lambda item: (
-                    sum(marker in item.lower() for marker in exam_priority_markers),
-                    len(item),
-                ),
-                reverse=True,
+                "vitals",
             )
-            return meaningful[0]
+            return sum(1 for marker in markers if marker in lowered)
 
-        candidate_normalized = self._first_sentence(candidate_value)
-        if candidate_normalized and not self._is_vitals_only_exam(candidate_normalized):
-            return candidate_normalized
+        best_blob = None
+        for raw in [*section_candidates, *sentence_candidates]:
+            if not raw:
+                continue
+            formatted = self._normalize_physical_exam_display(raw)
+            if not formatted:
+                continue
+            if self._is_vitals_only_exam(formatted) and exam_anchor_score(formatted) < 2:
+                continue
+            if best_blob is None or len(formatted) > len(best_blob):
+                best_blob = formatted
+
+        candidate_blob = None
+        if candidate_value is not None:
+            if isinstance(candidate_value, dict):
+                candidate_blob = self._normalize_physical_exam_display(
+                    "\n".join(f"{str(k).strip()}: {str(v).strip()}" for k, v in candidate_value.items()),
+                )
+            elif isinstance(candidate_value, list):
+                parts = []
+                for item in candidate_value:
+                    if isinstance(item, dict):
+                        label = item.get("label") or item.get("name") or item.get("system")
+                        detail = item.get("value") or item.get("text") or item.get("finding")
+                        if label and detail:
+                            parts.append(f"{label}: {detail}")
+                        elif detail:
+                            parts.append(str(detail))
+                    else:
+                        parts.append(str(item))
+                candidate_blob = self._normalize_physical_exam_display("\n".join(parts))
+            else:
+                candidate_blob = self._normalize_physical_exam_display(
+                    self._normalize_clinical_phrase(candidate_value),
+                )
+        if candidate_blob and not self._is_vitals_only_exam(candidate_blob):
+            if best_blob is None or len(candidate_blob) > len(best_blob):
+                best_blob = candidate_blob
+
+        if best_blob:
+            return best_blob[:1600]
+
+        if candidate_blob:
+            return candidate_blob[:1600]
+
         return None
 
     def _extract_impression_section(self, text_content):
@@ -940,29 +1425,64 @@ Return only valid JSON. No preamble or markdown.
         return findings
 
     def _build_imaging_results_summary(self, text_content, candidate_value=None):
+        formatted_candidate = self._format_imaging_candidate_value(candidate_value)
+        if formatted_candidate:
+            return formatted_candidate
+
         impression = self._extract_impression_section(text_content)
+        positives = self._extract_positive_imaging_findings(text_content, max_items=3)
+        positives = [
+            item
+            for item in positives
+            if item and not self._looks_like_serialized_mapping(item)
+        ]
 
-        positives = self._extract_positive_imaging_findings(text_content, max_items=1)
-        if candidate_value:
-            candidate_normalized = self._first_sentence(candidate_value)
-            if candidate_normalized:
-                positives = [item for item in positives if item.lower() != candidate_normalized.lower()]
-                positives.insert(0, candidate_normalized)
-                positives = positives[:1]
-
-        if impression and positives:
-            return f"Impression: {impression}. Key positive finding: {positives[0]}."
+        blocks = []
         if impression:
-            return f"Impression: {impression}."
+            blocks.append(f"Impression: {impression}")
         if positives:
-            return f"Key positive finding: {positives[0]}."
-        return None
+            for item in positives:
+                cleaned = self._normalize_clinical_phrase(item)
+                if cleaned and not self._looks_like_serialized_mapping(cleaned):
+                    blocks.append(cleaned)
+        if not blocks:
+            return None
+        if len(blocks) == 1:
+            return blocks[0]
+        return "\n\n".join(blocks)
 
     def _build_lab_results_summary(self, text_content, candidate_value=None):
+        structured = None
+        if isinstance(candidate_value, dict):
+            structured = candidate_value
+        elif isinstance(candidate_value, str):
+            structured = self._try_parse_structured_loose(candidate_value)
+            if not structured:
+                stripped = self._strip_lab_report_headers(candidate_value)
+                structured = self._try_parse_structured_loose(stripped)
+
+        if isinstance(structured, dict):
+            formatted = self._format_laboratory_mapping(structured)
+            if formatted:
+                return formatted
+
         source = str(text_content or "")
         section_candidates = []
         for label in ["lab results", "labs", "laboratory", "laboratory data"]:
             section_candidates.extend(self._extract_section_values(source, label))
+
+        for raw in section_candidates:
+            parsed = self._try_parse_structured_loose(raw)
+            if isinstance(parsed, dict):
+                formatted = self._format_laboratory_mapping(parsed)
+                if formatted:
+                    return formatted
+            cleaned = self._strip_lab_report_headers(raw)
+            parsed = self._try_parse_structured_loose(cleaned)
+            if isinstance(parsed, dict):
+                formatted = self._format_laboratory_mapping(parsed)
+                if formatted:
+                    return formatted
 
         sentence_candidates = []
         for sentence in self._split_sentences(source):
@@ -971,11 +1491,16 @@ Return only valid JSON. No preamble or markdown.
                 sentence_candidates.append(sentence)
 
         values = []
-        if candidate_value:
-            values.append(candidate_value)
+        if isinstance(candidate_value, str):
+            scrubbed = self._strip_lab_report_headers(candidate_value)
+            if scrubbed and not self._looks_like_serialized_mapping(scrubbed):
+                values.append(scrubbed)
         values.extend(section_candidates)
         values.extend(sentence_candidates)
-        return self._format_clinical_list(values, max_items=2)
+        flattened = self._format_clinical_list(values, max_items=3)
+        if flattened:
+            flattened = self._strip_lab_report_headers(flattened)
+        return flattened
 
     def _build_other_providers_summary(self, text_content, candidate_value=None):
         source = str(text_content or "")
