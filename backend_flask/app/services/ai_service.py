@@ -150,6 +150,10 @@ class AIService:
                             - imagingResults
                             - labResults
                             - otherProviders
+                            For imagingResults, include only:
+                            1) the report Impression, and
+                            2) key positive imaging findings.
+                            Do not copy full findings sections, and do not include purely negative statements.
                             Use null if a field is not clearly stated. Do not invent any details.
                         """,
                     },
@@ -170,7 +174,11 @@ class AIService:
 
             content = response.choices[0].message.content or "{}"
             parsed = self._parse_json_object(content)
-            normalized_profile = self._normalize_referral_triage_profile(parsed, reason_for_referral)
+            normalized_profile = self._normalize_referral_triage_profile(
+                parsed,
+                reason_for_referral,
+                normalized_text,
+            )
             normalized_profile["medicalRecordNumber"] = self._select_best_mrn_candidate(
                 normalized_text,
                 normalized_profile.get("medicalRecordNumber"),
@@ -261,7 +269,27 @@ class AIService:
             "diagnosis": diagnosis,
         }
 
-    def _normalize_referral_triage_profile(self, payload, reason_for_referral=None):
+    def _normalize_referral_triage_profile(self, payload, reason_for_referral=None, source_text=None):
+        physical_exam_candidate = self._clean_payload_value(
+            payload,
+            "physicalExam",
+            "physical_exam",
+        )
+        imaging_candidate = self._clean_payload_value(
+            payload,
+            "imagingResults",
+            "imaging_results",
+        )
+        physical_exam = (
+            self._build_physical_exam_summary(source_text, physical_exam_candidate)
+            if source_text
+            else self._first_sentence(physical_exam_candidate)
+        )
+        imaging_results = (
+            self._build_imaging_results_summary(source_text, imaging_candidate)
+            if source_text
+            else self._normalize_clinical_phrase(imaging_candidate)
+        )
         return {
             "insurance": self._clean_payload_value(payload, "insurance"),
             "medicalRecordNumber": self._clean_payload_value(
@@ -283,16 +311,8 @@ class AIService:
                 "history_of_present_illness",
                 "hpi",
             ),
-            "physicalExam": self._clean_payload_value(
-                payload,
-                "physicalExam",
-                "physical_exam",
-            ),
-            "imagingResults": self._clean_payload_value(
-                payload,
-                "imagingResults",
-                "imaging_results",
-            ),
+            "physicalExam": physical_exam,
+            "imagingResults": imaging_results,
             "labResults": self._clean_payload_value(
                 payload,
                 "labResults",
@@ -321,6 +341,23 @@ class AIService:
                 return value
 
         return None
+
+    def _extract_section_values(self, text_content, label):
+        content = str(text_content or "")
+        if not content.strip():
+            return []
+
+        patterns = [
+            rf"{label}\s*[:\-]\s*(.+?)(?=\s+[A-Z][A-Za-z ]{{2,30}}\s*[:\-]|$)",
+            rf"{label}\s+(.+?)(?=\s+[A-Z][A-Za-z ]{{2,30}}\s*[:\-]|$)",
+        ]
+        values = []
+        for pattern in patterns:
+            for match in re.finditer(pattern, content, flags=re.IGNORECASE | re.DOTALL):
+                value = re.sub(r"\s+", " ", match.group(1)).strip(" .;")
+                if value:
+                    values.append(value)
+        return values
 
     def _extract_labeled_value(self, text_content, labels, max_words=32):
         content = str(text_content or "")
@@ -499,6 +536,201 @@ class AIService:
             return " ".join(matches)
         return None
 
+    def _is_vitals_only_exam(self, text):
+        lowered = str(text or "").lower()
+        if not lowered.strip():
+            return True
+
+        vitals_markers = (
+            "vitals",
+            "blood pressure",
+            "bp ",
+            "pulse",
+            "heart rate",
+            "temperature",
+            "temp",
+            "respiratory rate",
+            "rr ",
+            "spo2",
+            "oxygen saturation",
+            "height",
+            "weight",
+            "bmi",
+        )
+        exam_finding_markers = (
+            "strength",
+            "reflex",
+            "gait",
+            "cranial nerve",
+            "sensation",
+            "motor",
+            "coordination",
+            "ataxia",
+            "nystagmus",
+            "focal",
+            "deficit",
+            "romberg",
+            "tone",
+            "weakness",
+            "numbness",
+        )
+
+        has_vitals = any(marker in lowered for marker in vitals_markers)
+        has_exam_findings = any(marker in lowered for marker in exam_finding_markers)
+        return has_vitals and not has_exam_findings
+
+    def _normalize_clinical_phrase(self, text):
+        if text is None:
+            return None
+        cleaned = re.sub(r"\s+", " ", str(text)).strip(" .;,:-")
+        if not cleaned:
+            return None
+        # Remove wrapping quotes that frequently appear in OCR/model output.
+        cleaned = cleaned.strip("\"'`")
+        return cleaned or None
+
+    def _first_sentence(self, text):
+        normalized = self._normalize_clinical_phrase(text)
+        if not normalized:
+            return None
+        parts = re.split(r"(?<=[.!?])\s+", normalized, maxsplit=1)
+        return self._normalize_clinical_phrase(parts[0])
+
+    def _build_physical_exam_summary(self, text_content, candidate_value=None):
+        source = str(text_content or "")
+        section_candidates = []
+        for label in ["neurological exam", "neuro exam", "physical exam", "exam"]:
+            section_candidates.extend(self._extract_section_values(source, label))
+
+        sentence_candidates = []
+        for sentence in self._split_sentences(source):
+            lowered = sentence.lower()
+            if not any(
+                token in lowered
+                for token in [
+                    "exam",
+                    "neurologic",
+                    "neurological",
+                    "strength",
+                    "reflex",
+                    "gait",
+                    "cranial nerve",
+                    "sensation",
+                ]
+            ):
+                continue
+            sentence_candidates.append(sentence)
+
+        ordered_candidates = []
+        seen = set()
+        for raw in [*section_candidates, *sentence_candidates]:
+            normalized = self._first_sentence(raw)
+            if not normalized:
+                continue
+            key = normalized.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            ordered_candidates.append(normalized)
+
+        meaningful = [item for item in ordered_candidates if not self._is_vitals_only_exam(item)]
+        if meaningful:
+            # Use the last meaningful candidate to favor the most recent exam block.
+            return meaningful[-1]
+
+        candidate_normalized = self._first_sentence(candidate_value)
+        if candidate_normalized and not self._is_vitals_only_exam(candidate_normalized):
+            return candidate_normalized
+        return None
+
+    def _extract_impression_section(self, text_content):
+        content = str(text_content or "")
+        if not content.strip():
+            return None
+
+        pattern = re.compile(
+            r"(?:^|\n)\s*impression\s*[:\-]?\s*(.+?)(?=(?:\n\s*(?:findings?|history|comparison|technique|assessment|plan|diagnosis|exam(?:ination)?|clinical|recommendation)s?\s*[:\-])|\n{2,}|$)",
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        match = pattern.search(content)
+        if not match:
+            return None
+
+        captured = re.sub(r"\s+", " ", match.group(1))
+        return self._first_sentence(captured)
+
+    def _extract_positive_imaging_findings(self, text_content, max_items=1):
+        sentences = self._split_sentences(text_content)
+        if not sentences:
+            return []
+
+        positive_keywords = (
+            "shows",
+            "showing",
+            "demonstrates",
+            "demonstrated",
+            "reveals",
+            "revealed",
+            "noted",
+            "evidence of",
+            "consistent with",
+            "compatible with",
+            "positive for",
+            "abnormal",
+            "lesion",
+            "mass",
+            "stenosis",
+            "herniation",
+            "edema",
+            "hemorrhage",
+            "infarct",
+            "enhancement",
+        )
+        negative_markers = (
+            "no ",
+            "without ",
+            "negative for",
+            "unremarkable",
+            "normal ",
+            "not seen",
+            "no evidence",
+        )
+        modality_markers = ("mri", "ct", "x-ray", "radiograph", "ultrasound", "scan", "imaging")
+
+        findings = []
+        for sentence in sentences:
+            lowered = sentence.lower()
+            if not any(marker in lowered for marker in modality_markers + positive_keywords):
+                continue
+            if any(marker in lowered for marker in negative_markers):
+                continue
+            normalized = self._first_sentence(sentence)
+            if not normalized:
+                continue
+            findings.append(normalized)
+            if len(findings) >= max_items:
+                break
+        return findings
+
+    def _build_imaging_results_summary(self, text_content, candidate_value=None):
+        impression = self._extract_impression_section(text_content)
+
+        positives = self._extract_positive_imaging_findings(text_content, max_items=1)
+        if candidate_value:
+            candidate_normalized = self._first_sentence(candidate_value)
+            if candidate_normalized:
+                positives = [item for item in positives if item.lower() != candidate_normalized.lower()]
+                positives.insert(0, candidate_normalized)
+                positives = positives[:1]
+
+        if impression and positives:
+            return f"Impression: {impression}. Key positive finding: {positives[0]}."
+        if impression:
+            return f"Impression: {impression}."
+        if positives:
+            return f"Key positive finding: {positives[0]}."
+        return None
+
     def _heuristic_referral_triage_profile(self, text_content, reason_for_referral=None):
         flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
 
@@ -541,7 +773,7 @@ class AIService:
             )
         )
 
-        physical_exam = (
+        physical_exam_candidate = (
             self._extract_section_value(flattened_text, "physical exam")
             or self._extract_section_value(flattened_text, "neurological exam")
             or self._extract_section_value(flattened_text, "exam")
@@ -559,8 +791,9 @@ class AIService:
                 ],
             )
         )
+        physical_exam = self._build_physical_exam_summary(text_content, physical_exam_candidate)
 
-        imaging_results = (
+        imaging_candidate = (
             self._extract_section_value(flattened_text, "imaging")
             or self._extract_section_value(flattened_text, "imaging results")
             or self._extract_section_value(flattened_text, "radiology")
@@ -569,6 +802,7 @@ class AIService:
                 ["mri", "ct", "scan", "imaging", "radiology", "x-ray"],
             )
         )
+        imaging_results = self._build_imaging_results_summary(text_content, imaging_candidate)
 
         lab_results = (
             self._extract_section_value(flattened_text, "lab results")
