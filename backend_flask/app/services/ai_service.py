@@ -158,7 +158,8 @@ Core scheduling fields (strings or null):
 - historyOfPresentIllness   (neurologic HPI only; no exam or imaging)
 - labResults              (plain text ONLY: one line per lab, "TestName: value and unit".
   Stop before checklists like "[X] Imaging", footers, CONFIDENTIAL, page numbers,
-  problem-list tails (e.g. "T2DM", "former smoker", "per PCP records"), or Prior auth.)
+  problem-list tails (e.g. "T2DM", "former smoker", "per PCP records"), or Prior auth.
+  Do not append "; pending", "pending Consider", or other filler after values; list each test once only.)
 - otherProviders          (prefer null when using otherProvidersList below)
 - otherProvidersList      (array, required — use [] if none): each item
   { "name": "Dr. Jane Smith, MD", "specialty": "Neurology" | null }
@@ -637,13 +638,58 @@ Return only valid JSON. No preamble or markdown.
             return raw
         return "\n".join(pieces)
 
+    def _strip_single_lab_line_trailing_junk(self, line):
+        """Remove OCR/model tails such as '; pending Consider' after the numeric result."""
+        if not line or not isinstance(line, str):
+            return line
+        ln = line.strip()
+        if not ln:
+            return ln
+        ln = re.sub(r"\s*;\s*pending\b.*$", "", ln, flags=re.IGNORECASE).strip()
+        ln = re.sub(r"\s+\bpending\s+\w+\s*$", "", ln, flags=re.IGNORECASE).strip()
+        ln = re.sub(r"\s*;\s*\bconsider\b\s*$", "", ln, flags=re.IGNORECASE).strip()
+        ln = ln.rstrip(";").strip()
+        ln = re.sub(r"\s*;\s*$", "", ln).strip()
+        return ln
+
+    def _dedupe_lab_lines_preserving_order(self, lines):
+        """Drop duplicate analytes (e.g. repeated CK) keeping the first line."""
+        seen = set()
+        out = []
+        for ln in lines:
+            if not ln or ":" not in ln:
+                continue
+            label = ln.split(":", 1)[0].strip()
+            key = re.sub(r"[^a-z0-9]+", "", label.lower())
+            if not key:
+                continue
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(ln)
+        return out
+
+    def _polish_lab_result_lines(self, text):
+        """Per-line junk strip + dedupe after expansion."""
+        if not text or not isinstance(text, str):
+            return None
+        raw_lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        cleaned = []
+        for ln in raw_lines:
+            cl = self._strip_single_lab_line_trailing_junk(ln)
+            if cl and ":" in cl:
+                cleaned.append(cl)
+        deduped = self._dedupe_lab_lines_preserving_order(cleaned)
+        return "\n".join(deduped) if deduped else None
+
     def _finalize_lab_results_display(self, text):
         if text is None:
             return None
         trimmed = self._strip_lab_context_junk(text if isinstance(text, str) else str(text))
         if not trimmed:
             return None
-        return self._expand_lab_runon_to_lines(trimmed)
+        expanded = self._expand_lab_runon_to_lines(trimmed)
+        return self._polish_lab_result_lines(expanded)
 
     def _lab_results_from_candidate_only(self, lab_candidate):
         if lab_candidate is None:
