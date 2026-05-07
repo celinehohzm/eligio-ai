@@ -49,52 +49,131 @@ const HARD_STOPS = [
   },
 ];
 
-const NEUROLOGY_KEYWORDS = [
-  "neurology",
-  "migraine",
-  "headache",
-  "seizure",
-  "epilepsy",
-  "stroke",
-  "multiple sclerosis",
-  "ms",
-  "neuropathy",
-  "parkinson",
-  "tremor",
-  "memory",
-  "movement disorder",
-  "dizziness",
+// Keyword groups are organized by clinical sub-area so the routing rationale can
+// surface *why* a packet leans a certain way (e.g. "headache disorders" vs
+// "neuromuscular disease") instead of a single keyword. The literal department
+// names ("neurology", "neurosurgery", "physical medicine and rehabilitation")
+// are intentionally excluded — every Johns Hopkins Neurology fax references the
+// department in its header and would otherwise produce circular reasoning.
+//
+// Keep these mirrored 1:1 with NEUROLOGY_KEYWORD_GROUPS / NEUROSURGERY_KEYWORD_GROUPS
+// / PMR_KEYWORD_GROUPS in backend_flask/scripts/check_routing_logic.py, which
+// runs the same scoring against every mock PDF for regression checks.
+const NEUROLOGY_KEYWORD_GROUPS = [
+  { category: "headache disorders", keywords: ["migraine", "headache", "cephalalgia"] },
+  { category: "seizure or epilepsy", keywords: ["seizure", "epilepsy", "convulsion"] },
+  {
+    category: "cerebrovascular concerns",
+    keywords: ["stroke", "tia", "transient ischemic attack"],
+  },
+  { category: "demyelinating disease", keywords: ["multiple sclerosis", "demyelinating"] },
+  {
+    category: "movement disorders",
+    keywords: ["parkinson", "tremor", "dystonia", "movement disorder"],
+  },
+  {
+    category: "cognitive concerns",
+    keywords: ["memory loss", "cognitive decline", "dementia"],
+  },
+  {
+    category: "neuromuscular disease",
+    keywords: [
+      "neuropathy",
+      "myopathy",
+      "motor neuron disease",
+      "als",
+      "myasthenia",
+      "muscular dystrophy",
+    ],
+  },
+  {
+    category: "neuralgia or neuropathic pain",
+    keywords: ["trigeminal neuralgia", "neuralgia"],
+  },
+  { category: "vestibular symptoms", keywords: ["dizziness", "vertigo"] },
 ];
 
-const NEUROSURGERY_KEYWORDS = [
-  "neurosurgery",
-  "spine",
-  "spinal",
-  "aneurysm",
-  "brain tumor",
-  "tumor",
-  "hydrocephalus",
-  "shunt",
-  "chiari",
-  "disc",
-  "radiculopathy",
-  "surgery",
-  "surgical",
+const NEUROSURGERY_KEYWORD_GROUPS = [
+  {
+    category: "spine pathology",
+    keywords: [
+      "spinal stenosis",
+      "lumbar stenosis",
+      "cervical stenosis",
+      "disc herniation",
+      "radiculopathy",
+      "myelopathy",
+      "cord compression",
+    ],
+  },
+  {
+    category: "neurovascular surgical lesions",
+    keywords: [
+      "aneurysm",
+      "avm",
+      "arteriovenous malformation",
+      "cavernoma",
+      "subarachnoid hemorrhage",
+      "intracerebral hemorrhage",
+    ],
+  },
+  {
+    category: "neuro-oncology",
+    keywords: [
+      "brain tumor",
+      "brain mass",
+      "intracranial mass",
+      "intracranial lesion",
+      "extra-axial mass",
+      "extra-axial lesion",
+      "glioma",
+      "meningioma",
+      "pituitary mass",
+      "pituitary tumor",
+      "metastasis",
+    ],
+  },
+  {
+    category: "CSF disorders",
+    keywords: ["hydrocephalus", "shunt", "chiari", "normal pressure hydrocephalus"],
+  },
+  {
+    category: "surgical evaluation",
+    keywords: [
+      "surgical resection",
+      "decompression",
+      "craniotomy",
+      "subdural hematoma",
+      "epidural hematoma",
+    ],
+  },
 ];
 
-const PMR_KEYWORDS = [
-  "physical medicine",
-  "physical medicine and rehabilitation",
-  "pm&r",
-  "pmr",
-  "physiatry",
-  "physiatrist",
-  "rehabilitation",
-  "rehab",
-  "spasticity",
-  "concussion",
-  "brain injury",
+const PMR_KEYWORD_GROUPS = [
+  {
+    category: "rehabilitation services",
+    keywords: [
+      "rehabilitation",
+      "rehab",
+      "physiatry",
+      "physiatrist",
+      "neurorehabilitation",
+    ],
+  },
+  { category: "spasticity or tone management", keywords: ["spasticity", "baclofen pump"] },
+  {
+    category: "concussion or TBI",
+    keywords: ["concussion", "traumatic brain injury", "post-concussive"],
+  },
 ];
+
+const KEYWORD_DISPLAY_OVERRIDES = {
+  als: "ALS",
+  tia: "TIA",
+  avm: "AVM",
+  csf: "CSF",
+  tbi: "TBI",
+};
 
 const TRIAGE_HIGHLIGHT_FIELDS = [
   {
@@ -163,54 +242,106 @@ const buildReferralCorpus = (referral) => {
     .toLowerCase();
 };
 
-const getKeywordHits = (corpus, keywords) => keywords.filter((keyword) => corpus.includes(keyword));
+const escapeForRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const formatKeywordLabel = (keyword) =>
-  keyword
+const matchesKeyword = (corpus, keyword) => {
+  const pattern = new RegExp(`\\b${escapeForRegex(keyword)}\\b`, "i");
+  return pattern.test(corpus);
+};
+
+const formatKeywordLabel = (keyword) => {
+  const lower = keyword.toLowerCase();
+  if (KEYWORD_DISPLAY_OVERRIDES[lower]) {
+    return KEYWORD_DISPLAY_OVERRIDES[lower];
+  }
+  return lower
     .split(/\s+/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+};
+
+const formatKeywordList = (keywords) => keywords.map(formatKeywordLabel).join(", ");
+
+const joinPhrases = (phrases) => {
+  if (phrases.length === 0) return "";
+  if (phrases.length === 1) return phrases[0];
+  if (phrases.length === 2) return `${phrases[0]} and ${phrases[1]}`;
+  return `${phrases.slice(0, -1).join(", ")}, and ${phrases[phrases.length - 1]}`;
+};
+
+const collectDepartmentSignal = (corpus, label, groups) => {
+  const matchedGroups = groups
+    .map((group) => ({
+      category: group.category,
+      keywords: group.keywords.filter((keyword) => matchesKeyword(corpus, keyword)),
+    }))
+    .filter((group) => group.keywords.length > 0);
+
+  const totalHits = matchedGroups.reduce((sum, group) => sum + group.keywords.length, 0);
+  return { label, matchedGroups, totalHits };
+};
+
+const formatSignalGroups = (matchedGroups) =>
+  joinPhrases(
+    matchedGroups.map((group) => `${group.category} (${formatKeywordList(group.keywords)})`),
+  );
 
 const inferDepartmentGuidance = (referral) => {
   const corpus = buildReferralCorpus(referral);
-  const neurologyHits = getKeywordHits(corpus, NEUROLOGY_KEYWORDS);
-  const neurosurgeryHits = getKeywordHits(corpus, NEUROSURGERY_KEYWORDS);
-  const pmrHits = getKeywordHits(corpus, PMR_KEYWORDS);
   const departmentSignals = [
-    { label: "Neurology", hits: neurologyHits },
-    { label: "Neurosurgery", hits: neurosurgeryHits },
-    { label: "Physical Medicine and Rehabilitation", hits: pmrHits },
-  ].sort((left, right) => right.hits.length - left.hits.length);
+    collectDepartmentSignal(corpus, "Neurology", NEUROLOGY_KEYWORD_GROUPS),
+    collectDepartmentSignal(corpus, "Neurosurgery", NEUROSURGERY_KEYWORD_GROUPS),
+    collectDepartmentSignal(
+      corpus,
+      "Physical Medicine and Rehabilitation",
+      PMR_KEYWORD_GROUPS,
+    ),
+  ].sort((left, right) => right.totalHits - left.totalHits);
 
-  if (departmentSignals[0].hits.length === 0) {
+  const leader = departmentSignals[0];
+  const runnerUp = departmentSignals[1];
+
+  if (!leader || leader.totalHits === 0) {
     return {
       label: "Needs clarification",
       status: "Needs confirmation",
-      detail: "The referral summary does not clearly identify the correct department yet.",
+      detail:
+        "No specialty-specific clinical signals were detected in the packet, so the correct department is not yet clear.",
       value: "Clarify the intended department before routing.",
     };
   }
 
-  if (
-    departmentSignals[0].hits.length > 0 &&
-    departmentSignals[0].hits.length === departmentSignals[1].hits.length
-  ) {
+  if (runnerUp && leader.totalHits === runnerUp.totalHits) {
     return {
       label: "Needs clarification",
       status: "Needs confirmation",
-      detail: "The packet contains mixed specialty signals, so the scheduler should confirm the correct department on the call.",
-      value: "Mixed specialty cues in the current referral packet.",
+      detail:
+        `The packet contains balanced signals for ${leader.label} (${formatSignalGroups(leader.matchedGroups)}) ` +
+        `and ${runnerUp.label} (${formatSignalGroups(runnerUp.matchedGroups)}). ` +
+        "Confirm the correct department on the call before scheduling.",
+      value: `Mixed signals between ${leader.label} and ${runnerUp.label}.`,
     };
   }
 
-  const label = departmentSignals[0].label;
-  const strongestHit = departmentSignals[0].hits[0];
+  const competing = departmentSignals.slice(1).filter((signal) => signal.totalHits > 0);
+  const leaderSummary = formatSignalGroups(leader.matchedGroups);
+
+  let detail = `The packet leans toward ${leader.label} based on ${leaderSummary}.`;
+  if (competing.length > 0) {
+    const competingSummary = competing
+      .map((signal) => `${signal.label} (${formatSignalGroups(signal.matchedGroups)})`)
+      .join("; ");
+    detail += ` Lower-priority signals also reference ${competingSummary}, so confirm the right department on the call before routing.`;
+  } else {
+    detail +=
+      " No competing Neurosurgery or PM&R signals were detected in the packet — confirm the routing on the call.";
+  }
 
   return {
-    label,
+    label: leader.label,
     status: "Review",
-    detail: `The current packet leans toward ${label} because it references ${formatKeywordLabel(strongestHit)}. Confirm that routing on the call.`,
-    value: `Likely ${label}, based on the current referral summary.`,
+    detail,
+    value: `Likely ${leader.label} based on ${leaderSummary}.`,
   };
 };
 
