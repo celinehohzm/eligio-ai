@@ -156,8 +156,14 @@ Core scheduling fields (strings or null):
 - medicalRecordNumber
 - chiefComplaint
 - historyOfPresentIllness   (neurologic HPI only; no exam or imaging)
-- labResults              (plain text: one line per test "Name: value", or a short paragraph)
-- otherProviders
+- labResults              (plain text ONLY: one line per lab, "TestName: value and unit".
+  Stop before checklists like "[X] Imaging", footers, CONFIDENTIAL, page numbers,
+  problem-list tails (e.g. "T2DM", "former smoker", "per PCP records"), or Prior auth.)
+- otherProviders          (prefer null when using otherProvidersList below)
+- otherProvidersList      (array, required — use [] if none): each item
+  { "name": "Dr. Jane Smith, MD", "specialty": "Neurology" | null }
+  Only real clinicians with a person name. Omit institution headers, Signature lines,
+  CONFIDENTIAL banners, fax footers, and page numbers.
 - urgency                 ("emergent" | "urgent" | "routine" | null)
 - urgencyFlags            (array of short strings; [] if none)
 - symptomOnset            ("acute" | "subacute" | "chronic" | null)
@@ -183,10 +189,12 @@ Legacy string fields (prefer null; filled only if arrays above are empty and you
 - imagingResults
 - physicalExam
 
-Example shape (illustrative only):
+Example shape (illustrative only — labResults must use real newline characters between lines in the JSON string):
 {"imagingStudies":[{"study":"CT Head","date":"02/2025","impression":"No acute hemorrhage."}],
  "physicalExamSystems":[{"system":"Vitals","findings":"BP 120/80, HR 72, RR 16"},
-  {"system":"Neuro","findings":"CN II-XII intact; strength 5/5 throughout."}]}
+  {"system":"Neuro","findings":"CN II-XII intact; strength 5/5 throughout."}],
+ "otherProvidersList":[{"name":"Dr. Anita Patel, MD","specialty":"Primary Care"}],
+ "otherProviders":null}
 """.strip()
             user_message = f"""
 Reason for referral (cover sheet): {reason_for_referral or 'Not provided'}
@@ -538,6 +546,265 @@ Return only valid JSON. No preamble or markdown.
             if val:
                 lines.append(f"{key}: {val}")
         return "\n".join(lines) if lines else None
+
+    def _strip_lab_context_junk(self, text):
+        """Remove checklist rows, fax footers, and problem-list tails merged into lab strings."""
+        if not text or not isinstance(text, str):
+            return text
+        text = text.strip()
+        if not text:
+            return None
+
+        if "\n" in text:
+            lines_in = [ln.strip() for ln in text.splitlines() if ln.strip()]
+            cleaned_lines = []
+            for ln in lines_in:
+                cl = self._strip_lab_report_headers(ln)
+                if cl:
+                    cleaned_lines.append(cl)
+            s = "\n".join(cleaned_lines)
+        else:
+            s = self._strip_lab_report_headers(text)
+
+        if not s:
+            return None
+
+        cut_at = len(s)
+        junk_markers = [
+            r";\s*\[X\]",
+            r";\s*\[\s*\]",
+            r"\s\[X\]\s",
+            r"\s\[ \]\s",
+            r"\bprior auth\b",
+            r"\bdischarge summary\b",
+            r"\bmed list\b",
+            r"\bimaging reports\b",
+            r"CONFIDENTIAL",
+            r"EXTERNAL REFERRAL",
+            r"JOHNS HOPKINS",
+            r"Johns Hopkins",
+            r"Page\s+\d+\s+of\s+\d+",
+            r"\bSignature\b",
+            r"\bper PCP records\b",
+            r"\bformer smoker\b",
+            r"\bT2DM\b",
+            r"\),\s*T2DM\b",
+            r"\*\*\*",
+        ]
+        for pat in junk_markers:
+            m = re.search(pat, s, flags=re.IGNORECASE)
+            if m and m.start() > 24:
+                cut_at = min(cut_at, m.start())
+        s = s[:cut_at].strip()
+        s = re.split(r"(?:\n|^)\s*(?:\[X\]|\[ \])\s", s, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+
+        lines_out = []
+        for ln in s.splitlines():
+            if re.search(
+                r"^\s*(?:\[X\])|CONFIDENTIAL|EXTERNAL REFERRAL|per PCP records|former smoker|T2DM\b",
+                ln,
+                re.IGNORECASE,
+            ):
+                break
+            if re.search(r";\s*\[X\]", ln, re.IGNORECASE):
+                ln = re.split(r";\s*\[X\]", ln, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+                if ln:
+                    lines_out.append(ln)
+                break
+            lines_out.append(ln)
+        s = "\n".join(lines_out) if lines_out else s
+        s = s.rstrip(" ;–—-")
+        return s or None
+
+    def _expand_lab_runon_to_lines(self, text):
+        """Split a single-line panel (Sodium: … Potassium: …) into one line per test."""
+        if not text or not isinstance(text, str):
+            return None
+        raw = text.strip()
+        if not raw:
+            return None
+        lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+        if len(lines) >= 3 and all(":" in ln for ln in lines):
+            return "\n".join(lines)
+        single = " ".join(lines)
+        single = re.sub(r"\s+", " ", single)
+        pieces = re.split(
+            r"\s+(?=(?:[A-Z][A-Za-z0-9()/\-\s]{0,55}|[a-z][a-zA-Z]{2,18}):\s*)",
+            single,
+        )
+        pieces = [p.strip() for p in pieces if p.strip() and ":" in p]
+        if len(pieces) <= 1:
+            return raw
+        return "\n".join(pieces)
+
+    def _finalize_lab_results_display(self, text):
+        if text is None:
+            return None
+        trimmed = self._strip_lab_context_junk(text if isinstance(text, str) else str(text))
+        if not trimmed:
+            return None
+        return self._expand_lab_runon_to_lines(trimmed)
+
+    def _lab_results_from_candidate_only(self, lab_candidate):
+        if lab_candidate is None:
+            return None
+        if isinstance(lab_candidate, dict):
+            return self._format_laboratory_mapping(lab_candidate)
+        if isinstance(lab_candidate, str):
+            structured = self._try_parse_structured_loose(lab_candidate)
+            if isinstance(structured, dict):
+                return self._format_laboratory_mapping(structured)
+            return self._normalize_clinical_phrase(lab_candidate)
+        return None
+
+    def _strip_other_provider_segment(self, text):
+        if not text or not isinstance(text, str):
+            return ""
+        s = text.strip()
+        s = re.split(
+            r"(?:CONFIDENTIAL|EXTERNAL REFERRAL|Signature\b|Medical Record\s*—|Page\s+\d+\s+of\s+\d+)",
+            s,
+            maxsplit=1,
+            flags=re.IGNORECASE,
+        )[0]
+        s = re.sub(r"\s*[—\-]{2,}\s*", " ", s)
+        return s.strip(" ;,—-")
+
+    def _looks_like_provider_name(self, s):
+        if not s or not isinstance(s, str):
+            return False
+        t = s.strip()
+        if len(t) < 3 or len(t) > 160:
+            return False
+        low = t.lower()
+        banned = (
+            "confidential",
+            "external referral",
+            "johns hopkins",
+            "neurology confidential",
+            "medical record",
+            "fax",
+            "referral —",
+            "page 2 of",
+            "page 1 of",
+            "signature",
+            "not identified",
+        )
+        if any(b in low for b in banned):
+            return False
+        if re.search(r"\[X\]|\[ \]", t):
+            return False
+        if re.search(r"\bdr\.?\s+[a-z]", low):
+            return True
+        if re.search(r"\b(md|do|d\.o\.|np|pa-c|pa)\b", low):
+            return True
+        if re.match(r"^[A-Z]\.?\s+[A-Za-z\-']{2,}", t):
+            return True
+        return False
+
+    def _normalize_provider_identity_key(self, display_name):
+        if not display_name:
+            return ""
+        s = display_name.lower()
+        s = re.sub(r"\([^)]*\)", " ", s)
+        s = re.sub(r"\b(dr\.?|doctor|prof\.?)\s+", "", s)
+        s = re.sub(
+            r"\b(md|do|d\.o\.|np|pa-c|pa|phd|mba|mph)\b\.?",
+            "",
+            s,
+        )
+        s = re.sub(r"[^a-z0-9]+", " ", s)
+        return s.strip()
+
+    def _provider_display_score(self, display):
+        if not display:
+            return 0
+        score = len(display)
+        if re.search(r"\([^)]{2,80}\)", display):
+            score += 40
+        if re.search(r"\b(MD|DO|NP|PA)\b", display):
+            score += 15
+        if re.search(r"\bDr\.?\s", display, flags=re.IGNORECASE):
+            score += 10
+        return score
+
+    def _format_single_provider_row(self, row):
+        if not isinstance(row, dict):
+            return ""
+        name = (row.get("name") or row.get("provider") or row.get("fullName") or "").strip()
+        spec = (row.get("specialty") or row.get("specialtyName") or row.get("department") or "").strip()
+        if not name and not spec:
+            return ""
+        if name and spec:
+            if spec.lower() in name.lower() and "(" in name and ")" in name:
+                return name
+            return f"{name} ({spec})"
+        return name or spec
+
+    def _dedupe_provider_displays(self, displays):
+        order = []
+        best = {}
+        for item in displays:
+            item = self._strip_other_provider_segment(item)
+            if not item or not self._looks_like_provider_name(item):
+                continue
+            key = self._normalize_provider_identity_key(item)
+            if not key or len(key) < 4:
+                continue
+            if key not in best:
+                order.append(key)
+                best[key] = item
+            elif self._provider_display_score(item) > self._provider_display_score(best[key]):
+                best[key] = item
+        if not order:
+            return None
+        return "; ".join(best[k] for k in order)
+
+    def _other_providers_from_structured_payload(self, payload):
+        rows = payload.get("otherProvidersList")
+        if rows is None:
+            rows = payload.get("other_providers_list") or payload.get("careTeam")
+        if not isinstance(rows, list) or not rows:
+            return None
+        displays = []
+        for row in rows:
+            if isinstance(row, dict):
+                line = self._format_single_provider_row(row)
+            else:
+                line = str(row).strip()
+            line = self._strip_other_provider_segment(line)
+            if line and self._looks_like_provider_name(line):
+                displays.append(line)
+        return self._dedupe_provider_displays(displays)
+
+    def _resolve_other_providers_for_triage(self, payload, source_text, candidate):
+        structured = self._other_providers_from_structured_payload(payload)
+        if structured:
+            return structured
+        built = (
+            self._build_other_providers_summary(source_text, candidate) if source_text else None
+        )
+        if built:
+            return built
+        if isinstance(candidate, list):
+            displays = []
+            for row in candidate:
+                if isinstance(row, dict):
+                    line = self._format_single_provider_row(row)
+                else:
+                    line = str(row).strip()
+                if line:
+                    displays.append(line)
+            return self._dedupe_provider_displays(displays)
+        if isinstance(candidate, str):
+            trimmed = self._strip_other_provider_segment(candidate)
+            if trimmed and self._looks_like_provider_name(trimmed):
+                parts = re.split(r"\s*;\s*", trimmed)
+                displays = [p.strip() for p in parts if p.strip()]
+                if len(displays) > 1:
+                    return self._dedupe_provider_displays(displays)
+                return trimmed
+        return None
 
     def _format_imaging_study_blocks_from_dict(self, payload):
         if not isinstance(payload, dict) or not payload:
@@ -899,20 +1166,20 @@ Return only valid JSON. No preamble or markdown.
             "labResults",
             "lab_results",
         )
-        other_providers_candidate = self._clean_payload_value(
+        other_providers_candidate = self._triage_mixed_field(
             payload,
             "otherProviders",
             "other_providers",
         )
-        lab_results = (
+        lab_results = self._finalize_lab_results_display(
             self._build_lab_results_summary(source_text, lab_candidate)
             if source_text
-            else self._normalize_clinical_phrase(lab_candidate)
+            else self._lab_results_from_candidate_only(lab_candidate),
         )
-        other_providers = (
-            self._build_other_providers_summary(source_text, other_providers_candidate)
-            if source_text
-            else self._normalize_clinical_phrase(other_providers_candidate)
+        other_providers = self._resolve_other_providers_for_triage(
+            payload,
+            source_text,
+            other_providers_candidate,
         )
         return {
             "insurance": self._clean_payload_value(payload, "insurance"),
@@ -1505,21 +1772,57 @@ Return only valid JSON. No preamble or markdown.
     def _build_other_providers_summary(self, text_content, candidate_value=None):
         source = str(text_content or "")
         section_candidates = []
-        for label in ["other providers", "care team", "referring provider", "consulting provider"]:
+        for label in [
+            "other providers",
+            "care team",
+            "referring provider",
+            "consulting provider",
+            "primary care provider",
+            "pcp",
+        ]:
             section_candidates.extend(self._extract_section_values(source, label))
 
         sentence_candidates = []
         for sentence in self._split_sentences(source):
             lowered = sentence.lower()
-            if any(keyword in lowered for keyword in ["dr.", "provider", "specialist", "referred to", "follows with"]):
+            if (
+                "dr." in lowered
+                or "d.o." in lowered
+                or "physician" in lowered
+                or re.search(r"\b(md|do|np|pa)\b", lowered)
+                or "provider" in lowered
+                or "specialist" in lowered
+                or "referred to" in lowered
+                or "follows with" in lowered
+                or re.search(r"\bpcp\b", lowered)
+            ):
                 sentence_candidates.append(sentence)
 
-        values = []
+        raw_blobs = []
         if candidate_value:
-            values.append(candidate_value)
-        values.extend(section_candidates)
-        values.extend(sentence_candidates)
-        return self._format_clinical_list(values, max_items=2)
+            if isinstance(candidate_value, str):
+                raw_blobs.append(candidate_value)
+            elif isinstance(candidate_value, list):
+                for row in candidate_value:
+                    if isinstance(row, dict):
+                        line = self._format_single_provider_row(row)
+                        if line:
+                            raw_blobs.append(line)
+                    elif row:
+                        raw_blobs.append(str(row))
+            else:
+                raw_blobs.append(str(candidate_value))
+        raw_blobs.extend(section_candidates)
+        raw_blobs.extend(sentence_candidates)
+
+        displays = []
+        for blob in raw_blobs:
+            for part in re.split(r"(?:;|\n)+", str(blob or "")):
+                cleaned = self._strip_other_provider_segment(part)
+                if cleaned and self._looks_like_provider_name(cleaned):
+                    displays.append(cleaned)
+
+        return self._dedupe_provider_displays(displays)
 
     def _heuristic_referral_triage_profile(self, text_content, reason_for_referral=None):
         flattened_text = re.sub(r"\s+", " ", text_content or "").strip()
@@ -1602,7 +1905,9 @@ Return only valid JSON. No preamble or markdown.
                 ["lab", "cbc", "cmp", "tsh", "b12", "esr", "crp", "a1c", "ck", "csf"],
             )
         )
-        lab_results = self._build_lab_results_summary(text_content, lab_results)
+        lab_results = self._finalize_lab_results_display(
+            self._build_lab_results_summary(text_content, lab_results),
+        )
 
         other_providers = (
             self._extract_section_value(flattened_text, "other providers")
