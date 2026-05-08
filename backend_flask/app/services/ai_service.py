@@ -264,13 +264,162 @@ Referral packet text:
         clinics = kb.get("clinics")
         return clinics if isinstance(clinics, list) else []
 
+    def _referral_routing_text_blob(self, triage_profile, reason_for_referral=None):
+        parts = [
+            triage_profile.get("chiefComplaint"),
+            triage_profile.get("historyOfPresentIllness"),
+            triage_profile.get("physicalExam"),
+            triage_profile.get("imagingResults"),
+            triage_profile.get("labResults"),
+            triage_profile.get("priorWorkup"),
+            triage_profile.get("otherProviders"),
+            reason_for_referral,
+            triage_profile.get("urgency"),
+            " ".join(triage_profile.get("urgencyFlags") or []),
+        ]
+        return " ".join(str(p) for p in parts if p).strip().lower()
+
+    def _score_clinic_match(self, clinic, text_lower):
+        cond_hits = 0
+        sym_hits = 0
+        for c in clinic.get("conditions") or []:
+            lc = str(c).strip().lower()
+            if len(lc) >= 4 and lc in text_lower:
+                cond_hits += 1
+        for s in clinic.get("key_symptoms") or []:
+            ls = str(s).strip().lower()
+            if len(ls) >= 4 and ls in text_lower:
+                sym_hits += 1
+        total = cond_hits * 3 + sym_hits * 2
+        return total, cond_hits, sym_hits
+
+    def _normalize_providers_for_clinic(self, clinic_id, parsed_providers, clinic_id_map):
+        clinic = clinic_id_map.get(clinic_id) or {}
+        kb_list = clinic.get("providers") if isinstance(clinic.get("providers"), list) else []
+        canon_upper_to_exact = {str(p).strip().upper(): str(p).strip() for p in kb_list}
+        out = []
+        seen = set()
+        if isinstance(parsed_providers, list):
+            for name in parsed_providers:
+                key = str(name).strip().upper()
+                exact = canon_upper_to_exact.get(key)
+                if exact and exact.upper() not in seen:
+                    seen.add(exact.upper())
+                    out.append(exact)
+        if out:
+            return out[:3]
+        return [str(p).strip() for p in kb_list[:3] if str(p).strip()]
+
+    def _normalize_alternative_clinics(self, raw, clinic_id_map):
+        out = []
+        if not isinstance(raw, list):
+            return out
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            cid = str(item.get("id") or "").strip()
+            if cid not in clinic_id_map:
+                continue
+            row = clinic_id_map[cid]
+            out.append({
+                "id": cid,
+                "name": row.get("name", ""),
+                "reason": item.get("reason") or "",
+            })
+            if len(out) >= 2:
+                break
+        return out
+
+    def _kb_heuristic_routing(self, triage_profile, reason_for_referral=None):
+        kb = self._load_knowledge_base()
+        clinics = kb.get("clinics") if isinstance(kb.get("clinics"), list) else []
+        if not clinics:
+            return self._fallback_routing()
+
+        clinic_id_map = {
+            str(clinic.get("id")): clinic
+            for clinic in clinics
+            if isinstance(clinic, dict) and clinic.get("id")
+        }
+
+        text = self._referral_routing_text_blob(triage_profile, reason_for_referral)
+        if not text:
+            text = (reason_for_referral or "").strip().lower()
+
+        general_id = "general-neurology"
+        scored = []
+        for clinic in clinics:
+            if not isinstance(clinic, dict):
+                continue
+            cid = str(clinic.get("id") or "")
+            if not cid:
+                continue
+            total, cond_hits, sym_hits = self._score_clinic_match(clinic, text)
+            scored.append((total, cond_hits, sym_hits, cid))
+
+        non_general = [row for row in scored if row[3] != general_id]
+        best = max(non_general, key=lambda x: (x[0], x[1], x[2])) if non_general else None
+
+        if best is None or best[0] <= 0:
+            winner_id = general_id
+            confidence = 0.35
+            rationale = (
+                "Heuristic routing using clinics.json only: no substantive overlap was found "
+                "between the referral excerpt and specific clinic conditions or key symptoms, "
+                "so the knowledge base default is General Neurology. Nuanced exclusions and "
+                "priorities in routing_rules.md are not fully applied without AI routing—manual "
+                "review is recommended."
+            )
+        else:
+            winner_id = best[3]
+            tie_bonus = min(best[1] + best[2], 8)
+            confidence = min(0.48 + 0.05 * tie_bonus, 0.82)
+            rationale = (
+                "Heuristic routing using clinics.json: scored the referral text against each "
+                "clinic's listed conditions and key symptoms "
+                f"({best[1]} condition phrase hits, {best[2]} symptom phrase hits for the chosen clinic). "
+                "routing_rules.md provides additional exclusions and triage nuance; verify especially "
+                "when urgency flags or 'do not route here' entries may apply."
+            )
+
+        canonical = clinic_id_map.get(winner_id, {})
+        display_name = canonical.get("name") or "General Neurology"
+        providers = self._normalize_providers_for_clinic(winner_id, [], clinic_id_map)
+
+        alternative_clinics = []
+        sorted_rest = sorted(
+            (row for row in non_general if row[3] != winner_id and row[0] > 0),
+            key=lambda x: (-x[0], -x[1], -x[2]),
+        )
+        for row in sorted_rest[:2]:
+            cid = row[3]
+            alternative_clinics.append({
+                "id": cid,
+                "name": clinic_id_map[cid].get("name", ""),
+                "reason": "Next-highest overlap with clinics.json conditions / symptoms in this referral excerpt.",
+            })
+
+        return {
+            "recommendedClinic": display_name,
+            "recommendedClinicId": winner_id,
+            "confidenceScore": confidence,
+            "confidenceLevel": "high" if confidence >= 0.80 else "medium" if confidence >= 0.60 else "low",
+            "rationale": rationale,
+            "alternativeClinics": alternative_clinics,
+            "urgency": "routine",
+            "escalateForReview": True,
+            "escalationReason": "Heuristic KB routing — confirm against routing_rules.md and clinic exclusions.",
+            "recommendedProviders": providers,
+        }
+
     def get_routing_recommendation(self, triage_profile, reason_for_referral=None):
         if not self.is_openai_configured() or not self.client:
-            return self._fallback_routing()
+            return self._kb_heuristic_routing(triage_profile, reason_for_referral)
         try:
             kb = self._load_knowledge_base()
             clinics = kb.get("clinics") if isinstance(kb.get("clinics"), list) else []
             clinics_text = kb.get("clinics_raw") or json.dumps(clinics, ensure_ascii=False, indent=2)
+            routing_rules = kb.get("routing_rules") or ""
             clinic_id_map = {
                 str(clinic.get("id")): clinic
                 for clinic in clinics
@@ -304,19 +453,31 @@ Reason for referral: {reason_for_referral or 'Not provided'}
                         "role": "system",
                         "content": """
 You are a neurology referral routing assistant at Johns Hopkins Medicine.
-Recommend which neurology subspecialty clinic a patient should be routed to.
+Your ONLY sources for clinic choice, clinic IDs, provider names, exclusions, and intake constraints are:
+(1) the Hopkins clinic knowledge base JSON (clinics.json structure), and
+(2) the Routing guidelines markdown (routing_rules.md).
+
+Recommend which neurology subspecialty clinic the patient should be routed to.
+Rules:
+- recommendedClinicId MUST be copied exactly from the JSON "id" field; recommendedClinic MUST exactly match that object's "name".
+- Honor each clinic's "do_not_route_here" list and urgency-related guidance from BOTH the JSON and the markdown when they apply.
+- recommendedProviders MUST contain only names taken from that clinic's JSON "providers" array (up to 3). Never invent providers.
+- In rationale (2-4 sentences), cite concrete referral findings AND tie them to relevant routing guidelines / clinic scope from the knowledge sources.
+
 Return strict JSON with exactly these keys:
-- recommendedClinic (full clinic name)
-- recommendedClinicId (id from the clinic list)
+- recommendedClinic (must equal JSON name for recommendedClinicId)
+- recommendedClinicId (from JSON only)
 - confidenceScore (float 0.0 to 1.0)
-- rationale (2-3 sentences citing specific clinical features from the referral)
-- alternativeClinics (array of {name, id, reason} — top 2 alternatives)
+- rationale (per rules above)
+- alternativeClinics (array of up to 2 objects {name, id, reason}; ids and names must match JSON entries)
 - urgency (emergent / urgent / routine)
 - escalateForReview (boolean)
 - escalationReason (string if escalateForReview true, else null)
-- recommendedProviders (array of up to 3 provider names from the Hopkins list)
+- recommendedProviders (array of up to 3 strings from that clinic's JSON providers list)
+
 Set escalateForReview true if: confidenceScore < 0.65, urgency is emergent,
-top two clinic scores are within 0.15, or referral is too incomplete to route.
+top two clinic choices conflict per routing_rules.md, or referral is too incomplete to route safely.
+
 Return only valid JSON. No preamble or markdown.
                         """,
                     },
@@ -327,7 +488,7 @@ Return only valid JSON. No preamble or markdown.
                             "for clinic IDs, conditions, routing exclusions, urgency flags, intake requirements, "
                             "age restrictions, and provider names.\n\n"
                             f"Clinics knowledge base JSON:\n{clinics_text}\n\n"
-                            f"Routing guidelines:\n{kb['routing_rules']}\n\n"
+                            f"Routing guidelines (routing_rules.md):\n{routing_rules}\n\n"
                             f"Patient:\n{clinical_summary}"
                         ),
                     },
@@ -347,13 +508,24 @@ Return only valid JSON. No preamble or markdown.
                 else:
                     recommended_clinic_id = "general-neurology"
 
-            recommended_providers = parsed.get("recommendedProviders", [])
-            if not isinstance(recommended_providers, list):
-                recommended_providers = []
-            if not recommended_providers and recommended_clinic_id in clinic_id_map:
-                fallback_providers = clinic_id_map[recommended_clinic_id].get("providers") or []
-                if isinstance(fallback_providers, list):
-                    recommended_providers = fallback_providers[:3]
+            canonical_row = clinic_id_map.get(recommended_clinic_id, {})
+            canonical_name = canonical_row.get("name") if isinstance(canonical_row, dict) else None
+            if canonical_name:
+                recommended_clinic = canonical_name
+
+            parsed_providers = parsed.get("recommendedProviders", [])
+            if not isinstance(parsed_providers, list):
+                parsed_providers = []
+            recommended_providers = self._normalize_providers_for_clinic(
+                recommended_clinic_id,
+                parsed_providers,
+                clinic_id_map,
+            )
+
+            alternative_clinics = self._normalize_alternative_clinics(
+                parsed.get("alternativeClinics"),
+                clinic_id_map,
+            )
 
             return {
                 "recommendedClinic": recommended_clinic,
@@ -361,15 +533,15 @@ Return only valid JSON. No preamble or markdown.
                 "confidenceScore": score,
                 "confidenceLevel": "high" if score >= 0.80 else "medium" if score >= 0.60 else "low",
                 "rationale": parsed.get("rationale", ""),
-                "alternativeClinics": parsed.get("alternativeClinics", []),
+                "alternativeClinics": alternative_clinics,
                 "urgency": parsed.get("urgency", "routine"),
                 "escalateForReview": parsed.get("escalateForReview", score < 0.65),
                 "escalationReason": parsed.get("escalationReason"),
-                "recommendedProviders": recommended_providers[:3],
+                "recommendedProviders": recommended_providers,
             }
         except Exception as exc:
             logging.warning("Routing recommendation failed: %s", exc)
-            return self._fallback_routing()
+            return self._kb_heuristic_routing(triage_profile, reason_for_referral)
 
     def _fallback_routing(self):
         return {
@@ -809,7 +981,8 @@ Return only valid JSON. No preamble or markdown.
                 best[key] = item
         if not order:
             return None
-        return "; ".join(best[k] for k in order)
+        # One provider per line — matches labResults-style multi-line triage fields.
+        return "\n".join(best[k] for k in order)
 
     def _other_providers_from_structured_payload(self, payload):
         rows = payload.get("otherProvidersList")

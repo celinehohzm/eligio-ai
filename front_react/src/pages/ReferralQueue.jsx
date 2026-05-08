@@ -9,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import eligioLogo from "@/assets/eligio-logo.png";
 import apiService from "@/services/api";
-import { getSpecialistMatches, getSpecialistScoreExplanation } from "@/lib/specialists";
 import { toast } from "sonner";
 
 const formatTimestamp = (value) => {
@@ -47,6 +46,13 @@ const HARD_STOPS = [
     title: "Patient in the incorrect department",
     detail: "Do not book until Neurology vs Neurosurgery has been clarified.",
   },
+];
+
+const ROUTING_KB_EXPLANATION = [
+  "Recommended clinic, rationale, alternatives, urgency, and providers are generated on the server from the same sources as automated routing: the Hopkins clinic catalog (clinics.json) and routing guidelines (routing_rules.md).",
+  "When AI routing runs, the model is instructed to use only clinic IDs, names, exclusions, and provider lists from the clinic catalog and to apply routing_rules.md; provider names are normalized to that clinic's JSON provider list.",
+  "When AI routing is off or fails, the server uses a clinics.json phrase overlap heuristic instead; staff should apply routing_rules.md manually in those cases.",
+  "This is decision support only; it does not check live availability, panel closure, or insurance participation.",
 ];
 
 // Keyword groups are organized by clinical sub-area so the routing rationale can
@@ -176,46 +182,77 @@ const KEYWORD_DISPLAY_OVERRIDES = {
 };
 
 const TRIAGE_HIGHLIGHT_FIELDS = [
-  {
-    key: "chiefComplaint",
-    label: "Chief Complaint",
-    description: "Summary from the uploaded document that identifies the primary chief complaint.",
-  },
-  {
-    key: "historyOfPresentIllness",
-    label: "History of Present Illness",
-    description:
-      "Summary from the uploaded document that provides a concise chronological history of the medical condition behind the referral.",
-  },
-  {
-    key: "physicalExam",
-    label: "Physical Exam",
-    description:
-      "Key physical exam findings from the packet, including pertinent positives or negatives for neurological conditions.",
-  },
-  {
-    key: "imagingResults",
-    label: "Imaging Results",
-    description:
-      "Imaging ordered in the packet, if any, and the most important findings from the study.",
-  },
-  {
-    key: "labResults",
-    label: "Lab Results",
-    description:
-      "Positive or negative laboratory findings that appear relevant to neurological evaluation.",
-  },
-  {
-    key: "otherProviders",
-    label: "Other Providers",
-    description:
-      "Current treating clinicians, what they are seeing the patient for, and any additional referrals mentioned in the packet.",
-  },
+  { key: "chiefComplaint", label: "Chief Complaint" },
+  { key: "historyOfPresentIllness", label: "History of Present Illness" },
+  { key: "physicalExam", label: "Physical Exam" },
+  { key: "imagingResults", label: "Imaging Results" },
+  { key: "labResults", label: "Lab Results" },
+  { key: "otherProviders", label: "Other Providers" },
 ];
 
 const cleanValue = (value) => String(value || "").trim();
 const formatDisplayValue = (value, fallback = "Not identified in the uploaded document.") =>
   cleanValue(value) || fallback;
+
+/** Same presentation as Lab Results: one provider per line (API may use \n or ';'). */
+const formatOtherProvidersCardValue = (value, fallback = "Not identified in the uploaded document.") => {
+  const raw = cleanValue(value);
+  if (!raw) {
+    return fallback;
+  }
+  const normalized = raw.replace(/\s*;\s*/g, "\n");
+  const parts = normalized.split("\n").map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 0) {
+    return fallback;
+  }
+  return parts.join("\n");
+};
+
+/** Hopkins catalog names are often "LAST, FIRST MIDDLE" in ALL CAPS — normalize for display. */
+const formatKbProviderDisplayName = (raw) => {
+  const s = cleanValue(raw);
+  if (!s) return s;
+
+  const stripTrailingPunct = (w) => {
+    let end = "";
+    let core = w;
+    while (core.length > 1 && ".,".includes(core.slice(-1))) {
+      end = core.slice(-1) + end;
+      core = core.slice(0, -1);
+    }
+    return { core, end };
+  };
+
+  const formatToken = (token) => {
+    const t = token.trim();
+    if (!t) return t;
+
+    const { core, end } = stripTrailingPunct(t);
+    const u = core.toUpperCase();
+    if (u === "JR") return "Jr." + end.replace(/^\./, "");
+    if (u === "SR") return "Sr." + end.replace(/^\./, "");
+    if (/^[IVX]{1,4}$/.test(u)) return u + end;
+    if (u.length === 1) return u + end;
+
+    const capPart = (part) =>
+      part ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : part;
+
+    const out = core
+      .split("-")
+      .map((segment) => segment.split("'").map(capPart).join("'"))
+      .join("-");
+    return out + end;
+  };
+
+  const commaIdx = s.indexOf(",");
+  if (commaIdx !== -1) {
+    const last = s.slice(0, commaIdx).trim().split(/\s+/).map(formatToken).join(" ");
+    const rest = s.slice(commaIdx + 1).trim().split(/\s+/).map(formatToken).join(" ");
+    return `${last}, ${rest}`;
+  }
+
+  return s.split(/\s+/).map(formatToken).join(" ");
+};
 
 const buildReferralCorpus = (referral) => {
   const patientInfo = referral?.patientInfo || {};
@@ -746,6 +783,11 @@ export default function ReferralQueue() {
     () => selectedReferral?.routingRecommendation || null,
     [selectedReferral],
   );
+  const kbRecommendedProviders = useMemo(() => {
+    const raw = routingRecommendation?.recommendedProviders;
+    return Array.isArray(raw) ? raw.filter((name) => String(name || "").trim()) : [];
+  }, [routingRecommendation]);
+
   const demographicItems = useMemo(
     () => [
       { label: "Name", value: formatDisplayValue(selectedMeta.fullName, "Not provided") },
@@ -760,8 +802,6 @@ export default function ReferralQueue() {
     ],
     [selectedMeta],
   );
-  const specialistMatches = useMemo(() => getSpecialistMatches(selectedReferral, 3), [selectedReferral]);
-  const specialistScoreExplanation = useMemo(() => getSpecialistScoreExplanation(), []);
   const selectedReferralDocument = useMemo(() => {
     const documents = selectedReferral?.documents || [];
     return (
@@ -784,7 +824,9 @@ export default function ReferralQueue() {
             ? formatChiefComplaintCardValue(
                 selectedTriageHighlights[field.key] || selectedMeta.reasonForReferral,
               )
-            : formatDisplayValue(selectedTriageHighlights[field.key]),
+            : field.key === "otherProviders"
+              ? formatOtherProvidersCardValue(selectedTriageHighlights[field.key])
+              : formatDisplayValue(selectedTriageHighlights[field.key]),
       })),
     [selectedMeta.reasonForReferral, selectedTriageHighlights],
   );
@@ -1199,7 +1241,7 @@ export default function ReferralQueue() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">Routing Recommendation</h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        Primary clinic routing generated from extracted triage details and Hopkins routing rules.
+                        Clinic, rationale, and providers are grounded in the server knowledge base (clinic catalog JSON and routing guidelines markdown).
                       </p>
                     </div>
                   </div>
@@ -1277,32 +1319,20 @@ export default function ReferralQueue() {
                       )}
                     </div>
                     <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">Recommended Specialists</p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            Ranked specialist matches from referral evidence and department fit.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-3 grid gap-3">
-                        {specialistMatches.map((match) => (
-                          <div
-                            key={match.id}
-                            className="rounded-lg border border-gray-200 bg-white p-3"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-sm font-semibold text-gray-900">{match.displayName}</p>
-                                <p className="text-xs font-medium text-blue-700">{match.subspecialty}</p>
-                              </div>
-                              <div className="inline-flex items-center rounded-full bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white">
-                                {match.score}%
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-sm font-semibold text-gray-900">Recommended providers</p>
+                      {kbRecommendedProviders.length > 0 ? (
+                        <ul className="mt-3 list-none space-y-2 border-l-2 border-blue-200 pl-4">
+                          {kbRecommendedProviders.map((name) => (
+                            <li key={name} className="text-sm leading-relaxed text-gray-800">
+                              {formatKbProviderDisplayName(name)}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-2 text-sm text-gray-600">
+                          No providers listed for this clinic in the catalog, or routing did not return provider names.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1323,8 +1353,7 @@ export default function ReferralQueue() {
                           className="rounded-xl border border-gray-200 bg-slate-50 p-4"
                         >
                           <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                          <p className="mt-1 text-xs leading-5 text-gray-500">{item.description}</p>
-                          <p className="mt-3 whitespace-pre-line text-sm leading-6 text-gray-700">{item.value}</p>
+                          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">{item.value}</p>
                         </div>
                       ))}
                     </div>
@@ -1390,9 +1419,9 @@ export default function ReferralQueue() {
                 </div>
 
                 <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                  <p className="text-sm font-semibold text-gray-900">How the match percentages are determined</p>
+                  <p className="text-sm font-semibold text-gray-900">How routing recommendations are sourced</p>
                   <div className="mt-2 space-y-2 text-sm leading-6 text-gray-600">
-                    {specialistScoreExplanation.map((line) => (
+                    {ROUTING_KB_EXPLANATION.map((line) => (
                       <p key={line}>{line}</p>
                     ))}
                   </div>
