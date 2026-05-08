@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ClipboardList, FileText, Search, Send, Trash2, UserRound } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  Flag,
+  HelpCircle,
+  Search,
+  Send,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -788,6 +800,27 @@ export default function ReferralQueue() {
     return Array.isArray(raw) ? raw.filter((name) => String(name || "").trim()) : [];
   }, [routingRecommendation]);
 
+  const intakeRequirementsCheck = routingRecommendation?.intakeRequirementsCheck;
+  const intakeCheckItemsSorted = useMemo(() => {
+    const items = intakeRequirementsCheck?.items;
+    if (!Array.isArray(items)) {
+      return [];
+    }
+    const rank = (f) => {
+      if (f === false) return 0;
+      if (f === true) return 2;
+      return 1;
+    };
+    return [...items].sort((a, b) => rank(a?.fulfilled) - rank(b?.fulfilled));
+  }, [intakeRequirementsCheck]);
+
+  const hasIntakeCheckPanel =
+    !!intakeRequirementsCheck &&
+    (intakeCheckItemsSorted.length > 0 ||
+      cleanValue(intakeRequirementsCheck.scopeSummary) ||
+      (Array.isArray(intakeRequirementsCheck.excludedPolicyPoints) &&
+        intakeRequirementsCheck.excludedPolicyPoints.length > 0));
+
   const demographicItems = useMemo(
     () => [
       { label: "Name", value: formatDisplayValue(selectedMeta.fullName, "Not provided") },
@@ -1335,6 +1368,99 @@ export default function ReferralQueue() {
                       )}
                     </div>
                   </div>
+
+                  {hasIntakeCheckPanel ? (
+                    <div className="mt-6 rounded-xl border-2 border-indigo-300 bg-indigo-50/90 p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <Flag className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" aria-hidden />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-900">
+                            Case-scoped intake checklist
+                          </p>
+                          <p className="mt-1 text-xs text-gray-600">
+                            Only intake rules that apply to this referral’s clinical context are listed; the model compares them to OCR text and structured triage fields.
+                          </p>
+                          {cleanValue(intakeRequirementsCheck?.scopeSummary) ? (
+                            <p className="mt-2 rounded-md border border-indigo-200 bg-white/90 px-3 py-2 text-sm leading-6 text-gray-900">
+                              <span className="font-semibold text-indigo-950">Scope: </span>
+                              {intakeRequirementsCheck.scopeSummary}
+                            </p>
+                          ) : null}
+                          {intakeRequirementsCheck?.evaluationUnavailable &&
+                          cleanValue(intakeRequirementsCheck?.evaluationNote) ? (
+                            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950">
+                              {intakeRequirementsCheck.evaluationNote}
+                            </p>
+                          ) : null}
+                          {intakeCheckItemsSorted.length > 0 ? (
+                            <ul className="mt-4 space-y-3">
+                              {intakeCheckItemsSorted.map((item, idx) => {
+                                const ok = item.fulfilled === true;
+                                const missing = item.fulfilled === false;
+                                return (
+                                  <li
+                                    key={`${idx}-${item.requirement?.slice(0, 48) ?? idx}`}
+                                    className={`rounded-lg border px-3 py-3 text-sm leading-relaxed ${
+                                      missing
+                                        ? "border-red-300 bg-red-50/90"
+                                        : ok
+                                          ? "border-emerald-200 bg-white"
+                                          : "border-amber-200 bg-amber-50/70"
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      {missing ? (
+                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+                                      ) : ok ? (
+                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                                      ) : (
+                                        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+                                      )}
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-gray-900">{item.requirement}</p>
+                                        {cleanValue(item.notes) ? (
+                                          <p className="mt-1 text-xs leading-5 text-gray-700">{item.notes}</p>
+                                        ) : null}
+                                        {missing ? (
+                                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-red-800">
+                                            Missing or unclear in packet
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          ) : (
+                            <p className="mt-4 text-sm text-gray-700">
+                              No checklist rows apply to this referral after case scoping (see omitted policy notes below if present).
+                            </p>
+                          )}
+                          {Array.isArray(intakeRequirementsCheck?.excludedPolicyPoints) &&
+                          intakeRequirementsCheck.excludedPolicyPoints.length > 0 ? (
+                            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-100/90 p-3">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                                Clinic policy not applied to this case
+                              </p>
+                              <ul className="mt-2 space-y-3">
+                                {intakeRequirementsCheck.excludedPolicyPoints.map((row, i) => (
+                                  <li key={`exc-${i}-${row.excerpt?.slice(0, 24) ?? i}`} className="text-xs leading-5 text-slate-800">
+                                    {cleanValue(row.excerpt) ? (
+                                      <p className="font-medium text-slate-900">{row.excerpt}</p>
+                                    ) : null}
+                                    {cleanValue(row.reason) ? (
+                                      <p className="mt-0.5 text-slate-600">{row.reason}</p>
+                                    ) : null}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="mt-6">
                     <div className="flex items-start justify-between gap-4">

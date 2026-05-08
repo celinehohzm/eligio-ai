@@ -330,7 +330,324 @@ Referral packet text:
                 break
         return out
 
-    def _kb_heuristic_routing(self, triage_profile, reason_for_referral=None):
+    def _clinic_intake_requirements(self, clinic_id_map, clinic_id):
+        """Plain-text intake_requirements from clinics.json for this clinic id."""
+        if not clinic_id or not isinstance(clinic_id_map, dict):
+            return None
+        row = clinic_id_map.get(str(clinic_id))
+        if not isinstance(row, dict):
+            return None
+        raw = row.get("intake_requirements")
+        if isinstance(raw, str):
+            text = raw.strip()
+            return text or None
+        return None
+
+    def _triage_blob_for_intake_check(self, triage_profile):
+        if not isinstance(triage_profile, dict):
+            return {}
+        keys = (
+            "chiefComplaint",
+            "historyOfPresentIllness",
+            "physicalExam",
+            "imagingResults",
+            "labResults",
+            "otherProviders",
+            "priorWorkup",
+            "urgency",
+            "urgencyFlags",
+            "insurance",
+            "medicalRecordNumber",
+            "referringProviderSpecialty",
+        )
+        return {k: triage_profile.get(k) for k in keys}
+
+    def _intake_policy_sentence_candidates(self, intake_policy):
+        sentences = []
+        for part in re.split(r"(?<=[.!?])\s+", (intake_policy or "").strip()):
+            p = part.strip()
+            if len(p) >= 12:
+                sentences.append(p)
+        if not sentences:
+            stem = (intake_policy or "").strip()
+            if stem:
+                sentences = [stem]
+        return sentences
+
+    def _referral_corpus_for_intake_scoping(
+        self,
+        referral_document_text,
+        triage_profile,
+        reason_for_referral,
+    ):
+        """Lowercase blob for lightweight applicability checks when AI is off."""
+        blob_parts = [
+            str(reason_for_referral or ""),
+            json.dumps(triage_profile or {}, ensure_ascii=False),
+            str(referral_document_text or "")[:12000],
+        ]
+        return " ".join(blob_parts).lower()
+
+    def _intake_sentence_plausible_for_case(self, sentence, corpus_lower):
+        """
+        Drop obvious policy branches that do not match this referral when AI is unavailable.
+        Conservative: prefer keeping items unless strong mismatch.
+        """
+        if not sentence or len(sentence) < 12:
+            return False
+        sl = sentence.lower()
+
+        generic_intake = re.search(
+            r"\b(record|referral|notes?|imaging|mri|ct\s|eeg|lab|fax|portal|scheduling|appointment|"
+            r"clinical|prior|days\s+before|questionnaire|evaluation|physician|provider|upload|submit)\b",
+            sl,
+        )
+        if generic_intake:
+            return True
+
+        tokens = [
+            t
+            for t in re.findall(r"[a-z]{5,}", sl)
+            if t
+            not in {
+                "patient",
+                "referral",
+                "clinical",
+                "requires",
+                "required",
+                "must",
+                "before",
+                "after",
+                "referrals",
+            }
+        ]
+        if not tokens:
+            return True
+        hits = sum(1 for t in tokens if t in corpus_lower)
+        if hits == 0:
+            return False
+        return hits >= max(2, (len(tokens) + 2) // 3)
+
+    def _intake_check_without_ai(
+        self,
+        intake_policy,
+        referral_document_text=None,
+        triage_profile=None,
+        reason_for_referral=None,
+    ):
+        sentences = self._intake_policy_sentence_candidates(intake_policy)
+        corpus_lower = self._referral_corpus_for_intake_scoping(
+            referral_document_text,
+            triage_profile,
+            reason_for_referral,
+        )
+        kept = [s for s in sentences if self._intake_sentence_plausible_for_case(s, corpus_lower)]
+        if not kept:
+            kept = sentences[: min(8, len(sentences))] if sentences else []
+
+        excluded_note = None
+        dropped = len(sentences) - len(kept)
+        if dropped > 0:
+            excluded_note = (
+                f"{dropped} policy sentence(s) were hidden as likely not applicable to this referral "
+                "(offline heuristic using referral text overlap)."
+            )
+
+        items = [
+            {
+                "requirement": s,
+                "fulfilled": None,
+                "notes": "Enable OpenAI on the server to verify this item against the referral PDF automatically.",
+            }
+            for s in kept[:14]
+        ]
+
+        note_parts = [
+            "Automatic intake verification is offline. Review each item against the uploaded referral PDF manually.",
+        ]
+        if excluded_note:
+            note_parts.append(excluded_note)
+
+        return {
+            "items": items,
+            "evaluationUnavailable": True,
+            "evaluationNote": " ".join(note_parts),
+            "scopeSummary": None,
+            "excludedPolicyPoints": [],
+        }
+
+    def _evaluate_intake_policy_vs_referral(
+        self,
+        intake_policy,
+        referral_document_text,
+        triage_profile,
+        reason_for_referral=None,
+    ):
+        policy = (intake_policy or "").strip()
+        if not policy:
+            return None
+
+        triage_blob = self._triage_blob_for_intake_check(triage_profile)
+        doc_excerpt = (referral_document_text or "").strip()
+        if len(doc_excerpt) > 14000:
+            doc_excerpt = doc_excerpt[:14000] + "\n\n[… referral text truncated for analysis …]"
+
+        if not self.is_openai_configured() or not self.client:
+            return self._intake_check_without_ai(
+                policy,
+                referral_document_text=referral_document_text,
+                triage_profile=triage_profile,
+                reason_for_referral=reason_for_referral,
+            )
+
+        try:
+            structured = json.dumps(triage_blob, ensure_ascii=False, indent=2)
+            user_block = (
+                f"CLINIC INTAKE POLICY (from clinics.json — authoritative):\n{policy}\n\n"
+                f"STRUCTURED TRIAGE EXTRACTION (from same referral PDF):\n{structured}\n\n"
+                f"REASON FOR REFERRAL (structured intake field):\n{reason_for_referral or 'Not provided'}\n\n"
+                f"REFERRAL DOCUMENT TEXT (OCR / extracted PDF text):\n{doc_excerpt or '[empty]'}\n"
+            )
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """
+You evaluate clinic intake policy against ONE referral packet.
+
+Step 1 — Infer case context from STRUCTURED TRIAGE + DOCUMENT TEXT + REASON FOR REFERRAL:
+problem type (e.g. stroke vs headache vs seizures vs MS), age group if evident, acute vs chronic issues,
+relevant testing mentioned (MRI, EEG, labs), pregnancy/pediatric/alternate-path cues, and referral urgency.
+
+Step 2 — Applicability (critical):
+From INTAKE POLICY, ONLY output checklist items that realistically apply to THIS referral’s context.
+EXCLUDE entire policy clauses that target other populations, unrelated pathways, optional branches, or
+documentation types clearly irrelevant to this presentation (examples: pediatric-only steps when this is
+clearly an adult case; ketogenic-diet intake when seizures/epilepsy are not part of the referral; EEG-first
+pathway requirements when the referral is purely vascular headache with no seizure history — unless the text
+still reasonably applies to any neurology referral such as generic records timing).
+
+Universal scheduling / records / imaging lead-time rules for patients actually being routed to this clinic
+usually remain applicable; tie narrowly scoped rules to whether the referral discusses that topic.
+
+Step 3 — Fulfillment (only for INCLUDED items):
+For each included requirement, fulfilled=true ONLY if the packet shows credible evidence it is met or explicitly documented.
+If silent or ambiguous, fulfilled=false with one short notes sentence on what is missing. Never invent facts.
+
+Return strict JSON with exactly these keys:
+- scopeSummary: string or null — one sentence stating how you scoped items to this case.
+- excludedPolicyPoints: array (max 10) of { "excerpt": string (short policy phrase you omitted), "reason": string (why not applicable to this referral) }
+- items: array (max 12) of { "requirement": string, "fulfilled": boolean, "notes": string }
+
+No markdown. Omitted clauses belong in excludedPolicyPoints, NOT as items with fulfilled=false unless they truly apply but are unmet.
+                        """.strip(),
+                    },
+                    {"role": "user", "content": user_block},
+                ],
+                temperature=0.05,
+                max_tokens=2200,
+                response_format={"type": "json_object"},
+            )
+            parsed = self._parse_json_object(response.choices[0].message.content or "{}")
+            rows = parsed.get("items")
+            if not isinstance(rows, list):
+                return self._intake_check_without_ai(
+                    policy,
+                    referral_document_text=referral_document_text,
+                    triage_profile=triage_profile,
+                    reason_for_referral=reason_for_referral,
+                )
+
+            scope_summary = parsed.get("scopeSummary")
+            if isinstance(scope_summary, str):
+                scope_summary = scope_summary.strip() or None
+            else:
+                scope_summary = None
+
+            excluded_norm = []
+            excluded_raw = parsed.get("excludedPolicyPoints")
+            if isinstance(excluded_raw, list):
+                for entry in excluded_raw[:10]:
+                    if not isinstance(entry, dict):
+                        continue
+                    excerpt = str(entry.get("excerpt") or entry.get("snippet") or "").strip()
+                    reason = str(entry.get("reason") or "").strip()
+                    if excerpt or reason:
+                        excluded_norm.append({"excerpt": excerpt, "reason": reason})
+
+            normalized = []
+            for row in rows[:14]:
+                if not isinstance(row, dict):
+                    continue
+                req = str(row.get("requirement") or "").strip()
+                if not req:
+                    continue
+                fulfilled = row.get("fulfilled")
+                if isinstance(fulfilled, str):
+                    low = fulfilled.strip().lower()
+                    if low in ("true", "yes", "met", "satisfied", "complete", "completed"):
+                        fv = True
+                    elif low in ("false", "no", "unmet", "missing", "incomplete", "not met"):
+                        fv = False
+                    else:
+                        fv = None
+                elif fulfilled is True:
+                    fv = True
+                elif fulfilled is False:
+                    fv = False
+                else:
+                    fv = None
+                notes = str(row.get("notes") or "").strip() or ""
+                normalized.append({"requirement": req, "fulfilled": fv, "notes": notes})
+            if not normalized:
+                return self._intake_check_without_ai(
+                    policy,
+                    referral_document_text=referral_document_text,
+                    triage_profile=triage_profile,
+                    reason_for_referral=reason_for_referral,
+                )
+            return {
+                "items": normalized,
+                "evaluationUnavailable": False,
+                "evaluationNote": None,
+                "scopeSummary": scope_summary,
+                "excludedPolicyPoints": excluded_norm,
+            }
+        except Exception as exc:
+            logging.warning("Intake requirement evaluation failed: %s", exc)
+            return self._intake_check_without_ai(
+                policy,
+                referral_document_text=referral_document_text,
+                triage_profile=triage_profile,
+                reason_for_referral=reason_for_referral,
+            )
+
+    def _finalize_routing_with_intake_check(
+        self,
+        routing_result,
+        clinic_id_map,
+        referral_document_text,
+        triage_profile,
+        reason_for_referral=None,
+    ):
+        if not isinstance(routing_result, dict):
+            return routing_result
+        routing_result.pop("intakeRequirements", None)
+        cid = routing_result.get("recommendedClinicId")
+        policy = self._clinic_intake_requirements(clinic_id_map, cid)
+        if not policy:
+            routing_result["intakeRequirementsCheck"] = None
+            return routing_result
+        routing_result["intakeRequirementsCheck"] = self._evaluate_intake_policy_vs_referral(
+            policy,
+            referral_document_text,
+            triage_profile,
+            reason_for_referral=reason_for_referral,
+        )
+        return routing_result
+
+    def _kb_heuristic_routing(self, triage_profile, reason_for_referral=None, referral_document_text=None):
         kb = self._load_knowledge_base()
         clinics = kb.get("clinics") if isinstance(kb.get("clinics"), list) else []
         if not clinics:
@@ -399,7 +716,7 @@ Referral packet text:
                 "reason": "Next-highest overlap with clinics.json conditions / symptoms in this referral excerpt.",
             })
 
-        return {
+        result = {
             "recommendedClinic": display_name,
             "recommendedClinicId": winner_id,
             "confidenceScore": confidence,
@@ -411,10 +728,21 @@ Referral packet text:
             "escalationReason": "Heuristic KB routing — confirm against routing_rules.md and clinic exclusions.",
             "recommendedProviders": providers,
         }
+        return self._finalize_routing_with_intake_check(
+            result,
+            clinic_id_map,
+            referral_document_text,
+            triage_profile,
+            reason_for_referral=reason_for_referral,
+        )
 
-    def get_routing_recommendation(self, triage_profile, reason_for_referral=None):
+    def get_routing_recommendation(self, triage_profile, reason_for_referral=None, referral_document_text=None):
         if not self.is_openai_configured() or not self.client:
-            return self._kb_heuristic_routing(triage_profile, reason_for_referral)
+            return self._kb_heuristic_routing(
+                triage_profile,
+                reason_for_referral,
+                referral_document_text,
+            )
         try:
             kb = self._load_knowledge_base()
             clinics = kb.get("clinics") if isinstance(kb.get("clinics"), list) else []
@@ -527,7 +855,7 @@ Return only valid JSON. No preamble or markdown.
                 clinic_id_map,
             )
 
-            return {
+            result = {
                 "recommendedClinic": recommended_clinic,
                 "recommendedClinicId": recommended_clinic_id,
                 "confidenceScore": score,
@@ -539,9 +867,20 @@ Return only valid JSON. No preamble or markdown.
                 "escalationReason": parsed.get("escalationReason"),
                 "recommendedProviders": recommended_providers,
             }
+            return self._finalize_routing_with_intake_check(
+                result,
+                clinic_id_map,
+                referral_document_text,
+                triage_profile,
+                reason_for_referral=reason_for_referral,
+            )
         except Exception as exc:
             logging.warning("Routing recommendation failed: %s", exc)
-            return self._kb_heuristic_routing(triage_profile, reason_for_referral)
+            return self._kb_heuristic_routing(
+                triage_profile,
+                reason_for_referral,
+                referral_document_text,
+            )
 
     def _fallback_routing(self):
         return {
@@ -555,6 +894,7 @@ Return only valid JSON. No preamble or markdown.
             "escalateForReview": True,
             "escalationReason": "Routing system unavailable",
             "recommendedProviders": [],
+            "intakeRequirementsCheck": None,
         }
 
     def _get_system_prompt(self):

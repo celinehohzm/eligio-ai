@@ -66,6 +66,7 @@ def _build_referral_triage_data(submission):
         triage_profile["routingRecommendation"] = current_app.ai_service.get_routing_recommendation(
             triage_profile,
             reason_for_referral=submission.reason_for_referral,
+            referral_document_text=processed_pdf.extracted_text or "",
         )
     except Exception:
         current_app.logger.warning(
