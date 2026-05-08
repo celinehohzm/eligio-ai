@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import RoleTabs from "@/components/RoleTabs";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -1062,23 +1063,28 @@ export default function ReferralQueue() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen">
+      <header className="site-header">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Link to="/" className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
+            <Link to="/" className="flex items-center gap-2 rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-accent/70 hover:text-primary">
               <ArrowLeft className="h-5 w-5" />
               <span className="text-sm font-medium">Back</span>
             </Link>
-            <div className="h-6 w-px bg-gray-300" />
+            <div className="h-6 w-px shrink-0 bg-border" />
             <div className="flex items-center space-x-2">
               <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 object-contain" />
-              <h1 className="text-xl font-bold text-gray-900">Eligio AI</h1>
-              <span className="hidden sm:inline text-gray-400">•</span>
-              <span className="hidden sm:inline text-lg font-medium text-gray-700">Referral Search</span>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">Eligio AI</h1>
+              <span className="hidden text-muted-foreground/60 sm:inline" aria-hidden>
+                •
+              </span>
+              <span className="hidden text-lg font-medium text-muted-foreground sm:inline">Referral Search</span>
             </div>
           </div>
-          <RoleTabs />
+          <div className="flex items-center gap-2 md:gap-3">
+            <ThemeToggle />
+            <RoleTabs />
+          </div>
         </div>
       </header>
 
@@ -1086,7 +1092,9 @@ export default function ReferralQueue() {
         <div className="mb-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Receiving Provider and Scheduler Referral Search</h1>
+              <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
+                Receiving Provider and Scheduler Referral Search
+              </h1>
               <p className="text-muted-foreground">
                 Search uploaded referral packets, review the extracted intake summary, and see suggested specialists.
               </p>
@@ -1094,7 +1102,7 @@ export default function ReferralQueue() {
 
             <Link
               to="/specialists-list"
-              className="inline-flex items-center justify-center rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+              className="inline-flex items-center justify-center rounded-md border border-primary/35 bg-accent/80 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent"
             >
               Open Specialists List
             </Link>
@@ -1106,7 +1114,7 @@ export default function ReferralQueue() {
             <Button
               type="button"
               variant="outline"
-              className="border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+              className="border-primary/35 bg-card text-primary hover:bg-accent"
               onClick={() => setPatientListMode("default")}
             >
               Show patient database
@@ -1115,7 +1123,7 @@ export default function ReferralQueue() {
             <Button
               type="button"
               variant="ghost"
-              className="text-gray-600 hover:bg-white hover:text-blue-700"
+              className="text-muted-foreground hover:bg-accent hover:text-primary"
               onClick={() => setPatientListMode("hidden")}
             >
               Hide patient database
@@ -1125,18 +1133,18 @@ export default function ReferralQueue() {
 
         <div className={layoutGridClassName}>
           {!isPatientDatabaseHidden && (
-            <Card className="min-w-0 self-start border border-gray-200 border-l-4 border-l-blue-600 p-4 shadow-md lg:sticky lg:top-24">
+            <Card className="min-w-0 self-start border border-border border-l-4 border-l-primary p-4 shadow-md lg:sticky lg:top-24">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Patient database</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <h2 className="text-lg font-semibold text-foreground">Patient database</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {referrals.length} referral{referrals.length === 1 ? "" : "s"} in the current queue.
                   </p>
                 </div>
               </div>
 
               <div className="relative mb-4">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
                 <Input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -1147,9 +1155,9 @@ export default function ReferralQueue() {
 
               <ScrollArea className="h-[520px] pr-3">
                 <div className="space-y-3">
-                  {isLoadingList && <p className="text-sm text-gray-500">Loading referrals...</p>}
+                  {isLoadingList && <p className="text-sm text-muted-foreground">Loading referrals...</p>}
                   {!isLoadingList && referrals.length === 0 && (
-                    <p className="text-sm text-gray-500">No referrals match your search.</p>
+                    <p className="text-sm text-muted-foreground">No referrals match your search.</p>
                   )}
                   {referrals.map((referral) => {
                     const isSelected = referral.id === selectedId;
@@ -1159,8 +1167,8 @@ export default function ReferralQueue() {
                         key={referral.id}
                         className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                           isSelected
-                            ? "border-blue-600 bg-blue-50"
-                            : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
+                            ? "border-primary/60 bg-primary/10"
+                            : "border-border bg-card hover:border-primary/35 hover:bg-accent/35"
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -1170,11 +1178,11 @@ export default function ReferralQueue() {
                             className="flex-1 text-left"
                             disabled={isDeleting}
                           >
-                            <p className="font-semibold text-gray-900">{referral.fullName}</p>
-                            <p className="mt-1 text-sm text-gray-600">
+                            <p className="font-semibold text-foreground">{referral.fullName}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
                               {referral.doctorName || "No referring provider listed"}
                             </p>
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               Uploaded {formatTimestamp(referral.submittedAt)}
                             </p>
                           </button>
@@ -1183,7 +1191,7 @@ export default function ReferralQueue() {
                             type="button"
                             onClick={() => handleDeleteReferral(referral)}
                             disabled={isDeleting}
-                            className="inline-flex shrink-0 items-center rounded-md border border-red-200 bg-white px-2.5 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex shrink-0 items-center rounded-md border border-red-500/30 bg-card px-2.5 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                             aria-label={`Delete ${referral.fullName}`}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1200,54 +1208,54 @@ export default function ReferralQueue() {
             </Card>
           )}
 
-          <Card className="min-w-0 border border-gray-200 border-l-4 border-l-blue-600 p-6 shadow-md min-h-[520px]">
+          <Card className="min-w-0 border border-border border-l-4 border-l-primary p-6 shadow-md min-h-[520px]">
             {!selectedId && !isLoadingList && (
-              <div className="flex h-full items-center justify-center text-center text-gray-500">
+              <div className="flex h-full items-center justify-center text-center text-muted-foreground">
                 <div>
-                  <UserRound className="mx-auto mb-4 h-10 w-10 text-gray-300" />
+                  <UserRound className="mx-auto mb-4 h-10 w-10 text-muted-foreground/70" />
                   <p>Select a patient referral to review demographics, routing guidance, and the original PDF.</p>
                 </div>
               </div>
             )}
 
             {selectedId && isLoadingDetail && (
-              <p className="text-sm text-gray-500">Loading referral details...</p>
+              <p className="text-sm text-muted-foreground">Loading referral details...</p>
             )}
 
             {selectedReferral && !isLoadingDetail && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">{selectedMeta.fullName}</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <h2 className="text-2xl font-semibold text-foreground">{selectedMeta.fullName}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Referral uploaded {formatTimestamp(selectedReferral.submittedAt)}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <ClipboardList className="mt-0.5 h-5 w-5 text-blue-600" />
+                    <ClipboardList className="mt-0.5 h-5 w-5 text-cyan-600" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Demographic Data</h3>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <h3 className="text-lg font-semibold text-foreground">Demographic Data</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Scheduler-facing patient details pulled from structured intake data and the uploaded referral packet.
                       </p>
                     </div>
                   </div>
 
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <div className="rounded-xl border border-gray-200 bg-blue-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Referring Provider
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-gray-900">
+                      <p className="mt-2 text-sm leading-6 text-foreground">
                         {formatDisplayValue(selectedMeta.doctorName, "Not provided")}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-gray-200 bg-blue-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Reason for Referral
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-gray-900">
+                      <p className="mt-2 text-sm leading-6 text-foreground">
                         {formatDisplayValue(selectedMeta.reasonForReferral, "Not provided")}
                       </p>
                     </div>
@@ -1257,23 +1265,23 @@ export default function ReferralQueue() {
                     {demographicItems.map((item) => (
                       <div
                         key={item.label}
-                        className="rounded-xl border border-gray-200 bg-slate-50 p-4"
+                        className="rounded-xl border border-border bg-muted/45 p-4"
                       >
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           {item.label}
                         </p>
-                        <p className="mt-2 text-sm leading-6 text-gray-900">{item.value}</p>
+                        <p className="mt-2 text-sm leading-6 text-foreground">{item.value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <ClipboardList className="mt-0.5 h-5 w-5 text-blue-600" />
+                    <ClipboardList className="mt-0.5 h-5 w-5 text-cyan-600" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Routing Recommendation</h3>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <h3 className="text-lg font-semibold text-foreground">Routing Recommendation</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Clinic, rationale, and providers are grounded in the server knowledge base (clinic catalog JSON and routing guidelines markdown).
                       </p>
                     </div>
@@ -1289,11 +1297,11 @@ export default function ReferralQueue() {
                   )}
 
                   <div className="mt-4 grid gap-4 xl:grid-cols-[300px,minmax(0,1fr)]">
-                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                         Recommended Clinic
                       </p>
-                      <p className="mt-3 text-2xl font-semibold text-gray-900">
+                      <p className="mt-3 text-2xl font-semibold text-foreground">
                         {formatDisplayValue(routingRecommendation?.recommendedClinic)}
                       </p>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -1323,24 +1331,24 @@ export default function ReferralQueue() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                         Recommendation Rationale
                       </p>
-                      <p className="mt-3 text-sm leading-7 text-gray-900">
+                      <p className="mt-3 text-sm leading-7 text-foreground">
                         {formatDisplayValue(routingRecommendation?.rationale)}
                       </p>
                     </div>
                   </div>
 
                   <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
-                      <p className="text-sm font-semibold text-gray-900">Alternative Clinics</p>
+                    <div className="rounded-xl border border-border bg-muted/45 p-4">
+                      <p className="text-sm font-semibold text-foreground">Alternative Clinics</p>
                       {(routingRecommendation?.alternativeClinics || []).length > 0 ? (
-                        <ul className="mt-3 space-y-2 text-sm text-gray-700">
+                        <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                           {(routingRecommendation?.alternativeClinics || []).map((clinic, index) => (
                             <li key={`${clinic?.id || clinic?.name || index}`}>
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-foreground">
                                 {clinic?.name || "Unknown clinic"}
                               </span>
                               {clinic?.reason ? ` - ${clinic.reason}` : ""}
@@ -1348,21 +1356,21 @@ export default function ReferralQueue() {
                           ))}
                         </ul>
                       ) : (
-                        <p className="mt-2 text-sm text-gray-600">No alternatives provided.</p>
+                        <p className="mt-2 text-sm text-muted-foreground">No alternatives provided.</p>
                       )}
                     </div>
-                    <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
-                      <p className="text-sm font-semibold text-gray-900">Recommended providers</p>
+                    <div className="rounded-xl border border-border bg-muted/45 p-4">
+                      <p className="text-sm font-semibold text-foreground">Recommended providers</p>
                       {kbRecommendedProviders.length > 0 ? (
-                        <ul className="mt-3 list-none space-y-2 border-l-2 border-blue-200 pl-4">
+                        <ul className="mt-3 list-none space-y-2 border-l-2 border-primary/30 pl-4">
                           {kbRecommendedProviders.map((name) => (
-                            <li key={name} className="text-sm leading-relaxed text-gray-800">
+                            <li key={name} className="text-sm leading-relaxed text-foreground/90">
                               {formatKbProviderDisplayName(name)}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-muted-foreground">
                           No providers listed for this clinic in the catalog, or routing did not return provider names.
                         </p>
                       )}
@@ -1370,25 +1378,25 @@ export default function ReferralQueue() {
                   </div>
 
                   {hasIntakeCheckPanel ? (
-                    <div className="mt-6 rounded-xl border-2 border-indigo-300 bg-indigo-50/90 p-4 shadow-sm">
+                    <div className="mt-6 rounded-2xl border border-primary/25 bg-card p-5 shadow-sm ring-1 ring-primary/10">
                       <div className="flex items-start gap-3">
-                        <Flag className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" aria-hidden />
+                        <Flag className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-900">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
                             Case-scoped intake checklist
                           </p>
-                          <p className="mt-1 text-xs text-gray-600">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             Only intake rules that apply to this referral’s clinical context are listed; the model compares them to OCR text and structured triage fields.
                           </p>
                           {cleanValue(intakeRequirementsCheck?.scopeSummary) ? (
-                            <p className="mt-2 rounded-md border border-indigo-200 bg-white/90 px-3 py-2 text-sm leading-6 text-gray-900">
-                              <span className="font-semibold text-indigo-950">Scope: </span>
+                            <p className="mt-3 rounded-xl border border-border bg-muted/35 px-4 py-3 text-sm leading-6 text-foreground">
+                              <span className="font-semibold text-primary">Scope: </span>
                               {intakeRequirementsCheck.scopeSummary}
                             </p>
                           ) : null}
                           {intakeRequirementsCheck?.evaluationUnavailable &&
                           cleanValue(intakeRequirementsCheck?.evaluationNote) ? (
-                            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950">
+                            <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs leading-5 text-amber-950 dark:bg-amber-950/35 dark:text-amber-50/90">
                               {intakeRequirementsCheck.evaluationNote}
                             </p>
                           ) : null}
@@ -1402,27 +1410,27 @@ export default function ReferralQueue() {
                                     key={`${idx}-${item.requirement?.slice(0, 48) ?? idx}`}
                                     className={`rounded-lg border px-3 py-3 text-sm leading-relaxed ${
                                       missing
-                                        ? "border-red-300 bg-red-50/90"
+                                        ? "border-red-500/30 bg-red-500/10 dark:bg-red-950/35"
                                         : ok
-                                          ? "border-emerald-200 bg-white"
-                                          : "border-amber-200 bg-amber-50/70"
+                                        ? "border-emerald-300/50 bg-emerald-50/40 dark:bg-emerald-950/25"
+                                          : "border-amber-500/25 bg-amber-500/10 dark:bg-amber-950/30"
                                     }`}
                                   >
                                     <div className="flex items-start gap-2">
                                       {missing ? (
-                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" aria-hidden />
                                       ) : ok ? (
                                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
                                       ) : (
-                                        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+                                        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
                                       )}
                                       <div className="min-w-0">
-                                        <p className="font-medium text-gray-900">{item.requirement}</p>
+                                        <p className="font-medium text-foreground">{item.requirement}</p>
                                         {cleanValue(item.notes) ? (
-                                          <p className="mt-1 text-xs leading-5 text-gray-700">{item.notes}</p>
+                                          <p className="mt-1 text-xs leading-5 text-foreground/85">{item.notes}</p>
                                         ) : null}
                                         {missing ? (
-                                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-red-800">
+                                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">
                                             Missing or unclear in packet
                                           </p>
                                         ) : null}
@@ -1433,24 +1441,27 @@ export default function ReferralQueue() {
                               })}
                             </ul>
                           ) : (
-                            <p className="mt-4 text-sm text-gray-700">
+                            <p className="mt-4 text-sm text-foreground/85">
                               No checklist rows apply to this referral after case scoping (see omitted policy notes below if present).
                             </p>
                           )}
                           {Array.isArray(intakeRequirementsCheck?.excludedPolicyPoints) &&
                           intakeRequirementsCheck.excludedPolicyPoints.length > 0 ? (
-                            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-100/90 p-3">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                            <div className="mt-4 rounded-xl border border-border bg-muted/35 p-4">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Clinic policy not applied to this case
                               </p>
                               <ul className="mt-2 space-y-3">
                                 {intakeRequirementsCheck.excludedPolicyPoints.map((row, i) => (
-                                  <li key={`exc-${i}-${row.excerpt?.slice(0, 24) ?? i}`} className="text-xs leading-5 text-slate-800">
+                                  <li
+                                    key={`exc-${i}-${row.excerpt?.slice(0, 24) ?? i}`}
+                                    className="text-xs leading-5 text-foreground/85"
+                                  >
                                     {cleanValue(row.excerpt) ? (
-                                      <p className="font-medium text-slate-900">{row.excerpt}</p>
+                                      <p className="font-medium text-foreground">{row.excerpt}</p>
                                     ) : null}
                                     {cleanValue(row.reason) ? (
-                                      <p className="mt-0.5 text-slate-600">{row.reason}</p>
+                                      <p className="mt-0.5 text-muted-foreground">{row.reason}</p>
                                     ) : null}
                                   </li>
                                 ))}
@@ -1465,8 +1476,8 @@ export default function ReferralQueue() {
                   <div className="mt-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h4 className="text-base font-semibold text-gray-900">Triage Highlights</h4>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <h4 className="text-base font-semibold text-foreground">Triage Highlights</h4>
+                        <p className="mt-1 text-sm text-muted-foreground">
                           These summaries come from the uploaded referral document and are meant to speed up intake review.
                         </p>
                       </div>
@@ -1476,21 +1487,21 @@ export default function ReferralQueue() {
                       {triageHighlightCards.map((item) => (
                         <div
                           key={item.key}
-                          className="rounded-xl border border-gray-200 bg-slate-50 p-4"
+                          className="rounded-xl border border-border bg-muted/45 p-4"
                         >
-                          <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">{item.value}</p>
+                          <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-foreground/90">{item.value}</p>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Original referral PDF</h3>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <h3 className="text-lg font-semibold text-foreground">Original referral PDF</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Scroll through the original uploaded referral packet without leaving the queue.
                       </p>
                     </div>
@@ -1500,7 +1511,7 @@ export default function ReferralQueue() {
                         href={pdfPreviewUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex shrink-0 items-center rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                        className="inline-flex shrink-0 items-center rounded-md border border-primary/30 bg-accent/75 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent"
                       >
                         Open full PDF
                       </a>
@@ -1509,7 +1520,7 @@ export default function ReferralQueue() {
 
                   <div className="mt-4">
                     {isLoadingPdfPreview && (
-                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
+                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/35 text-sm text-muted-foreground">
                         Loading original PDF...
                       </div>
                     )}
@@ -1521,15 +1532,15 @@ export default function ReferralQueue() {
                     )}
 
                     {!isLoadingPdfPreview && !pdfPreviewError && !selectedReferralDocument && (
-                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 text-center text-sm text-gray-500">
+                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/35 px-4 text-center text-sm text-muted-foreground">
                         No referral PDF is attached to this record yet.
                       </div>
                     )}
 
                     {!isLoadingPdfPreview && !pdfPreviewError && pdfPreviewUrl && (
-                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                        <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                          <FileText className="h-4 w-4 text-blue-600" />
+                      <div className="overflow-hidden rounded-xl border border-border bg-card">
+                        <div className="flex items-center gap-2 border-b border-border bg-muted/35 px-4 py-3 text-sm text-muted-foreground">
+                          <FileText className="h-4 w-4 text-cyan-600" />
                           <span className="truncate">
                             {selectedReferralDocument?.originalName || selectedReferralDocument?.filename || "Referral PDF"}
                           </span>
@@ -1537,16 +1548,16 @@ export default function ReferralQueue() {
                         <iframe
                           title={`Referral PDF preview for ${selectedMeta.fullName || "selected patient"}`}
                           src={pdfPreviewUrl}
-                          className="h-[720px] w-full bg-white"
+                          className="h-[720px] w-full bg-card"
                         />
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                  <p className="text-sm font-semibold text-gray-900">How routing recommendations are sourced</p>
-                  <div className="mt-2 space-y-2 text-sm leading-6 text-gray-600">
+                <div className="rounded-xl border border-primary/25 bg-primary/10 p-4">
+                  <p className="text-sm font-semibold text-foreground">How routing recommendations are sourced</p>
+                  <div className="mt-2 space-y-2 text-sm leading-6 text-muted-foreground">
                     {ROUTING_KB_EXPLANATION.map((line) => (
                       <p key={line}>{line}</p>
                     ))}
@@ -1556,22 +1567,22 @@ export default function ReferralQueue() {
             )}
           </Card>
 
-          <Card className="min-w-0 self-start border border-gray-200 border-l-4 border-l-blue-600 shadow-md lg:sticky lg:top-24">
-            <div className="border-b border-gray-200 px-4 py-4 sm:px-5">
-              <h3 className="text-lg font-semibold text-gray-900">Patient triage chat</h3>
-              <p className="mt-1 text-sm text-gray-500">
+          <Card className="min-w-0 self-start border border-border border-l-4 border-l-primary shadow-md lg:sticky lg:top-24">
+            <div className="border-b border-border px-4 py-4 sm:px-5">
+              <h3 className="text-lg font-semibold text-foreground">Patient triage chat</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Ask follow-up questions, look for a specific detail in the referral, or clarify something in the packet.
               </p>
             </div>
 
             <div className="px-4 py-4 sm:px-5">
               {selectedId && isLoadingDetail ? (
-                <p className="text-sm text-gray-500">Loading chat context...</p>
+                <p className="text-sm text-muted-foreground">Loading chat context...</p>
               ) : (
                 <>
                   <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
                     {!selectedReferral && !isSendingChat && (
-                      <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-sm text-gray-600">
+                      <div className="rounded-xl border border-dashed border-primary/30 bg-primary/10 px-4 py-6 text-sm text-muted-foreground">
                         Pick a referral from the patient database to open a dedicated triage chat panel.
                       </div>
                     )}
@@ -1584,8 +1595,8 @@ export default function ReferralQueue() {
                         <div
                           className={`max-w-[90%] rounded-xl px-4 py-3 text-sm leading-6 shadow-sm ${
                             message.role === "user"
-                              ? "bg-blue-600 text-white"
-                              : "border border-gray-200 bg-gray-50 text-gray-800"
+                              ? "bg-cyan-600 text-white"
+                              : "border border-border bg-muted/35 text-foreground"
                           }`}
                         >
                           {message.content}
@@ -1595,7 +1606,7 @@ export default function ReferralQueue() {
 
                     {isSendingChat && (
                       <div className="flex justify-start">
-                        <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 shadow-sm">
+                        <div className="rounded-xl border border-border bg-muted/35 px-4 py-3 text-sm text-muted-foreground shadow-sm">
                           Analyzing referral details...
                         </div>
                       </div>
@@ -1616,16 +1627,16 @@ export default function ReferralQueue() {
                       onChange={(event) => setChatInput(event.target.value)}
                       onKeyDown={handleChatKeyDown}
                       placeholder="Ask a follow-up question about this referral..."
-                      className="min-h-[112px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="min-h-[112px] resize-none border-border focus-visible:border-primary/40 focus-visible:ring-primary/30"
                       disabled={!selectedReferral || isSendingChat}
                     />
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Uses the selected referral details as context.
                       </p>
                       <Button
                         type="submit"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                         disabled={!selectedReferral || !chatInput.trim() || isSendingChat}
                       >
                         <Send className="mr-2 h-4 w-4" />

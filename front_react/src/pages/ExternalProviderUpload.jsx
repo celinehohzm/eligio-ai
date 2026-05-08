@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import RoleTabs from "@/components/RoleTabs";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import eligioLogo from "@/assets/eligio-logo.png";
 import apiService from "@/services/api";
 import { toast } from "sonner";
@@ -93,34 +94,42 @@ export default function ExternalProviderUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="site-header">
         <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Link to="/" className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
-              <ArrowLeft className="h-5 w-5" />
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="flex items-center gap-2 rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-accent/70 hover:text-primary"
+            >
+              <ArrowLeft className="size-5" />
               <span className="text-sm font-medium">Back</span>
             </Link>
-            <div className="h-6 w-px bg-gray-300" />
-            <div className="flex items-center space-x-2">
-              <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 object-contain" />
-              <h1 className="text-xl font-bold text-gray-900">Eligio AI</h1>
+            <div className="h-6 w-px shrink-0 bg-border" />
+            <div className="flex items-center gap-2">
+              <img src={eligioLogo} alt="Eligio AI" className="size-12 object-contain motion-safe:hover:scale-[1.03] motion-safe:transition-transform" />
+              <h1 className="text-xl font-bold tracking-tight text-foreground">Eligio AI</h1>
             </div>
           </div>
-          <RoleTabs />
+          <div className="flex items-center gap-2 md:gap-3">
+            <ThemeToggle />
+            <RoleTabs />
+          </div>
         </div>
       </header>
 
-      <div className="container mx-auto py-8 px-4 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">Referral Upload</h1>
-        <p className="text-muted-foreground mb-8">
-          Submit a referral with one PDF attachment
-        </p>
+      <div className="container mx-auto max-w-4xl px-4 pb-14 pt-10">
+        <div className="mb-12 motion-safe:animate-fade-up">
+          <h1 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">Referral Upload</h1>
+          <p className="mt-3 max-w-xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
+            Submit a referral with one PDF attachment
+          </p>
+        </div>
 
         <form onSubmit={onSubmit} className="space-y-8">
-          <Card className="p-6 border border-gray-200 border-l-4 border-l-blue-600 shadow-md hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-semibold mb-6 text-gray-900">Patient Information</h2>
+          <Card className="border-l-[3px] border-l-primary p-6 motion-safe:animate-fade-up">
+            <h2 className="mb-8 text-xl font-semibold tracking-tight text-foreground">Patient Information</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium mb-2">Patient's Name</label>
@@ -186,8 +195,8 @@ export default function ExternalProviderUpload() {
             </div>
           </Card>
 
-          <Card className="p-6 border border-gray-200 border-l-4 border-l-blue-600 shadow-md hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-semibold mb-6 text-gray-900">Referral PDF</h2>
+          <Card className="border-l-[3px] border-l-primary p-6 motion-safe:animate-fade-up motion-safe:animate-in-delay-100">
+            <h2 className="mb-8 text-xl font-semibold tracking-tight text-foreground">Referral PDF</h2>
             <div className="space-y-4">
               <input
                 id="referral-pdf-upload"
@@ -205,35 +214,28 @@ export default function ExternalProviderUpload() {
                 </Button>
               </label>
 
-              <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center">
-                <FileText className="mx-auto mb-3 h-10 w-10 text-gray-400" />
-                <p className="text-sm text-gray-600">Upload one PDF referral packet.</p>
-                <p className="mt-1 text-xs text-gray-500">PDF only</p>
+              <div className="rounded-2xl border border-dashed border-primary/35 bg-accent/35 p-8 text-center transition-colors duration-300 hover:border-primary/55 hover:bg-accent/50 motion-safe:focus-within:ring-2 motion-safe:focus-within:ring-primary/20">
+                <FileText className="mx-auto mb-4 size-10 text-primary/80" />
+                <p className="text-sm font-medium text-foreground">Upload one PDF referral packet.</p>
+                <p className="mt-1 text-xs text-muted-foreground">PDF only</p>
               </div>
 
               {referralPdf && (
-                <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-                  <FileText className="h-5 w-5 text-gray-500" />
+                <div className="flex items-center gap-3 rounded-xl border border-primary/25 bg-accent/60 p-3">
+                  <FileText className="size-5 shrink-0 text-primary" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{referralPdf.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {(referralPdf.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                    <p className="truncate text-sm font-medium text-foreground">{referralPdf.name}</p>
+                    <p className="text-xs text-muted-foreground">{(referralPdf.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
-                  <Button type="button" variant="ghost" size="icon" onClick={removeFile}>
-                    <X className="h-4 w-4" />
+                  <Button type="button" variant="ghost" size="icon" onClick={removeFile} className="shrink-0 text-primary hover:bg-primary/10">
+                    <X className="size-4" />
                   </Button>
                 </div>
               )}
             </div>
           </Card>
 
-          <Button 
-            type="submit" 
-            size="lg" 
-            disabled={isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-          >
+          <Button type="submit" size="lg" disabled={isSubmitting} className="min-w-[200px] shadow-lg shadow-primary/25">
             {isSubmitting ? "Submitting..." : "Submit Referral"}
           </Button>
         </form>

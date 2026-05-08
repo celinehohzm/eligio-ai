@@ -20,8 +20,10 @@ export default function RoleTabs({ className }) {
           end
           className={({ isActive }) =>
             cn(
-              "text-sm font-medium transition-colors",
-              isActive ? "text-blue-700" : "text-gray-600 hover:text-blue-600",
+              "relative pb-1 text-sm font-medium transition-[color] duration-200 ease-out",
+              isActive ? "font-semibold text-primary" : "text-muted-foreground hover:text-foreground",
+              "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-center after:rounded-full after:bg-primary after:transition-transform after:duration-300 after:ease-out",
+              isActive ? "after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-[55%]",
             )
           }
         >

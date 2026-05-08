@@ -6,6 +6,7 @@ import { Send, ArrowLeft, Paperclip, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import RoleTabs from '@/components/RoleTabs';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import eligioLogo from '@/assets/eligio-logo.png';
 import apiService from '@/services/api';
 import { extractPdfText } from '@/lib/pdf';
@@ -158,43 +159,56 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="site-header">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2 md:space-x-4">
-            <Link to="/" className="flex items-center space-x-1 md:space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
-              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="text-xs md:text-sm font-medium">Back</span>
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-accent/70 hover:text-primary md:gap-2"
+            >
+              <ArrowLeft className="size-4 md:size-5" />
+              <span className="text-xs font-medium md:text-sm">Back</span>
             </Link>
-            <div className="h-4 md:h-6 w-px bg-gray-300" />
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <img src={eligioLogo} alt="Eligio AI" className="w-10 h-10 md:w-12 md:h-12 object-contain" />
-              <h1 className="text-lg md:text-xl font-bold text-gray-900">Eligio AI</h1>
-              <span className="hidden sm:inline text-gray-400">•</span>
-              <span className="hidden sm:inline text-sm md:text-lg font-medium text-gray-700">Patient Triaging Chat</span>
+            <div className="h-4 w-px shrink-0 bg-border md:h-6" />
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <img src={eligioLogo} alt="Eligio AI" className="size-10 object-contain motion-safe:transition-transform md:size-12 motion-safe:hover:scale-[1.03]" />
+              <h1 className="text-lg font-bold tracking-tight text-foreground md:text-xl">Eligio AI</h1>
+              <span className="hidden text-muted-foreground/60 sm:inline" aria-hidden>
+                •
+              </span>
+              <span className="hidden text-sm font-medium text-muted-foreground sm:inline md:text-lg">Patient Triaging Chat</span>
             </div>
           </div>
-          <RoleTabs className="space-x-4 lg:space-x-8" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <ThemeToggle />
+            <RoleTabs className="space-x-4 lg:space-x-8" />
+          </div>
         </div>
       </header>
 
       {/* Chat Container */}
-      <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 max-w-4xl">
-        <div className="flex flex-col h-[calc(100vh-7rem)] md:h-[calc(100vh-8rem)]">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto space-y-3 md:space-y-4 mb-3 md:mb-4 px-1" style={{ height: '70vh' }}>
+      <div className="container mx-auto max-w-4xl px-3 py-4 md:px-4 md:py-6">
+        <div className="flex min-h-[70vh] flex-col md:h-[calc(100vh-8rem)]">
+          <div
+            className="mb-4 flex flex-1 flex-col gap-3 overflow-y-auto md:gap-4"
+            style={{ minHeight: "min(70vh,720px)" }}
+          >
             {messages.length === 0 && (
-              <div className="text-center py-8 md:py-16 px-4">
-                <div className="max-w-md mx-auto">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-                    <img src={eligioLogo} alt="Eligio AI" className="w-24 h-24 md:w-32 md:h-32 object-contain" />
+              <div className="flex flex-col items-center justify-center px-4 py-14 text-center motion-safe:animate-fade-up md:py-24">
+                <div className="relative mx-auto mb-8">
+                  <div className="absolute inset-0 scale-125 rounded-[2rem] bg-gradient-to-br from-primary/25 via-transparent to-teal-400/20 blur-xl motion-safe:animate-pulse" />
+                  <div className="relative flex items-center justify-center rounded-[2rem] border border-primary/15 bg-background/90 p-6 shadow-xl ring-2 ring-primary/10 backdrop-blur-sm">
+                    <img src={eligioLogo} alt="Eligio AI" className="mx-auto size-24 object-contain motion-safe:animate-float md:size-32" />
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
+                </div>
+                <div className="mx-auto max-w-md">
+                  <h3 className="mb-3 text-xl font-bold tracking-tight text-foreground md:text-2xl">
                     Welcome to Eligio AI
                   </h3>
-                  <p className="text-gray-600 text-base md:text-lg">
-                    Describe your patient's symptoms and condition to get intelligent triaging recommendations.
+                  <p className="text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
+                    Describe your patient&apos;s symptoms and condition to get intelligent triaging recommendations.
                   </p>
                 </div>
               </div>
@@ -203,13 +217,15 @@ const Chat = () => {
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`motion-safe:animate-fade-up flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <Card className={`max-w-[95%] sm:max-w-[85%] md:max-w-[80%] shadow-md hover:shadow-lg transition-shadow ${
-                  message.role === 'user' 
-                    ? 'bg-blue-600 text-white border-l-4 border-l-blue-800' 
-                    : 'bg-white border border-gray-200 border-l-4 border-l-blue-600'
-                }`}>
+                <Card
+                  className={`relative max-w-[95%] overflow-hidden rounded-2xl border border-border/60 shadow-md backdrop-blur-sm transition-[box-shadow,transform] duration-300 ease-out motion-safe:hover:-translate-y-px motion-safe:hover:shadow-lg sm:max-w-[85%] md:max-w-[80%] ${
+                    message.role === "user"
+                      ? "border-l-[3px] border-l-teal-800 bg-gradient-to-br from-primary via-teal-600 to-cyan-800 text-primary-foreground shadow-lg shadow-primary/30"
+                      : "border-l-[3px] border-l-primary bg-card/98"
+                  }`}
+                >
                   <CardContent className="p-3 md:p-4">
                     <p className="whitespace-pre-wrap text-sm md:text-base">{message.content}</p>
                   </CardContent>
@@ -218,20 +234,31 @@ const Chat = () => {
             ))}
             
             {isLoading && (
-              <div className="flex justify-start">
-                <Card className="bg-white border border-gray-200 border-l-4 border-l-blue-600 shadow-md max-w-[95%] sm:max-w-[85%] md:max-w-[80%]">
+              <div className="flex justify-start motion-safe:animate-fade-up">
+                <Card className="relative max-w-[95%] overflow-hidden rounded-2xl border border-border/70 bg-card/98 shadow-md backdrop-blur-sm before:pointer-events-none before:absolute before:inset-y-4 before:left-0 before:w-1 before:rounded-full before:bg-primary sm:max-w-[85%] md:max-w-[80%]">
                   <CardContent className="p-3 md:p-4">
-                    <div className="flex items-center space-x-2 md:space-x-3">
-                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0">
-                        <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+                    <div className="flex items-center gap-2 md:gap-4">
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-accent/70 md:size-14">
+                        <img src={eligioLogo} alt="" className="size-10 object-contain md:size-12" aria-hidden />
                       </div>
-                      <div className="flex items-center space-x-2 min-w-0">
-                        <div className="flex space-x-1 flex-shrink-0">
-                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="flex shrink-0 gap-1.5 px-1">
+                          <span
+                            className="size-2.5 rounded-full bg-primary motion-safe:animate-bounce [animation-duration:620ms]"
+                            aria-hidden
+                          />
+                          <span
+                            className="size-2.5 rounded-full bg-primary motion-safe:animate-bounce [animation-delay:160ms] [animation-duration:620ms]"
+                            aria-hidden
+                          />
+                          <span
+                            className="size-2.5 rounded-full bg-primary motion-safe:animate-bounce [animation-delay:320ms] [animation-duration:620ms]"
+                            aria-hidden
+                          />
                         </div>
-                        <span className="text-gray-600 text-xs md:text-sm font-medium truncate">Analyzing patient information...</span>
+                        <span className="truncate text-xs font-medium text-muted-foreground md:text-sm">
+                          Analyzing patient information…
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -240,10 +267,10 @@ const Chat = () => {
             )}
             
             {error && (
-              <div className="flex justify-center">
-                <Card className="bg-red-50 border border-red-200">
+              <div className="flex justify-center motion-safe:animate-subtle-zoom">
+                <Card className="rounded-2xl border border-destructive/25 bg-destructive/10">
                   <CardContent className="p-4">
-                    <p className="text-red-600 text-sm">{error}</p>
+                    <p className="text-sm font-medium text-destructive">{error}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -253,22 +280,22 @@ const Chat = () => {
           </div>
 
           {/* Input Bar */}
-          <div className="border-t pt-3 md:pt-4 bg-white/80 backdrop-blur-sm rounded-lg p-3 md:p-4 shadow-lg">
+          <div className="sticky bottom-0 mt-auto rounded-[1.25rem] border border-border/65 bg-background/90 p-4 shadow-[0_-8px_30px_-12px_hsl(var(--foreground)/0.12)] backdrop-blur-xl md:p-5">
             <form onSubmit={handleSubmit} className="space-y-2 md:space-y-3">
               {pdfFile && (
-                <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-2 md:p-3">
-                  <div className="flex items-center space-x-2 min-w-0 flex-1">
-                    <Paperclip className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                    <span className="text-sm text-blue-900 truncate">{pdfFile.name}</span>
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/25 bg-accent/80 p-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <Paperclip className="size-4 shrink-0 text-primary" />
+                    <span className="truncate text-sm text-accent-foreground">{pdfFile.name}</span>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={removePdfFile}
-                    className="h-6 w-6 p-0 hover:bg-blue-100 flex-shrink-0"
+                    className="size-9 shrink-0 p-0 text-primary hover:bg-primary/15"
                   >
-                    <X className="h-4 w-4 text-blue-600" />
+                    <X className="size-4" />
                   </Button>
                 </div>
               )}
@@ -285,9 +312,10 @@ const Chat = () => {
                   variant="ghost"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
-                  className="px-3 md:px-4 py-2 md:py-3 h-auto hover:bg-blue-50 flex-shrink-0"
+                  className="h-auto shrink-0 px-3 py-2 hover:bg-accent/80 md:px-4 md:py-3"
+                  aria-label="Attach PDF"
                 >
-                  <Paperclip className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
+                  <Paperclip className="size-5 text-primary md:size-6" />
                 </Button>
                 <div className="flex-1">
                   <Textarea
@@ -296,17 +324,18 @@ const Chat = () => {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Describe the patient's symptoms, medical history, and current condition..."
-                    className="min-h-[40px] md:min-h-[44px] max-h-[100px] md:max-h-[120px] resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm md:text-base"
+                    className="min-h-[44px] max-h-[120px] resize-none text-sm md:min-h-[48px] md:text-base border-border/70 focus-visible:ring-primary/30"
                     rows={1}
                   />
                 </div>
                 <Button
                   type="submit"
                   disabled={(!input.trim() && !pdfText) || isLoading}
-                  className="px-4 md:px-6 py-2 md:py-3 h-auto bg-blue-600 hover:bg-blue-700 text-white shadow-md flex-shrink-0"
                   size="lg"
+                  className="group h-auto shrink-0 px-6 py-3 shadow-lg shadow-primary/25"
+                  aria-label="Send message"
                 >
-                  <Send className="h-4 w-4 md:h-5 md:w-5" />
+                  <Send className="size-5 md:size-[1.35rem] motion-safe:transition-transform motion-safe:group-hover:-translate-y-px motion-safe:group-hover:translate-x-0.5" />
                 </Button>
               </div>
             </form>

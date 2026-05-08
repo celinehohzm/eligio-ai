@@ -4,11 +4,51 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import RoleTabs from "@/components/RoleTabs";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import eligioLogo from "@/assets/eligio-logo.png";
 import {
   getDefaultRouteForRole,
   getPrimaryActionLabelForRole,
 } from "@/lib/roles";
+
+const featureItems = [
+  {
+    Icon: FileText,
+    title: "Smart Note Summarization",
+    body:
+      "Automatically extract key insights from patient notes using advanced AI, saving hours of manual review time.",
+  },
+  {
+    Icon: Calendar,
+    title: "Intelligent Scheduling",
+    body:
+      "Get personalized scheduling recommendations based on patient history, urgency levels, and optimal care windows.",
+  },
+  {
+    Icon: Brain,
+    title: "AI-Powered Insights",
+    body:
+      "Discover patterns in patient data and receive actionable insights to improve treatment outcomes.",
+  },
+  {
+    Icon: Users,
+    title: "Team Collaboration",
+    body:
+      "Seamlessly share insights and coordinate care with your medical team in real-time.",
+  },
+  {
+    Icon: Shield,
+    title: "HIPAA Compliant",
+    body:
+      "Enterprise-grade security ensures all patient data is protected with full HIPAA compliance.",
+  },
+  {
+    Icon: Zap,
+    title: "Lightning Fast",
+    body:
+      "Process thousands of medical notes in seconds, not hours. Get instant results when you need them most.",
+  },
+];
 
 const Index = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -16,84 +56,98 @@ const Index = () => {
   const primaryActionLabel = getPrimaryActionLabelForRole(user?.role);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header */}
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <img src={eligioLogo} alt="Eligio AI" className="w-16 h-16 object-contain" />
-            <span className="text-xl font-bold text-gray-900">Eligio AI</span>
+    <div className="min-h-screen overflow-x-hidden">
+      <header className="site-header">
+        <div className="container mx-auto flex w-full items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="relative flex shrink-0">
+              <span
+                className="absolute inset-[-6px] rounded-2xl bg-gradient-to-br from-cyan-400/35 via-transparent to-teal-400/35 opacity-80 blur-md motion-safe:animate-pulse motion-reduce:hidden"
+                aria-hidden
+              />
+              <img
+                src={eligioLogo}
+                alt="Eligio AI"
+                className="relative size-14 object-contain motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out motion-safe:hover:scale-[1.03]"
+              />
+            </span>
+            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-xl font-bold tracking-tight text-transparent">
+              Eligio AI
+            </span>
           </div>
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="flex items-center gap-3 md:gap-8">
+            <ThemeToggle />
+            <div className="hidden items-center gap-8 md:flex">
             {isAuthenticated ? (
               <>
                 <RoleTabs />
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={logout}
-                    className="text-gray-600 hover:text-blue-600"
-                  >
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
+                  <Button variant="outline" size="sm" onClick={logout}>
                     Logout
                   </Button>
                 </div>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                <Link
+                  to="/login"
+                  className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-primary"
+                >
                   Login
                 </Link>
-                <Link to="/register" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                <Link
+                  to="/register"
+                  className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-primary"
+                >
                   Register
                 </Link>
               </>
             )}
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="px-4 py-20 lg:py-32">
-        <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Revolutionize Your
-              <span className="text-blue-600 block">Patient Workflow</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-              AI-powered medical note summarization & intelligent scheduling recommendations 
-              that help doctors focus on what matters most - patient care.
+      <section className="relative px-4 pb-24 pt-16 lg:pb-32 lg:pt-24">
+        <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-[min(100%,820px)] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/20 via-teal-300/25 to-primary/15 blur-[80px]" />
+        <div className="container relative mx-auto text-center">
+          <div className="mx-auto max-w-4xl">
+            <div className="motion-safe:animate-fade-down">
+              <p className="mb-6 inline-flex items-center rounded-full border border-border/70 bg-background/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground shadow-sm backdrop-blur-sm">
+                Clinical workflow • AI-assisted
+              </p>
+              <h1 className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-foreground md:text-6xl lg:text-[3.5rem] motion-safe:animate-fade-up">
+                Revolutionize Your
+                <span className="mt-3 block bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-600 bg-[length:200%_auto] bg-clip-text pb-2 text-transparent motion-safe:animate-gradient-shift">
+                  Patient Workflow
+                </span>
+              </h1>
+            </div>
+
+            <p className="mx-auto mb-12 mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
+              AI-powered medical note summarization and intelligent scheduling recommendations that help doctors focus on
+              what matters most — patient care.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+
+            <div className="flex flex-col items-center justify-center gap-4 motion-safe:animate-fade-up motion-safe:animate-in-delay-200 sm:flex-row">
               {isAuthenticated ? (
                 <Link to={primaryRoute}>
-                  <Button 
-                    size="lg" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
-                  >
+                  <Button size="lg" className="group min-w-[200px] gap-2 px-8 text-lg">
                     {primaryActionLabel}
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="h-5 w-5 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:translate-x-1" />
                   </Button>
                 </Link>
               ) : (
                 <>
                   <Link to="/register">
-                    <Button 
-                      size="lg" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
-                    >
+                    <Button size="lg" className="group min-w-[200px] gap-2 px-8 text-lg">
                       Get Started Now
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      <ArrowRight className="h-5 w-5 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:translate-x-1" />
                     </Button>
                   </Link>
                   <Link to="/login">
-                    <Button 
-                      size="lg" 
-                      variant="outline" 
-                      className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
-                    >
+                    <Button size="lg" variant="outline" className="min-w-[160px] border-primary/35 px-8 text-lg text-primary backdrop-blur-sm hover:border-primary/50">
                       Sign In
                     </Button>
                   </Link>
@@ -104,186 +158,118 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="px-4 py-20 bg-white">
+      <section id="features" className="relative border-y border-border/40 bg-muted/35 px-4 py-24 backdrop-blur-[1px]">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="mb-20 text-center motion-safe:animate-fade-up">
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Powerful Features for Modern Healthcare
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="mx-auto mt-5 max-w-2xl text-pretty text-lg text-muted-foreground">
               Our AI-driven platform streamlines your workflow and enhances patient care.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
-              <CardContent className="p-0">
-                <FileText className="h-12 w-12 text-blue-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Smart Note Summarization
-                </h3>
-                <p className="text-gray-600">
-                  Automatically extract key insights from patient notes using advanced AI, 
-                  saving hours of manual review time.
-                </p>
-              </CardContent>
-            </Card>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
-              <CardContent className="p-0">
-                <Calendar className="h-12 w-12 text-blue-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Intelligent Scheduling
-                </h3>
-                <p className="text-gray-600">
-                  Get personalized scheduling recommendations based on patient history, 
-                  urgency levels, and optimal care windows.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
-              <CardContent className="p-0">
-                <Brain className="h-12 w-12 text-blue-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  AI-Powered Insights
-                </h3>
-                <p className="text-gray-600">
-                  Discover patterns in patient data and receive actionable insights 
-                  to improve treatment outcomes.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
-              <CardContent className="p-0">
-                <Users className="h-12 w-12 text-blue-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Team Collaboration
-                </h3>
-                <p className="text-gray-600">
-                  Seamlessly share insights and coordinate care with your medical team 
-                  in real-time.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
-              <CardContent className="p-0">
-                <Shield className="h-12 w-12 text-blue-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  HIPAA Compliant
-                </h3>
-                <p className="text-gray-600">
-                  Enterprise-grade security ensures all patient data is protected 
-                  with full HIPAA compliance.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-blue-600">
-              <CardContent className="p-0">
-                <Zap className="h-12 w-12 text-blue-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Lightning Fast
-                </h3>
-                <p className="text-gray-600">
-                  Process thousands of medical notes in seconds, not hours. 
-                  Get instant results when you need them most.
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {featureItems.map(({ Icon, title, body }, i) => {
+              const staggerDelays = [
+                "",
+                "motion-safe:animate-in-delay-100",
+                "motion-safe:animate-in-delay-200",
+                "motion-safe:animate-in-delay-300",
+                "motion-safe:animate-in-delay-400",
+                "motion-safe:animate-in-delay-500",
+              ];
+              return (
+              <Card
+                key={title}
+                className={`group border-l-[3px] border-l-primary/85 p-6 motion-safe:animate-fade-up hover:border-primary/90 ${staggerDelays[i] ?? ""} [&:hover_.feature-icon-shell]:motion-safe:bg-primary/10`}
+              >
+                <CardContent className="p-0">
+                  <span className="feature-icon-shell mb-5 inline-flex size-14 items-center justify-center rounded-2xl border border-primary/15 bg-accent/70 text-primary shadow-inner transition-colors duration-300">
+                    <Icon className="size-7 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.06]" aria-hidden />
+                  </span>
+                  <h3 className="mb-3 text-xl font-semibold tracking-tight text-foreground">{title}</h3>
+                  <p className="leading-relaxed text-muted-foreground">{body}</p>
+                </CardContent>
+              </Card>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="px-4 py-20 bg-blue-50">
+      <section id="testimonials" className="px-4 py-24">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="mb-16 text-center motion-safe:animate-fade-up">
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Trusted by Healthcare Professionals
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="mt-4 text-xl text-muted-foreground">
               See how Eligio AI will transform medical practices nationwide.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="p-6 bg-white">
-              <CardContent className="p-0">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    KG
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Neurologist</h4>
-                    <p className="text-gray-600 text-sm">Johns Hopkins Hospital</p>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">
-                  "Having Eligio AI would cut my note review time by 70%. I would be able to spend more quality time 
-                  with my patients instead of drowning in paperwork."
-                </p>
-              </CardContent>
-            </Card>
 
-            <Card className="p-6 bg-white">
-              <CardContent className="p-0">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    JB
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                initials: "KG",
+                role: "Neurologist",
+                org: "Johns Hopkins Hospital",
+                quote:
+                  "Having Eligio AI would cut my note review time by 70%. I would be able to spend more quality time with my patients instead of drowning in paperwork.",
+              },
+              {
+                initials: "JB",
+                role: "Cardiologist",
+                org: "Mount Sinai Hospital",
+                quote:
+                  "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient needs we might have missed. Absolutely revolutionary.",
+              },
+              {
+                initials: "RP",
+                role: "Patient Access Leadership Team",
+                org: "Johns Hopkins Hospital",
+                quote:
+                  "60% of referrals require manual chart review, and it takes 40 hours/week to review documentation. Eligio AI would really help us reduce scheduling time and streamline referrals.",
+              },
+            ].map((t, idx) => (
+              <Card
+                key={t.initials}
+                className={`bg-card/98 p-6 motion-safe:animate-fade-up ${["motion-safe:animate-in-delay-100", "motion-safe:animate-in-delay-200", "motion-safe:animate-in-delay-300"][idx]}`}
+              >
+                <CardContent className="p-0">
+                  <div className="mb-5 flex items-center gap-4">
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-teal-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25">
+                      {t.initials}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold leading-snug text-foreground">{t.role}</h4>
+                      <p className="text-sm text-muted-foreground">{t.org}</p>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Cardiologist</h4>
-                    <p className="text-gray-600 text-sm">Mount Sinai Hospital</p>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">
-                  "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient 
-                  needs we might have missed. Absolutely revolutionary."
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 bg-white">
-              <CardContent className="p-0">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    RP
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-semibold text-gray-900">Patient Access Leadership Team</h4>
-                    <p className="text-gray-600 text-sm">Johns Hopkins Hospital</p>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">
-                  "60% of referrals require manual chart review, and it takes 40 hours/week to review documentation. Eligio AI would really help us reduce scheduling time and streamline referrals."
-                </p>
-              </CardContent>
-            </Card>
+                  <p className="text-pretty italic leading-relaxed text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="px-4 py-20 bg-blue-600">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+      <section className="relative overflow-hidden px-4 py-24">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-600 via-teal-600 to-cyan-900" />
+        <div className="pointer-events-none absolute -left-[20%] top-[-40%] h-[120%] w-[55%] rounded-full bg-teal-300/15 blur-[100px]" />
+        <div className="pointer-events-none absolute -right-[10%] bottom-[-35%] h-[95%] w-[45%] rounded-full bg-cyan-400/15 blur-[90px]" />
+        <div className="relative container mx-auto text-center">
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-white md:text-4xl motion-safe:animate-fade-up">
             Ready to Transform Your Practice?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join the waitlist to be among the first healthcare professionals to experience 
-            the future of AI-powered medical practice management with Eligio AI.
+          <p className="mx-auto mb-12 mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-white/85 motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
+            Join the waitlist to be among the first healthcare professionals to experience the future of AI-powered
+            medical practice management with Eligio AI.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="motion-safe:animate-fade-up motion-safe:animate-in-delay-200">
             <Link to={isAuthenticated ? primaryRoute : "/login"}>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-white text-blue-600 hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
-              >
+              <Button size="lg" variant="outline" className="min-w-[220px] border-white/85 bg-white/10 px-8 text-lg text-white shadow-lg backdrop-blur-md transition-colors duration-300 hover:bg-white hover:text-primary">
                 {isAuthenticated ? primaryActionLabel : "Eligio AI chat"}
               </Button>
             </Link>
@@ -291,22 +277,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-4 py-12 bg-gray-900 text-white">
+      <footer className="border-t border-border/60 bg-slate-950 px-4 py-14 text-white">
         <div className="container mx-auto">
-          <div className="grid md:grid-cols-1 gap-8 text-center">
-            <div>
-              <div className="flex items-center space-x-2 mb-4 justify-center">
-                <img src={eligioLogo} alt="Eligio AI" className="w-16 h-16 object-contain" />
-                <span className="text-xl font-bold">Eligio AI</span>
-              </div>
-              <p className="text-gray-400">
-                Revolutionizing healthcare with AI-powered solutions for medical professionals.
-              </p>
+          <div className="text-center">
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <img src={eligioLogo} alt="Eligio AI" className="size-14 object-contain opacity-95" />
+              <span className="text-xl font-bold tracking-tight">Eligio AI</span>
             </div>
+            <p className="text-pretty text-slate-400">Revolutionizing healthcare with AI-powered solutions for medical professionals.</p>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 Eligio AI. All rights reserved.</p>
+          <div className="mt-10 border-t border-white/10 pt-8 text-center text-sm text-slate-500">
+            <p>&copy; {new Date().getFullYear()} Eligio AI. All rights reserved.</p>
           </div>
         </div>
       </footer>

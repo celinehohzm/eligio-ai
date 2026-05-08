@@ -1,11 +1,16 @@
-import { Toaster as Sonner } from "sonner";
+import { Toaster as SonnerBase } from "sonner";
+import { useTheme } from "next-themes";
 
 const Toaster = (props) => {
+  const { resolvedTheme } = useTheme();
+  const sonnerTheme = resolvedTheme === "dark" ? "dark" : "light";
+
   return (
-    <Sonner
+    <SonnerBase
       richColors
       closeButton
       position="top-right"
+      theme={sonnerTheme}
       {...props}
     />
   );
