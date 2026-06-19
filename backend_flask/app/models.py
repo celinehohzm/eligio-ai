@@ -1,10 +1,14 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
 from app.roles import DEFAULT_REGISTRATION_ROLE
+
+JSONVariant = JSON().with_variant(JSONB(), "postgresql")
 
 
 def new_uuid():
@@ -49,7 +53,8 @@ class Submission(db.Model):
     chief_complaint = db.Column(db.Text, nullable=True)
     evaluation = db.Column(db.Text, nullable=True)
     diagnosis = db.Column(db.Text, nullable=True)
-    submitted_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    triage_profile = db.Column(JSONVariant, nullable=True)
+    submitted_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
     status = db.Column(db.String(50), nullable=False, default="received")
     documents = db.relationship(
         "Document",

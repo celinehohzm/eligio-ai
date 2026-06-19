@@ -32,59 +32,54 @@ def _get_scheduler_user():
     return User.query.filter_by(email=current_email).first()
 
 
-def _build_referral_triage_data(submission):
-    triage_profile = {
-        "insurance": None,
-        "medicalRecordNumber": None,
-        "chiefComplaint": submission.chief_complaint or submission.reason_for_referral,
-        "historyOfPresentIllness": None,
-        "physicalExam": None,
-        "imagingResults": None,
-        "labResults": None,
-        "otherProviders": None,
-        "routingRecommendation": None,
-    }
+def _get_or_backfill_triage_profile(submission):
+    """Return the stored triage profile, computing and persisting it once if missing.
+
+    New referrals get this populated at upload time (see app/api/upload.py). This
+    fallback only runs for referrals uploaded before that change existed.
+    """
+    if submission.triage_profile is not None:
+        return submission.triage_profile
 
     referral_document = next(
         (document for document in submission.documents if document.category == "Referral PDF"),
         None,
     )
     if not referral_document:
-        return triage_profile
+        return None
 
     try:
         file_bytes = current_app.storage_service.read_file(
             referral_document.storage_key or referral_document.file_path
         )
         processed_pdf = current_app.pdf_ocr_service.process_referral_pdf(file_bytes)
-        triage_profile.update(
-            current_app.ai_service.extract_referral_triage_profile(
-                processed_pdf.extracted_text or "",
-                reason_for_referral=submission.reason_for_referral,
-            )
-        )
-        triage_profile["routingRecommendation"] = current_app.ai_service.get_routing_recommendation(
-            triage_profile,
+        triage_profile = current_app.ai_service.build_referral_triage_data(
+            processed_pdf.extracted_text or "",
             reason_for_referral=submission.reason_for_referral,
-            referral_document_text=processed_pdf.extracted_text or "",
         )
+        submission.triage_profile = triage_profile
+        db.session.commit()
+        return triage_profile
     except Exception:
         current_app.logger.warning(
             "Failed to derive triage profile for referral %s",
             submission.id,
             exc_info=True,
         )
-
-    return triage_profile
+        return None
 
 
 def _serialize_referral(submission):
     payload = submission.to_dict()
-    triage_profile = _build_referral_triage_data(submission)
+    triage_profile = _get_or_backfill_triage_profile(submission) or {}
     payload["patientInfo"]["insurance"] = triage_profile.get("insurance")
     payload["patientInfo"]["medicalRecordNumber"] = triage_profile.get("medicalRecordNumber")
     payload["triageHighlights"] = {
-        "chiefComplaint": triage_profile.get("chiefComplaint"),
+        "chiefComplaint": (
+            triage_profile.get("chiefComplaint")
+            or submission.chief_complaint
+            or submission.reason_for_referral
+        ),
         "historyOfPresentIllness": triage_profile.get("historyOfPresentIllness"),
         "physicalExam": triage_profile.get("physicalExam"),
         "imagingResults": triage_profile.get("imagingResults"),

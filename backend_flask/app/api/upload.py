@@ -127,6 +127,17 @@ def upload_documents():
         submission.evaluation = extracted_summary.get('evaluation')
         submission.diagnosis = extracted_summary.get('diagnosis')
 
+        try:
+            submission.triage_profile = current_app.ai_service.build_referral_triage_data(
+                extracted_pdf_text,
+                reason_for_referral=cleaned_referral_data['reasonForReferral'],
+            )
+        except Exception:
+            logging.warning(
+                "Failed to derive triage profile at upload for %s", submission_id, exc_info=True
+            )
+            submission.triage_profile = None
+
         db.session.add(submission)
 
         uploaded_files = []

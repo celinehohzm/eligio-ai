@@ -242,6 +242,39 @@ Referral packet text:
             logging.warning("Falling back to heuristic triage extraction: %s", exc)
             return self._heuristic_referral_triage_profile(normalized_text, reason_for_referral)
 
+    def build_referral_triage_data(self, extracted_text, reason_for_referral=None):
+        """Extract the full triage profile and routing recommendation for a referral packet.
+
+        Takes already-extracted PDF text so callers (upload-time and the lazy
+        backfill path) don't need to re-read/re-OCR the file themselves.
+        """
+        triage_profile = {
+            "insurance": None,
+            "medicalRecordNumber": None,
+            "chiefComplaint": reason_for_referral,
+            "historyOfPresentIllness": None,
+            "physicalExam": None,
+            "imagingResults": None,
+            "labResults": None,
+            "otherProviders": None,
+            "routingRecommendation": None,
+        }
+        try:
+            triage_profile.update(
+                self.extract_referral_triage_profile(
+                    extracted_text or "",
+                    reason_for_referral=reason_for_referral,
+                )
+            )
+            triage_profile["routingRecommendation"] = self.get_routing_recommendation(
+                triage_profile,
+                reason_for_referral=reason_for_referral,
+                referral_document_text=extracted_text or "",
+            )
+        except Exception:
+            logging.warning("Failed to derive triage profile", exc_info=True)
+        return triage_profile
+
     def _load_knowledge_base(self):
         if hasattr(self, "_kb_cache"):
             return self._kb_cache
