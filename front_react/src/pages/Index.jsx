@@ -50,6 +50,28 @@ const featureItems = [
   },
 ];
 
+const SectionDivider = ({ dark = false }) => (
+  <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16" aria-hidden>
+    <div
+      className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${
+        dark ? "via-white/35" : "via-primary/30"
+      } to-transparent`}
+    />
+    <div
+      className={`absolute left-1/2 top-0 h-14 w-px -translate-x-1/2 bg-gradient-to-b ${
+        dark ? "from-white/35" : "from-primary/35"
+      } to-transparent`}
+    />
+    <span
+      className={`absolute left-1/2 top-3 size-2 -translate-x-1/2 rounded-full border ${
+        dark
+          ? "border-white/45 bg-white/70 shadow-[0_0_26px_rgba(255,255,255,0.45)]"
+          : "border-primary/35 bg-background shadow-[0_0_24px_hsl(var(--primary)/0.28)]"
+      }`}
+    />
+  </div>
+);
+
 const Index = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const primaryRoute = getDefaultRouteForRole(user?.role);
@@ -109,8 +131,9 @@ const Index = () => {
         </div>
       </header>
 
-      <section className="relative px-4 pb-24 pt-16 lg:pb-32 lg:pt-24">
+      <section className="relative overflow-hidden px-4 pb-24 pt-16 lg:pb-32 lg:pt-24">
         <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-[min(100%,820px)] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/20 via-teal-300/25 to-primary/15 blur-[80px]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-background/75 to-muted/35" aria-hidden />
         <div className="container relative mx-auto text-center">
           <div className="mx-auto max-w-4xl">
             <div className="motion-safe:animate-fade-down">
@@ -158,7 +181,10 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="features" className="relative border-y border-border/40 bg-muted/35 px-4 py-24 backdrop-blur-[1px]">
+      <section id="features" className="relative overflow-hidden border-y border-border/40 bg-muted/35 px-4 py-24 backdrop-blur-[1px]">
+        <SectionDivider />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-[linear-gradient(174deg,transparent_0%,transparent_45%,hsl(var(--background)/0.62)_46%,transparent_68%)]" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent md:block" aria-hidden />
         <div className="container mx-auto">
           <div className="mb-20 text-center motion-safe:animate-fade-up">
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
@@ -198,7 +224,10 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="testimonials" className="px-4 py-24">
+      <section id="testimonials" className="relative overflow-hidden px-4 py-24">
+        <SectionDivider />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(186deg,hsl(var(--muted)/0.42)_0%,transparent_58%)]" aria-hidden />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[min(88%,980px)] -translate-x-1/2 bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
         <div className="container mx-auto">
           <div className="mb-16 text-center motion-safe:animate-fade-up">
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
@@ -256,7 +285,9 @@ const Index = () => {
       </section>
 
       <section className="relative overflow-hidden px-4 py-24">
+        <SectionDivider dark />
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-600 via-teal-600 to-cyan-900" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-[linear-gradient(176deg,hsl(var(--background))_0%,hsl(var(--background)/0.72)_34%,transparent_35%)]" aria-hidden />
         <div className="pointer-events-none absolute -left-[20%] top-[-40%] h-[120%] w-[55%] rounded-full bg-teal-300/15 blur-[100px]" />
         <div className="pointer-events-none absolute -right-[10%] bottom-[-35%] h-[95%] w-[45%] rounded-full bg-cyan-400/15 blur-[90px]" />
         <div className="relative container mx-auto text-center">
