@@ -208,14 +208,14 @@ const Index = () => {
               return (
               <Card
                 key={title}
-                className={`group relative overflow-hidden border-border/55 bg-card/90 p-0 shadow-sm shadow-slate-900/5 backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform] duration-300 hover:border-border/80 hover:bg-card hover:shadow-xl hover:shadow-slate-900/10 motion-safe:animate-fade-up motion-safe:hover:-translate-y-1 ${staggerDelays[i] ?? ""} [&:hover_.feature-icon-shell]:border-border [&:hover_.feature-icon-shell]:bg-muted/80 [&:hover_.feature-icon-shell]:text-primary [&:hover_.feature-orbit]:opacity-100`}
+                className={`group relative overflow-hidden border border-primary/20 bg-card/90 p-0 shadow-sm shadow-primary/5 outline outline-1 outline-cyan-50/70 backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform] duration-300 hover:border-primary/45 hover:bg-card hover:shadow-xl hover:shadow-primary/10 motion-safe:animate-fade-up motion-safe:hover:-translate-y-1 ${staggerDelays[i] ?? ""} [&:hover_.feature-icon-shell]:border-primary/30 [&:hover_.feature-icon-shell]:bg-primary/10 [&:hover_.feature-icon-shell]:text-primary [&:hover_.feature-orbit]:opacity-100`}
               >
-                <div className="absolute inset-x-6 top-0 h-px bg-border/70" aria-hidden />
+                <div className="absolute inset-x-6 top-0 h-px bg-primary/25" aria-hidden />
                 <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-muted/70 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden />
                 <CardContent className="relative p-6">
                   <div className="mb-6 flex items-start justify-between gap-4">
                     <span className="feature-icon-shell relative inline-flex size-12 items-center justify-center rounded-lg border border-border/80 bg-background/80 text-primary/90 shadow-sm transition-[background-color,border-color,color,transform] duration-300 motion-safe:group-hover:scale-[1.04]">
-                      <span className="feature-orbit absolute -inset-2 rounded-xl border border-border/70 opacity-0 transition-opacity duration-300" aria-hidden />
+                      <span className="feature-orbit absolute -inset-2 rounded-xl border border-primary/20 opacity-0 transition-opacity duration-300" aria-hidden />
                       <Icon className="relative size-6" aria-hidden />
                     </span>
                     <span className="mt-1 h-px flex-1 bg-gradient-to-r from-border via-border/60 to-transparent" aria-hidden />
