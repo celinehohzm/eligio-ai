@@ -129,7 +129,16 @@ export default function ExternalProviderUpload() {
 
         <form onSubmit={onSubmit} className="space-y-8">
           <Card className="border-l-[3px] border-l-primary p-6 motion-safe:animate-fade-up">
-            <h2 className="mb-8 text-xl font-semibold tracking-tight text-foreground">Patient Information</h2>
+            <div className="mb-8 flex items-start gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                1
+              </span>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 1 of 2</p>
+                <h2 className="text-xl font-semibold tracking-tight text-foreground">Patient Information</h2>
+                <p className="mt-1 text-sm text-muted-foreground">All fields below are required.</p>
+              </div>
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium mb-2">Patient's Name</label>
@@ -196,7 +205,16 @@ export default function ExternalProviderUpload() {
           </Card>
 
           <Card className="border-l-[3px] border-l-primary p-6 motion-safe:animate-fade-up motion-safe:animate-in-delay-100">
-            <h2 className="mb-8 text-xl font-semibold tracking-tight text-foreground">Referral PDF</h2>
+            <div className="mb-8 flex items-start gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                2
+              </span>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 2 of 2</p>
+                <h2 className="text-xl font-semibold tracking-tight text-foreground">Referral PDF</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Click below to choose the file from your computer.</p>
+              </div>
+            </div>
             <div className="space-y-4">
               <input
                 id="referral-pdf-upload"
@@ -205,20 +223,19 @@ export default function ExternalProviderUpload() {
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <label htmlFor="referral-pdf-upload">
-                <Button type="button" variant="outline" asChild>
-                  <span className="cursor-pointer">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Select PDF
-                  </span>
+
+              <label
+                htmlFor="referral-pdf-upload"
+                className="block cursor-pointer rounded-2xl border border-dashed border-primary/35 bg-accent/35 p-8 text-center transition-colors duration-300 hover:border-primary/55 hover:bg-accent/50 motion-safe:focus-within:ring-2 motion-safe:focus-within:ring-primary/20"
+              >
+                <FileText className="mx-auto mb-4 size-10 text-primary/80" />
+                <p className="text-sm font-medium text-foreground">Click to select a PDF referral packet</p>
+                <p className="mt-1 text-xs text-muted-foreground">PDF only</p>
+                <Button type="button" variant="outline" className="mt-4 pointer-events-none" tabIndex={-1}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Select PDF
                 </Button>
               </label>
-
-              <div className="rounded-2xl border border-dashed border-primary/35 bg-accent/35 p-8 text-center transition-colors duration-300 hover:border-primary/55 hover:bg-accent/50 motion-safe:focus-within:ring-2 motion-safe:focus-within:ring-primary/20">
-                <FileText className="mx-auto mb-4 size-10 text-primary/80" />
-                <p className="text-sm font-medium text-foreground">Upload one PDF referral packet.</p>
-                <p className="mt-1 text-xs text-muted-foreground">PDF only</p>
-              </div>
 
               {referralPdf && (
                 <div className="flex items-center gap-3 rounded-xl border border-primary/25 bg-accent/60 p-3">

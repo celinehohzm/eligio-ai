@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import StatusPill, { STATUS_TONE_CLASSES } from "@/components/StatusPill";
 import eligioLogo from "@/assets/eligio-logo.png";
 import apiService from "@/services/api";
 import { toast } from "sonner";
@@ -202,6 +203,9 @@ const TRIAGE_HIGHLIGHT_FIELDS = [
   { key: "labResults", label: "Lab Results" },
   { key: "otherProviders", label: "Other Providers" },
 ];
+
+const CONFIDENCE_TONE = { high: "success", medium: "warning", low: "danger" };
+const URGENCY_TONE = { emergent: "warning", emergency: "danger" };
 
 const cleanValue = (value) => String(value || "").trim();
 const formatDisplayValue = (value, fallback = "Not identified in the uploaded document.") =>
@@ -1191,7 +1195,7 @@ export default function ReferralQueue() {
                             type="button"
                             onClick={() => handleDeleteReferral(referral)}
                             disabled={isDeleting}
-                            className="inline-flex shrink-0 items-center rounded-md border border-red-500/30 bg-card px-2.5 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex shrink-0 items-center rounded-md border border-destructive/30 bg-card px-2.5 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
                             aria-label={`Delete ${referral.fullName}`}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1233,7 +1237,7 @@ export default function ReferralQueue() {
 
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <ClipboardList className="mt-0.5 h-5 w-5 text-cyan-600" />
+                    <ClipboardList className="mt-0.5 h-5 w-5 text-primary" />
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">Demographic Data</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
@@ -1278,7 +1282,7 @@ export default function ReferralQueue() {
 
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <ClipboardList className="mt-0.5 h-5 w-5 text-cyan-600" />
+                    <ClipboardList className="mt-0.5 h-5 w-5 text-primary" />
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">Routing Recommendation</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
@@ -1288,11 +1292,14 @@ export default function ReferralQueue() {
                   </div>
 
                   {routingRecommendation?.escalateForReview && (
-                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-sm font-semibold text-amber-900">Physician review recommended</p>
-                      <p className="mt-1 text-sm text-amber-800">
-                        {formatDisplayValue(routingRecommendation?.escalationReason, "Routing confidence is low.")}
-                      </p>
+                    <div className="mt-4 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden />
+                      <div>
+                        <p className="text-sm font-semibold text-warning">Physician review recommended</p>
+                        <p className="mt-1 text-sm text-foreground/85">
+                          {formatDisplayValue(routingRecommendation?.escalationReason, "Routing confidence is low.")}
+                        </p>
+                      </div>
                     </div>
                   )}
 
@@ -1305,28 +1312,16 @@ export default function ReferralQueue() {
                         {formatDisplayValue(routingRecommendation?.recommendedClinic)}
                       </p>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${
-                            routingRecommendation?.confidenceLevel === "high"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : routingRecommendation?.confidenceLevel === "medium"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {String(routingRecommendation?.confidenceLevel || "low")} confidence
-                        </span>
+                        <StatusPill
+                          tone={CONFIDENCE_TONE[routingRecommendation?.confidenceLevel] || "danger"}
+                          label={`${String(routingRecommendation?.confidenceLevel || "low")} confidence`}
+                        />
                         {routingRecommendation?.urgency &&
                           routingRecommendation.urgency !== "routine" && (
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${
-                                routingRecommendation.urgency === "emergent"
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {routingRecommendation.urgency}
-                            </span>
+                            <StatusPill
+                              tone={URGENCY_TONE[routingRecommendation.urgency] || "danger"}
+                              label={routingRecommendation.urgency}
+                            />
                           )}
                       </div>
                     </div>
@@ -1409,20 +1404,16 @@ export default function ReferralQueue() {
                                   <li
                                     key={`${idx}-${item.requirement?.slice(0, 48) ?? idx}`}
                                     className={`rounded-lg border px-3 py-3 text-sm leading-relaxed ${
-                                      missing
-                                        ? "border-red-500/30 bg-red-500/10 dark:bg-red-950/35"
-                                        : ok
-                                        ? "border-emerald-300/50 bg-emerald-50/40 dark:bg-emerald-950/25"
-                                          : "border-amber-500/25 bg-amber-500/10 dark:bg-amber-950/30"
+                                      STATUS_TONE_CLASSES[missing ? "danger" : ok ? "success" : "warning"]
                                     }`}
                                   >
                                     <div className="flex items-start gap-2">
                                       {missing ? (
-                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" aria-hidden />
+                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden />
                                       ) : ok ? (
-                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
                                       ) : (
-                                        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+                                        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
                                       )}
                                       <div className="min-w-0">
                                         <p className="font-medium text-foreground">{item.requirement}</p>
@@ -1430,7 +1421,7 @@ export default function ReferralQueue() {
                                           <p className="mt-1 text-xs leading-5 text-foreground/85">{item.notes}</p>
                                         ) : null}
                                         {missing ? (
-                                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">
+                                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-destructive">
                                             Missing or unclear in packet
                                           </p>
                                         ) : null}
@@ -1526,7 +1517,7 @@ export default function ReferralQueue() {
                     )}
 
                     {!isLoadingPdfPreview && pdfPreviewError && (
-                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-center text-sm text-red-600">
+                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10 px-4 text-center text-sm text-destructive">
                         {pdfPreviewError}
                       </div>
                     )}
@@ -1540,7 +1531,7 @@ export default function ReferralQueue() {
                     {!isLoadingPdfPreview && !pdfPreviewError && pdfPreviewUrl && (
                       <div className="overflow-hidden rounded-xl border border-border bg-card">
                         <div className="flex items-center gap-2 border-b border-border bg-muted/35 px-4 py-3 text-sm text-muted-foreground">
-                          <FileText className="h-4 w-4 text-cyan-600" />
+                          <FileText className="h-4 w-4 text-primary" />
                           <span className="truncate">
                             {selectedReferralDocument?.originalName || selectedReferralDocument?.filename || "Referral PDF"}
                           </span>
@@ -1595,7 +1586,7 @@ export default function ReferralQueue() {
                         <div
                           className={`max-w-[90%] rounded-xl px-4 py-3 text-sm leading-6 shadow-sm ${
                             message.role === "user"
-                              ? "bg-cyan-600 text-white"
+                              ? "bg-primary text-primary-foreground"
                               : "border border-border bg-muted/35 text-foreground"
                           }`}
                         >
@@ -1613,7 +1604,7 @@ export default function ReferralQueue() {
                     )}
 
                     {chatError && (
-                      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                      <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                         {chatError}
                       </div>
                     )}
