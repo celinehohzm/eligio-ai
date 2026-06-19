@@ -208,14 +208,21 @@ const Index = () => {
               return (
               <Card
                 key={title}
-                className={`group border-l-[3px] border-l-primary/85 p-6 motion-safe:animate-fade-up hover:border-primary/90 ${staggerDelays[i] ?? ""} [&:hover_.feature-icon-shell]:motion-safe:bg-primary/10`}
+                className={`group relative overflow-hidden border-border/55 bg-card/90 p-0 shadow-sm shadow-slate-900/5 backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform] duration-300 hover:border-border/80 hover:bg-card hover:shadow-xl hover:shadow-slate-900/10 motion-safe:animate-fade-up motion-safe:hover:-translate-y-1 ${staggerDelays[i] ?? ""} [&:hover_.feature-icon-shell]:border-border [&:hover_.feature-icon-shell]:bg-muted/80 [&:hover_.feature-icon-shell]:text-primary [&:hover_.feature-orbit]:opacity-100`}
               >
-                <CardContent className="p-0">
-                  <span className="feature-icon-shell mb-5 inline-flex size-14 items-center justify-center rounded-2xl border border-primary/15 bg-accent/70 text-primary shadow-inner transition-colors duration-300">
-                    <Icon className="size-7 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.06]" aria-hidden />
-                  </span>
-                  <h3 className="mb-3 text-xl font-semibold tracking-tight text-foreground">{title}</h3>
-                  <p className="leading-relaxed text-muted-foreground">{body}</p>
+                <div className="absolute inset-x-6 top-0 h-px bg-border/70" aria-hidden />
+                <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-muted/70 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden />
+                <CardContent className="relative p-6">
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <span className="feature-icon-shell relative inline-flex size-12 items-center justify-center rounded-lg border border-border/80 bg-background/80 text-primary/90 shadow-sm transition-[background-color,border-color,color,transform] duration-300 motion-safe:group-hover:scale-[1.04]">
+                      <span className="feature-orbit absolute -inset-2 rounded-xl border border-border/70 opacity-0 transition-opacity duration-300" aria-hidden />
+                      <Icon className="relative size-6" aria-hidden />
+                    </span>
+                    <span className="mt-1 h-px flex-1 bg-gradient-to-r from-border via-border/60 to-transparent" aria-hidden />
+                  </div>
+                  <h3 className="mb-3 max-w-[14rem] text-xl font-semibold tracking-tight text-foreground">{title}</h3>
+                  <p className="text-sm leading-6 text-muted-foreground">{body}</p>
+                  <span className="mt-6 block h-px w-12 bg-border transition-[width] duration-300 group-hover:w-20" aria-hidden />
                 </CardContent>
               </Card>
               );
