@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { ArrowRight, Calendar, FileText, Users, Shield, Zap, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,9 +77,18 @@ const Index = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const primaryRoute = getDefaultRouteForRole(user?.role);
   const primaryActionLabel = getPrimaryActionLabelForRole(user?.role);
+  const handlePointerMove = useCallback((event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty("--cursor-x", `${event.clientX - rect.left}px`);
+    event.currentTarget.style.setProperty("--cursor-y", `${event.clientY - rect.top}px`);
+  }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div
+      className="relative min-h-screen overflow-x-hidden"
+      onPointerMove={handlePointerMove}
+      style={{ "--cursor-x": "50vw", "--cursor-y": "18rem" }}
+    >
       <header className="site-header">
         <div className="container mx-auto flex w-full items-center justify-between">
           <div className="flex items-center gap-3">
@@ -131,9 +141,15 @@ const Index = () => {
         </div>
       </header>
 
-      <section className="relative overflow-hidden px-4 pb-24 pt-16 lg:pb-32 lg:pt-24">
-        <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-[min(100%,820px)] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400/20 via-teal-300/25 to-primary/15 blur-[80px]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-background/75 to-muted/35" aria-hidden />
+      <section
+        className="relative overflow-hidden bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(192_58%_96%)_48%,hsl(186_45%_94%)_100%)] px-4 pb-24 pt-16 dark:bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(216_38%_9%)_52%,hsl(198_44%_10%)_100%)] lg:pb-32 lg:pt-24"
+        onPointerMove={handlePointerMove}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,transparent_58%,hsl(var(--primary)/0.08)_58.2%,transparent_76%),linear-gradient(90deg,hsl(var(--foreground)/0.075)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--foreground)/0.055)_1px,transparent_1px)] bg-[auto,52px_52px,52px_52px]" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_360px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.18),transparent_62%)] opacity-90 transition-opacity duration-300 motion-reduce:hidden" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.16)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.12)_1px,transparent_1px)] bg-[52px_52px] opacity-0 [mask-image:radial-gradient(circle_260px_at_var(--cursor-x)_var(--cursor-y),black,transparent_72%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
+        <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-[min(100%,820px)] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.14),transparent_66%)] blur-[70px]" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-background/55 to-muted/45" aria-hidden />
         <div className="container relative mx-auto text-center">
           <div className="mx-auto max-w-4xl">
             <div className="motion-safe:animate-fade-down">
@@ -181,11 +197,19 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="features" className="relative overflow-hidden border-y border-border/40 bg-muted/35 px-4 py-24 backdrop-blur-[1px]">
+      <section
+        id="features"
+        className="relative overflow-hidden border-y border-primary/15 bg-[linear-gradient(180deg,hsl(188_48%_95%)_0%,hsl(203_42%_97%)_48%,hsl(185_38%_94%)_100%)] px-4 py-24 backdrop-blur-[1px] dark:bg-[linear-gradient(180deg,hsl(202_36%_10%)_0%,hsl(218_34%_8%)_54%,hsl(190_34%_9%)_100%)]"
+        onPointerMove={handlePointerMove}
+      >
         <SectionDivider />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-[linear-gradient(174deg,transparent_0%,transparent_45%,hsl(var(--background)/0.62)_46%,transparent_68%)]" aria-hidden />
         <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent md:block" aria-hidden />
-        <div className="container mx-auto">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.095)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.075)_1px,transparent_1px)] bg-[42px_42px] opacity-80" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_420px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.16),transparent_64%)] opacity-80 motion-reduce:hidden" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.2)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.16)_1px,transparent_1px)] bg-[42px_42px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(132deg,transparent_0%,transparent_18%,hsl(var(--background)/0.62)_18.2%,transparent_44%,transparent_100%)]" aria-hidden />
+        <div className="container relative mx-auto">
           <div className="mb-20 text-center motion-safe:animate-fade-up">
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Powerful Features for Modern Healthcare
@@ -231,11 +255,13 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="testimonials" className="relative overflow-hidden px-4 py-24">
+      <section id="testimonials" className="relative overflow-hidden bg-[linear-gradient(180deg,hsl(198_50%_98%)_0%,hsl(180_30%_96%)_48%,hsl(210_32%_97%)_100%)] px-4 py-24 dark:bg-[linear-gradient(180deg,hsl(219_34%_8%)_0%,hsl(205_30%_10%)_50%,hsl(222_34%_7%)_100%)]">
         <SectionDivider />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(186deg,hsl(var(--muted)/0.42)_0%,transparent_58%)]" aria-hidden />
         <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[min(88%,980px)] -translate-x-1/2 bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-        <div className="container mx-auto">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,hsl(178_56%_90%/0.34)_0%,transparent_28%,transparent_72%,hsl(204_72%_92%/0.45)_100%)] dark:bg-[linear-gradient(145deg,hsl(178_46%_18%/0.32)_0%,transparent_30%,transparent_70%,hsl(204_56%_18%/0.25)_100%)]" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(0deg,hsl(var(--background)/0.82),transparent)]" aria-hidden />
+        <div className="container relative mx-auto">
           <div className="mb-16 text-center motion-safe:animate-fade-up">
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Trusted by Healthcare Professionals
@@ -291,12 +317,14 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="relative overflow-hidden px-4 py-24">
+      <section className="relative overflow-hidden bg-cyan-950 px-4 py-24" onPointerMove={handlePointerMove}>
         <SectionDivider dark />
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-600 via-teal-600 to-cyan-900" />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(190_92%_31%)_0%,hsl(174_70%_31%)_42%,hsl(202_84%_18%)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(0_0%_100%/0.12)_1px,transparent_1px),linear-gradient(180deg,hsl(0_0%_100%/0.09)_1px,transparent_1px)] bg-[48px_48px] opacity-50" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_430px_at_var(--cursor-x)_var(--cursor-y),hsl(0_0%_100%/0.16),transparent_64%)] opacity-80 motion-reduce:hidden" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(0_0%_100%/0.24)_1px,transparent_1px),linear-gradient(180deg,hsl(0_0%_100%/0.18)_1px,transparent_1px)] bg-[48px_48px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-[linear-gradient(176deg,hsl(var(--background))_0%,hsl(var(--background)/0.72)_34%,transparent_35%)]" aria-hidden />
-        <div className="pointer-events-none absolute -left-[20%] top-[-40%] h-[120%] w-[55%] rounded-full bg-teal-300/15 blur-[100px]" />
-        <div className="pointer-events-none absolute -right-[10%] bottom-[-35%] h-[95%] w-[45%] rounded-full bg-cyan-400/15 blur-[90px]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(160deg,hsl(0_0%_100%/0.14)_0%,transparent_24%,transparent_100%),linear-gradient(20deg,transparent_0%,transparent_56%,hsl(184_80%_72%/0.16)_56.2%,transparent_78%)]" aria-hidden />
         <div className="relative container mx-auto text-center">
           <h2 className="text-balance text-3xl font-bold tracking-tight text-white md:text-4xl motion-safe:animate-fade-up">
             Ready to Transform Your Practice?
@@ -315,7 +343,7 @@ const Index = () => {
         </div>
       </section>
 
-      <footer className="border-t border-border/60 bg-slate-950 px-4 py-14 text-white">
+      <footer className="border-t border-cyan-300/10 bg-[linear-gradient(180deg,hsl(203_70%_11%)_0%,hsl(222_47%_7%)_100%)] px-4 py-14 text-white">
         <div className="container mx-auto">
           <div className="text-center">
             <div className="mb-4 flex items-center justify-center gap-3">
