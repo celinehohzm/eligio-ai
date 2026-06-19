@@ -51,6 +51,30 @@ const featureItems = [
   },
 ];
 
+const testimonialItems = [
+  {
+    initials: "KG",
+    role: "Neurologist",
+    org: "Johns Hopkins Hospital",
+    quote:
+      "Having Eligio AI would cut my note review time by 70%. I would be able to spend more quality time with my patients instead of drowning in paperwork.",
+  },
+  {
+    initials: "JB",
+    role: "Cardiologist",
+    org: "Mount Sinai Hospital",
+    quote:
+      "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient needs we might have missed. Absolutely revolutionary.",
+  },
+  {
+    initials: "RP",
+    role: "Patient Access Leadership Team",
+    org: "Johns Hopkins Hospital",
+    quote:
+      "60% of referrals require manual chart review, and it takes 40 hours/week to review documentation. Eligio AI would really help us reduce scheduling time and streamline referrals.",
+  },
+];
+
 const SectionDivider = ({ dark = false }) => (
   <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16" aria-hidden>
     <div
@@ -219,38 +243,30 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {featureItems.map(({ Icon, title, body }, i) => {
-              const staggerDelays = [
-                "",
-                "motion-safe:animate-in-delay-100",
-                "motion-safe:animate-in-delay-200",
-                "motion-safe:animate-in-delay-300",
-                "motion-safe:animate-in-delay-400",
-                "motion-safe:animate-in-delay-500",
-              ];
-              return (
-              <Card
-                key={title}
-                className={`group relative overflow-hidden border border-primary/20 bg-card/90 p-0 shadow-sm shadow-primary/5 outline outline-1 outline-cyan-50/70 backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform] duration-300 hover:border-primary/45 hover:bg-card hover:shadow-xl hover:shadow-primary/10 motion-safe:animate-fade-up motion-safe:hover:-translate-y-1 ${staggerDelays[i] ?? ""} [&:hover_.feature-icon-shell]:border-primary/30 [&:hover_.feature-icon-shell]:bg-primary/10 [&:hover_.feature-icon-shell]:text-primary [&:hover_.feature-orbit]:opacity-100`}
-              >
-                <div className="absolute inset-x-6 top-0 h-px bg-primary/25" aria-hidden />
-                <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-muted/70 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden />
-                <CardContent className="relative p-6">
-                  <div className="mb-6 flex items-start justify-between gap-4">
-                    <span className="feature-icon-shell relative inline-flex size-12 items-center justify-center rounded-lg border border-border/80 bg-background/80 text-primary/90 shadow-sm transition-[background-color,border-color,color,transform] duration-300 motion-safe:group-hover:scale-[1.04]">
-                      <span className="feature-orbit absolute -inset-2 rounded-xl border border-primary/20 opacity-0 transition-opacity duration-300" aria-hidden />
-                      <Icon className="relative size-6" aria-hidden />
-                    </span>
-                    <span className="mt-1 h-px flex-1 bg-gradient-to-r from-border via-border/60 to-transparent" aria-hidden />
-                  </div>
-                  <h3 className="mb-3 max-w-[14rem] text-xl font-semibold tracking-tight text-foreground">{title}</h3>
-                  <p className="text-sm leading-6 text-muted-foreground">{body}</p>
-                  <span className="mt-6 block h-px w-12 bg-border transition-[width] duration-300 group-hover:w-20" aria-hidden />
-                </CardContent>
-              </Card>
-              );
-            })}
+          <div className="-mx-4 -my-5 overflow-hidden px-4 py-5 [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)] motion-safe:animate-fade-up">
+            <div className="relative z-10 flex w-max gap-6 motion-safe:animate-marquee-left motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center motion-reduce:[animation:none] hover:[animation-play-state:paused]">
+              {[...featureItems, ...featureItems].map(({ Icon, title, body }, i) => (
+                <Card
+                  key={`${title}-${i}`}
+                  aria-hidden={i >= featureItems.length}
+                  className="group relative min-h-[17rem] w-[min(82vw,22rem)] shrink-0 overflow-hidden border border-primary/25 border-t-primary/45 bg-card/90 p-0 shadow-[inset_0_1px_0_hsl(var(--primary)/0.28),0_1px_2px_hsl(var(--primary)/0.05)] outline outline-1 outline-cyan-50/70 backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform] duration-300 hover:border-primary/45 hover:border-t-primary/65 hover:bg-card hover:shadow-[inset_0_1px_0_hsl(var(--primary)/0.42),0_18px_36px_hsl(var(--primary)/0.10)] motion-safe:hover:-translate-y-1 [&:hover_.feature-icon-shell]:border-primary/30 [&:hover_.feature-icon-shell]:bg-primary/10 [&:hover_.feature-icon-shell]:text-primary [&:hover_.feature-orbit]:opacity-100"
+                >
+                  <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-muted/70 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden />
+                  <CardContent className="relative p-6">
+                    <div className="mb-6 flex items-start justify-between gap-4">
+                      <span className="feature-icon-shell relative inline-flex size-12 items-center justify-center rounded-lg border border-border/80 bg-background/80 text-primary/90 shadow-sm transition-[background-color,border-color,color,transform] duration-300 motion-safe:group-hover:scale-[1.04]">
+                        <span className="feature-orbit absolute -inset-2 rounded-xl border border-primary/20 opacity-0 transition-opacity duration-300" aria-hidden />
+                        <Icon className="relative size-6" aria-hidden />
+                      </span>
+                      <span className="mt-1 h-px flex-1 bg-gradient-to-r from-border via-border/60 to-transparent" aria-hidden />
+                    </div>
+                    <h3 className="mb-3 max-w-[14rem] text-xl font-semibold tracking-tight text-foreground">{title}</h3>
+                    <p className="text-sm leading-6 text-muted-foreground">{body}</p>
+                    <span className="mt-6 block h-px w-12 bg-border transition-[width] duration-300 group-hover:w-20" aria-hidden />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -271,48 +287,29 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                initials: "KG",
-                role: "Neurologist",
-                org: "Johns Hopkins Hospital",
-                quote:
-                  "Having Eligio AI would cut my note review time by 70%. I would be able to spend more quality time with my patients instead of drowning in paperwork.",
-              },
-              {
-                initials: "JB",
-                role: "Cardiologist",
-                org: "Mount Sinai Hospital",
-                quote:
-                  "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient needs we might have missed. Absolutely revolutionary.",
-              },
-              {
-                initials: "RP",
-                role: "Patient Access Leadership Team",
-                org: "Johns Hopkins Hospital",
-                quote:
-                  "60% of referrals require manual chart review, and it takes 40 hours/week to review documentation. Eligio AI would really help us reduce scheduling time and streamline referrals.",
-              },
-            ].map((t, idx) => (
-              <Card
-                key={t.initials}
-                className={`bg-card/98 p-6 motion-safe:animate-fade-up ${["motion-safe:animate-in-delay-100", "motion-safe:animate-in-delay-200", "motion-safe:animate-in-delay-300"][idx]}`}
-              >
-                <CardContent className="p-0">
-                  <div className="mb-5 flex items-center gap-4">
-                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-teal-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25">
-                      {t.initials}
+          <div className="-mx-4 -my-5 overflow-hidden px-4 py-5 [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)] motion-safe:animate-fade-up">
+            <div className="relative z-10 flex w-max gap-6 motion-safe:animate-marquee-right motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center motion-reduce:[animation:none] hover:[animation-play-state:paused]">
+              {[...testimonialItems, ...testimonialItems].map((t, idx) => (
+                <Card
+                  key={`${t.initials}-${idx}`}
+                  aria-hidden={idx >= testimonialItems.length}
+                  className="min-h-[17rem] w-[min(82vw,23rem)] shrink-0 border border-primary/18 border-t-primary/35 bg-card/98 p-6 shadow-[inset_0_1px_0_hsl(var(--primary)/0.22),0_1px_2px_hsl(var(--primary)/0.04)] transition-[border-color,box-shadow,transform] duration-300 hover:border-primary/35 hover:border-t-primary/55 hover:shadow-[inset_0_1px_0_hsl(var(--primary)/0.36),0_18px_36px_hsl(var(--primary)/0.10)] motion-safe:hover:-translate-y-1"
+                >
+                  <CardContent className="p-0">
+                    <div className="mb-5 flex items-center gap-4">
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-teal-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25">
+                        {t.initials}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold leading-snug text-foreground">{t.role}</h4>
+                        <p className="text-sm text-muted-foreground">{t.org}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold leading-snug text-foreground">{t.role}</h4>
-                      <p className="text-sm text-muted-foreground">{t.org}</p>
-                    </div>
-                  </div>
-                  <p className="text-pretty italic leading-relaxed text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
-                </CardContent>
-              </Card>
-            ))}
+                    <p className="text-pretty italic leading-relaxed text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>
