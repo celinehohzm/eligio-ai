@@ -50,19 +50,11 @@ export default function Register() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+    <div className="app-page-shell flex items-center justify-center px-4 py-12">
       <div className="absolute right-4 top-4 z-[2] md:right-8 md:top-8">
         <ThemeToggle />
       </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.9]"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse 72% 64% at 18% -8%, hsl(191 91% 42% / 0.08), transparent 55%), radial-gradient(ellipse 60% 54% at 96% 12%, hsl(174 72% 40% / 0.06), transparent 50%)",
-        }}
-      />
-      <Card className="relative z-[1] w-full max-w-md border-l-[3px] border-l-primary shadow-2xl shadow-primary/20 motion-safe:animate-subtle-zoom">
+      <Card className="themed-panel relative z-[1] w-full max-w-md shadow-2xl shadow-primary/20 motion-safe:animate-subtle-zoom">
         <CardHeader className="text-center pb-6">
           <div className="mb-4 flex justify-center">
             <img src={eligioLogo} alt="Eligio AI" className="size-16 object-contain motion-safe:hover:rotate-1 motion-safe:transition-transform motion-safe:duration-500" />

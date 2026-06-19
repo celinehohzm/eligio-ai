@@ -159,7 +159,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="app-page-shell">
       {/* Header */}
       <header className="site-header">
         <div className="container mx-auto flex items-center justify-between">
@@ -189,7 +189,7 @@ const Chat = () => {
       </header>
 
       {/* Chat Container */}
-      <div className="container mx-auto max-w-4xl px-3 py-4 md:px-4 md:py-6">
+      <div className="container relative mx-auto max-w-4xl px-3 py-4 md:px-4 md:py-6">
         <div className="flex min-h-[70vh] flex-col md:h-[calc(100vh-8rem)]">
           <div
             className="mb-4 flex flex-1 flex-col gap-3 overflow-y-auto md:gap-4"
@@ -199,7 +199,7 @@ const Chat = () => {
               <div className="flex flex-col items-center justify-center px-4 py-14 text-center motion-safe:animate-fade-up md:py-24">
                 <div className="relative mx-auto mb-8">
                   <div className="absolute inset-0 scale-125 rounded-[2rem] bg-gradient-to-br from-primary/25 via-transparent to-teal-400/20 blur-xl motion-safe:animate-pulse" />
-                  <div className="relative flex items-center justify-center rounded-[2rem] border border-primary/15 bg-background/90 p-6 shadow-xl ring-2 ring-primary/10 backdrop-blur-sm">
+                  <div className="themed-panel relative flex items-center justify-center rounded-[2rem] p-6 shadow-xl ring-2 ring-primary/10">
                     <img src={eligioLogo} alt="Eligio AI" className="mx-auto size-24 object-contain motion-safe:animate-float md:size-32" />
                   </div>
                 </div>
@@ -222,8 +222,8 @@ const Chat = () => {
                 <Card
                   className={`relative max-w-[95%] overflow-hidden rounded-2xl border border-border/60 shadow-md backdrop-blur-sm transition-[box-shadow,transform] duration-300 ease-out motion-safe:hover:-translate-y-px motion-safe:hover:shadow-lg sm:max-w-[85%] md:max-w-[80%] ${
                     message.role === "user"
-                      ? "border-l-[3px] border-l-teal-800 bg-gradient-to-br from-primary via-teal-600 to-cyan-800 text-primary-foreground shadow-lg shadow-primary/30"
-                      : "border-l-[3px] border-l-primary bg-card/98"
+                      ? "border-primary/35 border-t-primary/50 bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                      : "themed-panel"
                   }`}
                 >
                   <CardContent className="p-3 md:p-4">
@@ -235,7 +235,7 @@ const Chat = () => {
             
             {isLoading && (
               <div className="flex justify-start motion-safe:animate-fade-up">
-                <Card className="relative max-w-[95%] overflow-hidden rounded-2xl border border-border/70 bg-card/98 shadow-md backdrop-blur-sm before:pointer-events-none before:absolute before:inset-y-4 before:left-0 before:w-1 before:rounded-full before:bg-primary sm:max-w-[85%] md:max-w-[80%]">
+                <Card className="themed-panel relative max-w-[95%] overflow-hidden rounded-2xl shadow-md before:pointer-events-none before:absolute before:inset-y-4 before:left-0 before:w-1 before:rounded-full before:bg-primary sm:max-w-[85%] md:max-w-[80%]">
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center gap-2 md:gap-4">
                       <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-accent/70 md:size-14">
@@ -280,7 +280,7 @@ const Chat = () => {
           </div>
 
           {/* Input Bar */}
-          <div className="sticky bottom-0 mt-auto rounded-[1.25rem] border border-border/65 bg-background/90 p-4 shadow-[0_-8px_30px_-12px_hsl(var(--foreground)/0.12)] backdrop-blur-xl md:p-5">
+          <div className="themed-panel sticky bottom-0 mt-auto rounded-[1.25rem] p-4 md:p-5">
             <form onSubmit={handleSubmit} className="space-y-2 md:space-y-3">
               {pdfFile && (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/25 bg-accent/80 p-3">

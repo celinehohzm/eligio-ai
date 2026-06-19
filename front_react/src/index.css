@@ -164,6 +164,76 @@
     @apply sticky top-0 z-50 flex h-16 shrink-0 items-center border-b border-border/55 bg-background/75 px-4 shadow-[inset_0_-1px_0_0_hsl(var(--border)/0.35)] backdrop-blur-xl lg:px-6;
   }
 
+  .app-page-shell {
+    @apply relative min-h-screen overflow-hidden;
+    isolation: isolate;
+    background: linear-gradient(
+      180deg,
+      hsl(198 70% 99%) 0%,
+      hsl(190 64% 96%) 44%,
+      hsl(184 48% 91%) 100%
+    );
+  }
+
+  .app-page-shell::before,
+  .app-page-shell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .app-page-shell::before {
+    background:
+      radial-gradient(circle 540px at 12% 6%, hsl(var(--primary) / 0.14), transparent 66%),
+      radial-gradient(circle 520px at 92% 18%, hsl(174 72% 42% / 0.1), transparent 62%),
+      linear-gradient(132deg, transparent 0%, transparent 34%, hsl(var(--background) / 0.45) 34.2%, transparent 62%);
+  }
+
+  .app-page-shell::after {
+    opacity: 0.72;
+    background-image:
+      linear-gradient(90deg, hsl(var(--primary) / 0.08) 1px, transparent 1px),
+      linear-gradient(180deg, hsl(var(--primary) / 0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  html.dark .app-page-shell {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--background)) 0%,
+      hsl(202 36% 10%) 52%,
+      hsl(190 34% 9%) 100%
+    );
+  }
+
+  html.dark .app-page-shell::before {
+    background:
+      radial-gradient(circle 520px at 12% 6%, hsl(var(--primary) / 0.1), transparent 66%),
+      radial-gradient(circle 500px at 92% 18%, hsl(174 60% 38% / 0.08), transparent 62%),
+      linear-gradient(132deg, transparent 0%, transparent 34%, hsl(198 34% 12% / 0.45) 34.2%, transparent 62%);
+  }
+
+  html.dark .app-page-shell::after {
+    opacity: 0.5;
+    background-image:
+      linear-gradient(90deg, hsl(var(--primary) / 0.12) 1px, transparent 1px),
+      linear-gradient(180deg, hsl(var(--primary) / 0.09) 1px, transparent 1px);
+  }
+
+  .page-intro {
+    @apply relative mb-8 max-w-3xl text-left motion-safe:animate-fade-up;
+  }
+
+  .page-kicker {
+    @apply mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/75 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary shadow-sm backdrop-blur-sm;
+  }
+
+  .themed-panel {
+    @apply border border-primary/20 border-t-primary/40 bg-card/90 shadow-[inset_0_1px_0_hsl(var(--primary)/0.22),0_18px_48px_-28px_hsl(var(--primary)/0.35)] backdrop-blur-sm;
+  }
+
   @keyframes specialists-panel-reveal {
     from {
       opacity: 0;

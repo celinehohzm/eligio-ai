@@ -12,19 +12,11 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-24">
+    <div className="app-page-shell flex flex-col items-center justify-center px-6 py-24">
       <div className="absolute right-6 top-6 z-[2] md:right-10 md:top-10">
         <ThemeToggle />
       </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-75"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 20% 20%, hsl(191 91% 36% / 0.07), transparent 45%), radial-gradient(circle at 82% 10%, hsl(174 72% 38% / 0.06), transparent 42%)",
-        }}
-      />
-      <div className="relative mx-auto flex max-w-lg flex-col items-center text-center motion-safe:animate-subtle-zoom">
+      <div className="themed-panel relative mx-auto flex max-w-lg flex-col items-center rounded-3xl px-8 py-12 text-center motion-safe:animate-subtle-zoom">
         <span className="mb-8 inline-flex rounded-full border border-primary/20 bg-accent/70 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
           Error 404
         </span>

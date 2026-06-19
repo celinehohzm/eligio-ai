@@ -186,7 +186,7 @@ export default function SpecialistsList() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="app-page-shell">
       <header className="site-header">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -211,9 +211,9 @@ export default function SpecialistsList() {
         </div>
       </header>
 
-      <div className="container mx-auto py-8 px-4 max-w-6xl">
-        <div className="mb-8 motion-safe:animate-fade-down">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-accent/75 px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-primary transition-[border-color,background-color,box-shadow] duration-500 ease-smooth dark:border-primary/45 dark:bg-primary/12 dark:text-primary motion-safe:hover:shadow-md">
+      <div className="container relative mx-auto max-w-6xl px-4 py-8">
+        <div className="page-intro">
+          <div className="page-kicker">
             <ClipboardList className="h-4 w-4" />
             Routing clinic directory (knowledge base)
           </div>
@@ -251,7 +251,7 @@ export default function SpecialistsList() {
               return (
                 <Card
                   key={id}
-                  className="motion-safe:hover:-translate-y-1 motion-safe:animate-fade-up border-border/80 border-l-[3px] border-l-primary bg-card p-6 shadow-[0_2px_28px_-12px_hsl(var(--foreground)/0.12)] backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-700 ease-smooth motion-safe:[animation-fill-mode:backwards] motion-safe:hover:shadow-[0_14px_44px_-18px_hsl(var(--foreground)/0.14)] motion-safe:active:transition-transform motion-safe:active:duration-150 motion-safe:active:ease-out"
+                  className="themed-panel motion-safe:hover:-translate-y-1 motion-safe:animate-fade-up p-6 transition-[transform,box-shadow,border-color] duration-700 ease-smooth motion-safe:[animation-fill-mode:backwards] motion-safe:active:transition-transform motion-safe:active:duration-150 motion-safe:active:ease-out"
                   style={{
                     animationDelay: `${Math.min(index * 52, 480)}ms`,
                   }}

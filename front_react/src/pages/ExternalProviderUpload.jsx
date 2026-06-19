@@ -94,7 +94,7 @@ export default function ExternalProviderUpload() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="app-page-shell">
       {/* Header */}
       <header className="site-header">
         <div className="container mx-auto flex items-center justify-between">
@@ -119,8 +119,12 @@ export default function ExternalProviderUpload() {
         </div>
       </header>
 
-      <div className="container mx-auto max-w-4xl px-4 pb-14 pt-10">
-        <div className="mb-12 motion-safe:animate-fade-up">
+      <div className="container relative mx-auto max-w-4xl px-4 pb-14 pt-10">
+        <div className="page-intro mb-12">
+          <div className="page-kicker">
+            <Upload className="size-4" />
+            Referring provider portal
+          </div>
           <h1 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">Referral Upload</h1>
           <p className="mt-3 max-w-xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
             Submit a referral with one PDF attachment
@@ -128,7 +132,7 @@ export default function ExternalProviderUpload() {
         </div>
 
         <form onSubmit={onSubmit} className="space-y-8">
-          <Card className="border-l-[3px] border-l-primary p-6 motion-safe:animate-fade-up">
+          <Card className="themed-panel p-6 motion-safe:animate-fade-up">
             <div className="mb-8 flex items-start gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                 1
@@ -204,7 +208,7 @@ export default function ExternalProviderUpload() {
             </div>
           </Card>
 
-          <Card className="border-l-[3px] border-l-primary p-6 motion-safe:animate-fade-up motion-safe:animate-in-delay-100">
+          <Card className="themed-panel p-6 motion-safe:animate-fade-up motion-safe:animate-in-delay-100">
             <div className="mb-8 flex items-start gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                 2

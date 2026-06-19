@@ -1067,7 +1067,7 @@ export default function ReferralQueue() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="app-page-shell">
       <header className="site-header">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -1092,10 +1092,14 @@ export default function ReferralQueue() {
         </div>
       </header>
 
-      <div className="container mx-auto py-8 px-4 max-w-[1600px]">
-        <div className="mb-8">
+      <div className="container relative mx-auto max-w-[1600px] px-4 py-8">
+        <div className="page-intro">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
+              <div className="page-kicker">
+                <ClipboardList className="size-4" />
+                Referral routing workspace
+              </div>
               <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
                 Receiving Provider and Scheduler Referral Search
               </h1>
@@ -1137,7 +1141,7 @@ export default function ReferralQueue() {
 
         <div className={layoutGridClassName}>
           {!isPatientDatabaseHidden && (
-            <Card className="min-w-0 self-start border border-border border-l-4 border-l-primary p-4 shadow-md lg:sticky lg:top-24">
+            <Card className="themed-panel min-w-0 self-start p-4 lg:sticky lg:top-24">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">Patient database</h2>
@@ -1212,7 +1216,7 @@ export default function ReferralQueue() {
             </Card>
           )}
 
-          <Card className="min-w-0 border border-border border-l-4 border-l-primary p-6 shadow-md min-h-[520px]">
+          <Card className="themed-panel min-h-[520px] min-w-0 p-6">
             {!selectedId && !isLoadingList && (
               <div className="flex h-full items-center justify-center text-center text-muted-foreground">
                 <div>
@@ -1558,7 +1562,7 @@ export default function ReferralQueue() {
             )}
           </Card>
 
-          <Card className="min-w-0 self-start border border-border border-l-4 border-l-primary shadow-md lg:sticky lg:top-24">
+          <Card className="themed-panel min-w-0 self-start lg:sticky lg:top-24">
             <div className="border-b border-border px-4 py-4 sm:px-5">
               <h3 className="text-lg font-semibold text-foreground">Patient triage chat</h3>
               <p className="mt-1 text-sm text-muted-foreground">

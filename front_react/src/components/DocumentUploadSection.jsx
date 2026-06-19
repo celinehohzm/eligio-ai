@@ -51,8 +51,8 @@ export const DocumentUploadSection = ({
   const acceptedTypes = ".pdf,.doc,.docx,.jpg,.jpeg,.png";
 
   return (
-    <Card className="border-border/70 border-l-[3px] border-l-primary p-6 shadow-md backdrop-blur-sm transition-[box-shadow,transform] duration-300 hover:shadow-xl">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">{title}</h3>
+    <Card className="themed-panel p-6 transition-[box-shadow,transform] duration-300 hover:shadow-xl">
+      <h3 className="mb-4 text-lg font-semibold text-foreground">{title}</h3>
 
       <div className="space-y-4">
         <div className="flex gap-4 items-end">
