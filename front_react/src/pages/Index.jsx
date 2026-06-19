@@ -166,16 +166,16 @@ const Index = () => {
       </header>
 
       <section
-        className="relative overflow-hidden bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(192_58%_96%)_48%,hsl(186_45%_94%)_100%)] px-4 pb-24 pt-16 dark:bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(216_38%_9%)_52%,hsl(198_44%_10%)_100%)] lg:pb-32 lg:pt-24"
+        className="relative overflow-hidden bg-[linear-gradient(180deg,hsl(198_70%_99%)_0%,hsl(190_64%_96%)_46%,hsl(182_48%_91%)_100%)] px-4 pb-24 pt-16 dark:bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(216_38%_9%)_52%,hsl(198_44%_10%)_100%)] lg:pb-32 lg:pt-24"
         onPointerMove={handlePointerMove}
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,transparent_58%,hsl(var(--primary)/0.08)_58.2%,transparent_76%),linear-gradient(90deg,hsl(var(--foreground)/0.075)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--foreground)/0.055)_1px,transparent_1px)] bg-[auto,52px_52px,52px_52px]" aria-hidden />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_360px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.18),transparent_62%)] opacity-90 transition-opacity duration-300 motion-reduce:hidden" aria-hidden />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.16)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.12)_1px,transparent_1px)] bg-[52px_52px] opacity-0 [mask-image:radial-gradient(circle_260px_at_var(--cursor-x)_var(--cursor-y),black,transparent_72%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
         <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-[min(100%,820px)] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.14),transparent_66%)] blur-[70px]" aria-hidden />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-background/55 to-muted/45" aria-hidden />
-        <div className="container relative mx-auto text-center">
-          <div className="mx-auto max-w-4xl">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,transparent,hsl(187_52%_91%/0.48),hsl(184_48%_86%/0.76))] dark:bg-[linear-gradient(180deg,transparent,hsl(202_50%_9%/0.58),hsl(190_54%_11%/0.9))]" aria-hidden />
+        <div className="container relative mx-auto text-left">
+          <div className="max-w-4xl">
             <div className="motion-safe:animate-fade-down">
               <p className="mb-6 inline-flex items-center rounded-full border border-border/70 bg-background/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground shadow-sm backdrop-blur-sm">
                 Clinical workflow • AI-assisted
@@ -188,12 +188,12 @@ const Index = () => {
               </h1>
             </div>
 
-            <p className="mx-auto mb-12 mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
+            <p className="mb-12 mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
               AI-powered medical note summarization and intelligent scheduling recommendations that help doctors focus on
               what matters most — patient care.
             </p>
 
-            <div className="flex flex-col items-center justify-center gap-4 motion-safe:animate-fade-up motion-safe:animate-in-delay-200 sm:flex-row">
+            <div className="flex flex-col items-start gap-4 motion-safe:animate-fade-up motion-safe:animate-in-delay-200 sm:flex-row">
               {isAuthenticated ? (
                 <Link to={primaryRoute}>
                   <Button size="lg" className="group min-w-[200px] gap-2 px-8 text-lg">
@@ -223,7 +223,7 @@ const Index = () => {
 
       <section
         id="features"
-        className="relative overflow-hidden border-y border-primary/15 bg-[linear-gradient(180deg,hsl(188_48%_95%)_0%,hsl(203_42%_97%)_48%,hsl(185_38%_94%)_100%)] px-4 py-24 backdrop-blur-[1px] dark:bg-[linear-gradient(180deg,hsl(202_36%_10%)_0%,hsl(218_34%_8%)_54%,hsl(190_34%_9%)_100%)]"
+        className="relative overflow-hidden border-y border-primary/15 bg-[linear-gradient(180deg,hsl(188_58%_89%)_0%,hsl(196_58%_93%)_48%,hsl(186_48%_90%)_100%)] px-4 py-24 backdrop-blur-[1px] dark:bg-[linear-gradient(180deg,hsl(202_36%_10%)_0%,hsl(218_34%_8%)_54%,hsl(190_34%_9%)_100%)]"
         onPointerMove={handlePointerMove}
       >
         <SectionDivider />
@@ -234,11 +234,11 @@ const Index = () => {
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.2)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.16)_1px,transparent_1px)] bg-[42px_42px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(132deg,transparent_0%,transparent_18%,hsl(var(--background)/0.62)_18.2%,transparent_44%,transparent_100%)]" aria-hidden />
         <div className="container relative mx-auto">
-          <div className="mb-20 text-center motion-safe:animate-fade-up">
+          <div className="mb-20 max-w-3xl text-left motion-safe:animate-fade-up">
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Powerful Features for Modern Healthcare
             </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-pretty text-lg text-muted-foreground">
+            <p className="mt-5 max-w-2xl text-pretty text-lg text-muted-foreground">
               Our AI-driven platform streamlines your workflow and enhances patient care.
             </p>
           </div>
@@ -271,18 +271,25 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="testimonials" className="relative overflow-hidden bg-[linear-gradient(180deg,hsl(198_50%_98%)_0%,hsl(180_30%_96%)_48%,hsl(210_32%_97%)_100%)] px-4 py-24 dark:bg-[linear-gradient(180deg,hsl(219_34%_8%)_0%,hsl(205_30%_10%)_50%,hsl(222_34%_7%)_100%)]">
+      <section
+        id="testimonials"
+        className="relative overflow-hidden border-y border-primary/12 bg-[linear-gradient(180deg,hsl(186_48%_91%)_0%,hsl(193_52%_94%)_46%,hsl(188_42%_90%)_100%)] px-4 py-24 dark:bg-[linear-gradient(180deg,hsl(198_40%_11%)_0%,hsl(192_38%_10%)_52%,hsl(202_34%_8%)_100%)]"
+        onPointerMove={handlePointerMove}
+      >
         <SectionDivider />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(186deg,hsl(var(--muted)/0.42)_0%,transparent_58%)]" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,hsl(188_58%_89%/0.78),transparent_70%)] dark:bg-[linear-gradient(180deg,hsl(190_38%_9%/0.86),transparent_70%)]" aria-hidden />
         <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[min(88%,980px)] -translate-x-1/2 bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,hsl(178_56%_90%/0.34)_0%,transparent_28%,transparent_72%,hsl(204_72%_92%/0.45)_100%)] dark:bg-[linear-gradient(145deg,hsl(178_46%_18%/0.32)_0%,transparent_30%,transparent_70%,hsl(204_56%_18%/0.25)_100%)]" aria-hidden />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(0deg,hsl(var(--background)/0.82),transparent)]" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.075)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.055)_1px,transparent_1px)] bg-[42px_42px] opacity-70" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_420px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.13),transparent_64%)] opacity-70 motion-reduce:hidden" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.17)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.13)_1px,transparent_1px)] bg-[42px_42px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(142deg,transparent_0%,transparent_26%,hsl(var(--background)/0.44)_26.2%,transparent_54%,transparent_100%)]" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,transparent,hsl(188_42%_90%/0.9))] dark:bg-[linear-gradient(180deg,transparent,hsl(202_34%_8%/0.92))]" aria-hidden />
         <div className="container relative mx-auto">
-          <div className="mb-16 text-center motion-safe:animate-fade-up">
+          <div className="mb-16 max-w-3xl text-left motion-safe:animate-fade-up">
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Trusted by Healthcare Professionals
             </h2>
-            <p className="mt-4 text-xl text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-xl text-muted-foreground">
               See how Eligio AI will transform medical practices nationwide.
             </p>
           </div>
@@ -314,25 +321,24 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-cyan-950 px-4 py-24" onPointerMove={handlePointerMove}>
-        <SectionDivider dark />
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(190_92%_31%)_0%,hsl(174_70%_31%)_42%,hsl(202_84%_18%)_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(0_0%_100%/0.12)_1px,transparent_1px),linear-gradient(180deg,hsl(0_0%_100%/0.09)_1px,transparent_1px)] bg-[48px_48px] opacity-50" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_430px_at_var(--cursor-x)_var(--cursor-y),hsl(0_0%_100%/0.16),transparent_64%)] opacity-80 motion-reduce:hidden" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(0_0%_100%/0.24)_1px,transparent_1px),linear-gradient(180deg,hsl(0_0%_100%/0.18)_1px,transparent_1px)] bg-[48px_48px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-[linear-gradient(176deg,hsl(var(--background))_0%,hsl(var(--background)/0.72)_34%,transparent_35%)]" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(160deg,hsl(0_0%_100%/0.14)_0%,transparent_24%,transparent_100%),linear-gradient(20deg,transparent_0%,transparent_56%,hsl(184_80%_72%/0.16)_56.2%,transparent_78%)]" aria-hidden />
-        <div className="relative container mx-auto text-center">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-white md:text-4xl motion-safe:animate-fade-up">
+      <section className="relative overflow-hidden border-t border-primary/15 bg-[linear-gradient(180deg,hsl(188_42%_90%)_0%,hsl(190_48%_86%)_58%,hsl(184_45%_82%)_100%)] px-4 py-24 dark:bg-[linear-gradient(180deg,hsl(202_34%_8%)_0%,hsl(194_38%_10%)_58%,hsl(188_42%_12%)_100%)]" onPointerMove={handlePointerMove}>
+        <SectionDivider />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.085)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.065)_1px,transparent_1px)] bg-[48px_48px] opacity-75" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_430px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.14),transparent_64%)] opacity-75 motion-reduce:hidden" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.19)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.145)_1px,transparent_1px)] bg-[48px_48px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-[linear-gradient(180deg,hsl(188_42%_90%/0.86),transparent)] dark:bg-[linear-gradient(180deg,hsl(202_34%_8%/0.82),transparent)]" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,hsl(var(--background)/0.52)_0%,transparent_32%,transparent_100%),linear-gradient(24deg,transparent_0%,transparent_54%,hsl(var(--primary)/0.1)_54.2%,transparent_78%)]" aria-hidden />
+        <div className="relative container mx-auto text-left">
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl motion-safe:animate-fade-up">
             Ready to Transform Your Practice?
           </h2>
-          <p className="mx-auto mb-12 mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-white/85 motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
+          <p className="mb-12 mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
             Join the waitlist to be among the first healthcare professionals to experience the future of AI-powered
             medical practice management with Eligio AI.
           </p>
           <div className="motion-safe:animate-fade-up motion-safe:animate-in-delay-200">
             <Link to={isAuthenticated ? primaryRoute : "/login"}>
-              <Button size="lg" variant="outline" className="min-w-[220px] border-white/85 bg-white/10 px-8 text-lg text-white shadow-lg backdrop-blur-md transition-colors duration-300 hover:bg-white hover:text-primary">
+              <Button size="lg" className="min-w-[220px] px-8 text-lg shadow-lg shadow-primary/20">
                 {isAuthenticated ? primaryActionLabel : "Eligio AI chat"}
               </Button>
             </Link>
@@ -340,16 +346,16 @@ const Index = () => {
         </div>
       </section>
 
-      <footer className="border-t border-cyan-300/10 bg-[linear-gradient(180deg,hsl(203_70%_11%)_0%,hsl(222_47%_7%)_100%)] px-4 py-14 text-white">
+      <footer className="border-t border-teal-200/10 bg-[linear-gradient(180deg,hsl(194_42%_11%)_0%,hsl(198_42%_9%)_52%,hsl(204_40%_7%)_100%)] px-4 py-14 text-white">
         <div className="container mx-auto">
-          <div className="text-center">
-            <div className="mb-4 flex items-center justify-center gap-3">
+          <div className="text-left">
+            <div className="mb-4 flex items-center justify-start gap-3">
               <img src={eligioLogo} alt="Eligio AI" className="size-14 object-contain opacity-95" />
               <span className="text-xl font-bold tracking-tight">Eligio AI</span>
             </div>
-            <p className="text-pretty text-slate-400">Revolutionizing healthcare with AI-powered solutions for medical professionals.</p>
+            <p className="max-w-xl text-pretty text-slate-400">Revolutionizing healthcare with AI-powered solutions for medical professionals.</p>
           </div>
-          <div className="mt-10 border-t border-white/10 pt-8 text-center text-sm text-slate-500">
+          <div className="mt-10 border-t border-white/10 pt-8 text-left text-sm text-slate-500">
             <p>&copy; {new Date().getFullYear()} Eligio AI. All rights reserved.</p>
           </div>
         </div>
