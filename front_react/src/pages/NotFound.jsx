@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { Mark } from "@/components/Logo";
+import AppHeader from "@/components/AppHeader";
 
 const NotFound = () => {
   const location = useLocation();
@@ -12,25 +13,20 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="app-page-shell flex flex-col items-center justify-center px-6 py-24">
-      <div className="absolute right-6 top-6 z-[2] md:right-10 md:top-10">
-        <ThemeToggle />
-      </div>
-      <div className="themed-panel relative mx-auto flex max-w-lg flex-col items-center rounded-3xl px-8 py-12 text-center motion-safe:animate-subtle-zoom">
-        <span className="mb-8 inline-flex rounded-full border border-primary/20 bg-accent/70 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-          Error 404
-        </span>
-        <h1 className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-6xl font-extrabold tracking-tight text-transparent md:text-7xl">
-          Oops!
-        </h1>
-        <p className="mt-6 text-xl font-semibold tracking-tight text-foreground md:text-2xl">That page drifted away</p>
-        <p className="mt-3 max-w-[36ch] text-pretty leading-relaxed text-muted-foreground">
+    <div className="min-h-screen bg-paper text-ink">
+      <AppHeader />
+      <div className="idx-in flex min-h-[calc(100vh-60px)] flex-col items-center justify-center px-6 text-center">
+        <Mark className="size-10" />
+        <span className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-signal">Error 404</span>
+        <h1 className="mt-3 font-display text-6xl font-extrabold tracking-[-0.04em] sm:text-7xl">Oops!</h1>
+        <p className="mt-4 font-display text-xl font-bold tracking-[-0.02em] sm:text-2xl">That page drifted away</p>
+        <p className="mt-3 max-w-[36ch] font-sans leading-[1.6] text-muted2">
           The URL you visited does not match any route we know — double-check your link or return to Eligio.
         </p>
-        <Button asChild className="group mt-10 gap-2 rounded-full px-8">
+        <Button asChild className="mt-9 gap-2">
           <Link to="/">
-            <ArrowLeft className="size-4 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:-translate-x-0.5" />
-            Back to Home
+            <ArrowLeft className="size-4" />
+            Back to home
           </Link>
         </Button>
       </div>

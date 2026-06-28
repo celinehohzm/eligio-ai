@@ -1,18 +1,21 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import eligioLogo from "@/assets/eligio-logo.png";
+import { Mark } from "@/components/Logo";
+import AppHeader from "@/components/AppHeader";
 import {
   ROLE_PATIENT_SCHEDULER,
   ROLE_PATIENT_SCHEDULER_LABEL,
   ROLE_REFERRING_PROVIDER,
   ROLE_REFERRING_PROVIDER_LABEL,
 } from "@/lib/roles";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
+const fieldClass =
+  "mt-2 h-auto border-0 px-0 py-0 font-sans text-lg font-semibold text-ink shadow-none focus-visible:ring-0 focus-visible:ring-offset-0";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -50,50 +53,45 @@ export default function Register() {
   };
 
   return (
-    <div className="app-page-shell flex items-center justify-center px-4 py-12">
-      <div className="absolute right-4 top-4 z-[2] md:right-8 md:top-8">
-        <ThemeToggle />
-      </div>
-      <Card className="themed-panel relative z-[1] w-full max-w-md shadow-2xl shadow-primary/20 motion-safe:animate-subtle-zoom">
-        <CardHeader className="text-center pb-6">
-          <div className="mb-4 flex justify-center">
-            <img src={eligioLogo} alt="Eligio AI" className="size-16 object-contain motion-safe:hover:rotate-1 motion-safe:transition-transform motion-safe:duration-500" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-            Create Account
-          </CardTitle>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Join Eligio AI to start using our platform
+    <div className="min-h-screen bg-paper text-ink">
+      <AppHeader />
+      <div className="idx-in mx-auto grid min-h-[calc(100vh-60px)] max-w-[1280px] grid-cols-1 px-4 lg:grid-cols-2 lg:px-8">
+        <div className="flex flex-col justify-center border-line py-12 lg:border-r lg:py-0 lg:pr-16">
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-signal">02 — Access</span>
+          <h1 className="mt-4 font-display text-4xl font-extrabold leading-none tracking-[-0.04em] sm:text-5xl">
+            Create
+            <br />
+            account.
+          </h1>
+          <p className="mt-4 max-w-[380px] font-sans text-base leading-[1.6] text-muted2">
+            Join Eligio to start triaging, routing, and searching the specialist index.
           </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium">Full Name</label>
+
+          <form onSubmit={handleSubmit} className="mt-10 flex max-w-[420px] flex-col">
+            <div className="border-t border-line py-4">
+              <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Full name</label>
               <Input
                 type="text"
                 placeholder="John Doe"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 required
-                className="border-border bg-background focus-visible:border-primary/50 focus-visible:ring-primary/25"
+                className={fieldClass}
               />
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">Email</label>
+            <div className="border-t border-line py-4">
+              <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Work email</label>
               <Input
                 type="email"
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 required
-                className="border-border bg-background focus-visible:border-primary/50 focus-visible:ring-primary/25"
+                className={fieldClass}
               />
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">Password</label>
+            <div className="border-t border-line py-4">
+              <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Password</label>
               <Input
                 type="password"
                 placeholder="Create a strong password"
@@ -101,40 +99,54 @@ export default function Register() {
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 required
                 minLength={6}
-                className="border-border bg-background focus-visible:border-primary/50 focus-visible:ring-primary/25"
+                className={fieldClass}
               />
             </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">Role</label>
+            <div className="border-t border-line py-4">
+              <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Role</label>
               <select
                 value={formData.role}
                 onChange={(e) => handleInputChange('role', e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 shadow-sm outline-none ring-offset-background transition-[border-color,box-shadow] duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/25 focus:ring-offset-2 hover:border-input"
+                className="mt-2 w-full border-0 bg-transparent font-sans text-lg font-semibold text-ink outline-none"
               >
                 <option value={ROLE_PATIENT_SCHEDULER}>{ROLE_PATIENT_SCHEDULER_LABEL}</option>
                 <option value={ROLE_REFERRING_PROVIDER}>{ROLE_REFERRING_PROVIDER_LABEL}</option>
               </select>
             </div>
+            <div className="border-t border-line" />
 
-            <Button type="submit" className="w-full shadow-lg shadow-primary/25" disabled={isLoading}>
-              {isLoading ? "Creating Account..." : "Create Account"}
+            <Button type="submit" className="mt-6 justify-between" disabled={isLoading}>
+              {isLoading ? "Creating account…" : "Create account"}
+              <ArrowRight className="size-4" />
             </Button>
-          </form>
-
-          <div className="mt-6 border-t border-border/60 pt-6 text-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-3 font-sans text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link
-                to="/login"
-                className="font-semibold text-primary underline-offset-4 transition-colors duration-200 hover:text-primary/80 hover:underline"
-              >
+              <Link to="/login" className="font-semibold text-signal underline-offset-4 hover:underline">
                 Sign in
               </Link>
             </p>
+          </form>
+        </div>
+
+        <div className="relative hidden items-center justify-center overflow-hidden bg-strong text-on-strong lg:flex">
+          <div
+            className="absolute inset-0 opacity-50"
+            style={{
+              backgroundImage: "radial-gradient(var(--strong-hair) 1px, transparent 1px)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+          <div className="relative text-center">
+            <Mark className="mx-auto size-[120px]" strokeWidth={1.3} />
+            <div className="mt-7 font-mono text-[11px] uppercase tracking-[0.24em] text-faint">Registration mark</div>
+            <div className="mt-3 max-w-[300px] font-display text-2xl leading-[1.4]">
+              One packet in.
+              <br />
+              The right clinic out.
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

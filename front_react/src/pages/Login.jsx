@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import eligioLogo from "@/assets/eligio-logo.png";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { Mark } from "@/components/Logo";
+import AppHeader from "@/components/AppHeader";
+
+const fieldClass =
+  "mt-2 h-auto border-0 px-0 py-0 font-sans text-lg font-semibold text-ink shadow-none focus-visible:ring-0 focus-visible:ring-offset-0";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -42,72 +45,80 @@ export default function Login() {
   };
 
   return (
-    <div className="app-page-shell flex items-center justify-center px-4 py-12">
-      <div className="absolute right-4 top-4 z-[2] md:right-8 md:top-8">
-        <ThemeToggle />
-      </div>
-      <Card className="themed-panel relative z-[1] w-full max-w-md shadow-2xl shadow-primary/20 motion-safe:animate-subtle-zoom">
-        <CardHeader className="text-center pb-6">
-          <div className="flex justify-center mb-4">
-            <img src={eligioLogo} alt="Eligio AI" className="w-16 h-16 object-contain" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-            Sign In to Eligio AI
-          </CardTitle>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Enter your credentials to access platform
+    <div className="min-h-screen bg-paper text-ink">
+      <AppHeader />
+      <div className="idx-in mx-auto grid min-h-[calc(100vh-60px)] max-w-[1280px] grid-cols-1 px-4 lg:grid-cols-2 lg:px-8">
+        <div className="flex flex-col justify-center border-line py-12 lg:border-r lg:py-0 lg:pr-16">
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-signal">02 — Access</span>
+          <h1 className="mt-4 font-display text-4xl font-extrabold leading-none tracking-[-0.04em] sm:text-5xl">
+            Welcome
+            <br />
+            back.
+          </h1>
+          <p className="mt-4 max-w-[380px] font-sans text-base leading-[1.6] text-muted2">
+            Sign in to route referrals, triage patients, and search the specialist index.
           </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
+
+          <form onSubmit={handleSubmit} className="mt-10 flex max-w-[420px] flex-col">
+            <div className="border-t border-line py-4">
+              <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Work email</label>
               <Input
                 type="email"
-                placeholder="demo@eligio.ai"
+                placeholder="scheduler@northbay.health"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 required
-                className="border-border bg-background focus-visible:border-primary/50 focus-visible:ring-primary/25"
+                className={fieldClass}
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
+            <div className="border-t border-line py-4">
+              <label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Password</label>
               <Input
                 type="password"
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 required
-                className="border-border bg-background focus-visible:border-primary/50 focus-visible:ring-primary/25"
+                className={fieldClass}
               />
             </div>
+            <div className="border-t border-line" />
 
-            <Button type="submit" className="w-full shadow-lg shadow-primary/25" disabled={isLoading}>
-              {isLoading ? "Signing In..." : "Sign In"}
+            <Button type="submit" className="mt-6 justify-between" disabled={isLoading}>
+              {isLoading ? "Signing in…" : "Enter Eligio"}
+              <ArrowRight className="size-4" />
             </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-4 font-sans text-sm text-muted-foreground">
               Demo credentials: demo@eligio.ai / demo123
             </p>
-          </div>
-
-          <div className="mt-6 border-t border-border/60 pt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                className="font-semibold text-primary underline-offset-4 transition-colors duration-200 hover:text-primary/80 hover:underline"
-              >
-                Sign up
+            <p className="mt-3 font-sans text-sm text-muted-foreground">
+              New practice?{" "}
+              <Link to="/register" className="font-semibold text-signal underline-offset-4 hover:underline">
+                Request access
               </Link>
             </p>
+          </form>
+        </div>
+
+        <div className="relative hidden items-center justify-center overflow-hidden bg-strong text-on-strong lg:flex">
+          <div
+            className="absolute inset-0 opacity-50"
+            style={{
+              backgroundImage: "radial-gradient(var(--strong-hair) 1px, transparent 1px)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+          <div className="relative text-center">
+            <Mark className="mx-auto size-[120px]" strokeWidth={1.3} />
+            <div className="mt-7 font-mono text-[11px] uppercase tracking-[0.24em] text-faint">Registration mark</div>
+            <div className="mt-3 max-w-[300px] font-display text-2xl leading-[1.4]">
+              One packet in.
+              <br />
+              The right clinic out.
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   ClipboardList,
   FileText,
@@ -14,14 +13,12 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import RoleTabs from "@/components/RoleTabs";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import AppHeader from "@/components/AppHeader";
+import { Mark } from "@/components/Logo";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import StatusPill, { STATUS_TONE_CLASSES } from "@/components/StatusPill";
-import eligioLogo from "@/assets/eligio-logo.png";
 import apiService from "@/services/api";
 import { toast } from "sonner";
 
@@ -1067,105 +1064,65 @@ export default function ReferralQueue() {
   };
 
   return (
-    <div className="app-page-shell">
-      <header className="site-header">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Link to="/" className="flex items-center gap-2 rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-accent/70 hover:text-primary">
-              <ArrowLeft className="h-5 w-5" />
-              <span className="text-sm font-medium">Back</span>
-            </Link>
-            <div className="h-6 w-px shrink-0 bg-border" />
-            <div className="flex items-center space-x-2">
-              <img src={eligioLogo} alt="Eligio AI" className="w-12 h-12 object-contain" />
-              <h1 className="text-xl font-bold tracking-tight text-foreground">Eligio AI</h1>
-              <span className="hidden text-muted-foreground/60 sm:inline" aria-hidden>
-                •
-              </span>
-              <span className="hidden text-lg font-medium text-muted-foreground sm:inline">Referral Search</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 md:gap-3">
-            <ThemeToggle />
-            <RoleTabs />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-paper text-ink">
+      <AppHeader />
 
-      <div className="container relative mx-auto max-w-[1600px] px-4 py-8">
-        <div className="page-intro">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="page-kicker">
-                <ClipboardList className="size-4" />
-                Referral routing workspace
-              </div>
-              <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
-                Receiving Provider and Scheduler Referral Search
-              </h1>
-              <p className="text-muted-foreground">
-                Search uploaded referral packets, review the extracted intake summary, and see suggested specialists.
-              </p>
-            </div>
-
-            <Link
-              to="/specialists-list"
-              className="inline-flex items-center justify-center rounded-md border border-primary/35 bg-accent/80 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent"
-            >
-              Open Specialists List
-            </Link>
+      <div className="idx-in mx-auto max-w-[1600px] px-4 py-9 sm:px-8">
+        <div className="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-signal">03 — Overview</span>
+            <h1 className="mt-1.5 font-display text-4xl font-extrabold tracking-[-0.035em]">Routing desk</h1>
+            <p className="mt-2 max-w-2xl font-sans text-sm text-muted2">
+              Search uploaded referral packets, review the extracted intake summary, and see suggested specialists.
+            </p>
           </div>
+
+          <Link to="/specialists-list">
+            <Button variant="outline" size="sm">Open specialists list</Button>
+          </Link>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        <div className="mb-6 mt-5 flex flex-wrap items-center gap-2">
           {isPatientDatabaseHidden ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="border-primary/35 bg-card text-primary hover:bg-accent"
-              onClick={() => setPatientListMode("default")}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => setPatientListMode("default")}>
               Show patient database
             </Button>
           ) : (
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              className="text-muted-foreground hover:bg-accent hover:text-primary"
               onClick={() => setPatientListMode("hidden")}
+              className="font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground hover:text-ink"
             >
               Hide patient database
-            </Button>
+            </button>
           )}
         </div>
 
         <div className={layoutGridClassName}>
           {!isPatientDatabaseHidden && (
-            <Card className="themed-panel min-w-0 self-start p-4 lg:sticky lg:top-24">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">Patient database</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {referrals.length} referral{referrals.length === 1 ? "" : "s"} in the current queue.
-                  </p>
-                </div>
+            <div className="min-w-0 self-start border border-line p-4 lg:sticky lg:top-[76px]">
+              <div className="mb-4">
+                <h2 className="font-display text-lg font-extrabold tracking-[-0.02em]">Patient database</h2>
+                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+                  {referrals.length} referral{referrals.length === 1 ? "" : "s"} in queue
+                </p>
               </div>
 
-              <div className="relative mb-4">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
+              <div className="mb-4 flex items-center gap-2.5 border border-line px-3 py-2.5">
+                <Search className="size-4 shrink-0 text-muted-foreground" />
                 <Input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search patient, referring provider, or referral reason"
-                  className="pl-9"
+                  placeholder="Search patient, provider, or reason"
+                  className="h-auto border-0 px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
 
               <ScrollArea className="h-[520px] pr-3">
-                <div className="space-y-3">
-                  {isLoadingList && <p className="text-sm text-muted-foreground">Loading referrals...</p>}
+                <div className="border-t border-line">
+                  {isLoadingList && <p className="py-4 font-sans text-sm text-muted-foreground">Loading referrals...</p>}
                   {!isLoadingList && referrals.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No referrals match your search.</p>
+                    <p className="py-4 font-sans text-sm text-muted-foreground">No referrals match your search.</p>
                   )}
                   {referrals.map((referral) => {
                     const isSelected = referral.id === selectedId;
@@ -1173,11 +1130,7 @@ export default function ReferralQueue() {
                     return (
                       <div
                         key={referral.id}
-                        className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
-                          isSelected
-                            ? "border-primary/60 bg-primary/10"
-                            : "border-border bg-card hover:border-primary/35 hover:bg-accent/35"
-                        }`}
+                        className={`border-b border-hair px-1 py-3 transition-colors ${isSelected ? "bg-paper" : "hover:bg-paper"}`}
                       >
                         <div className="flex items-start gap-3">
                           <button
@@ -1186,11 +1139,11 @@ export default function ReferralQueue() {
                             className="flex-1 text-left"
                             disabled={isDeleting}
                           >
-                            <p className="font-semibold text-foreground">{referral.fullName}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">
+                            <p className={`font-sans text-[15px] font-semibold ${isSelected ? "text-signal" : "text-ink"}`}>{referral.fullName}</p>
+                            <p className="mt-0.5 font-sans text-sm text-muted2">
                               {referral.doctorName || "No referring provider listed"}
                             </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
                               Uploaded {formatTimestamp(referral.submittedAt)}
                             </p>
                           </button>
@@ -1199,10 +1152,10 @@ export default function ReferralQueue() {
                             type="button"
                             onClick={() => handleDeleteReferral(referral)}
                             disabled={isDeleting}
-                            className="inline-flex shrink-0 items-center rounded-md border border-destructive/30 bg-card px-2.5 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="shrink-0 text-muted-foreground hover:text-destructive disabled:cursor-not-allowed disabled:opacity-60"
                             aria-label={`Delete ${referral.fullName}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="size-4" />
                             <span className="sr-only">
                               {isDeleting ? "Deleting referral" : `Delete ${referral.fullName}`}
                             </span>
@@ -1213,290 +1166,284 @@ export default function ReferralQueue() {
                   })}
                 </div>
               </ScrollArea>
-            </Card>
+            </div>
           )}
 
-          <Card className="themed-panel min-h-[520px] min-w-0 p-6">
+          <div className="min-h-[520px] min-w-0 border border-line p-6">
             {!selectedId && !isLoadingList && (
               <div className="flex h-full items-center justify-center text-center text-muted-foreground">
                 <div>
-                  <UserRound className="mx-auto mb-4 h-10 w-10 text-muted-foreground/70" />
-                  <p>Select a patient referral to review demographics, routing guidance, and the original PDF.</p>
+                  <UserRound className="mx-auto mb-4 size-9 text-muted-foreground" />
+                  <p className="font-sans text-sm">Select a patient referral to review demographics, routing guidance, and the original PDF.</p>
                 </div>
               </div>
             )}
 
             {selectedId && isLoadingDetail && (
-              <p className="text-sm text-muted-foreground">Loading referral details...</p>
+              <p className="font-sans text-sm text-muted-foreground">Loading referral details...</p>
             )}
 
             {selectedReferral && !isLoadingDetail && (
-              <div className="space-y-6">
+              <div className="space-y-7">
                 <div>
-                  <h2 className="text-2xl font-semibold text-foreground">{selectedMeta.fullName}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <h2 className="font-display text-2xl font-extrabold tracking-[-0.025em]">{selectedMeta.fullName}</h2>
+                  <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
                     Referral uploaded {formatTimestamp(selectedReferral.submittedAt)}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <ClipboardList className="mt-0.5 h-5 w-5 text-primary" />
+                <div className="border border-line">
+                  <div className="flex items-start gap-3 border-b border-line bg-strong px-5 py-3.5 text-on-strong">
+                    <ClipboardList className="mt-0.5 size-4 shrink-0 text-signal" />
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Demographic Data</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <h3 className="font-mono text-[11px] uppercase tracking-[0.16em]">Demographic data</h3>
+                      <p className="mt-1 font-sans text-xs text-faint">
                         Scheduler-facing patient details pulled from structured intake data and the uploaded referral packet.
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Referring Provider
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-foreground">
+                  <div className="grid grid-cols-1 border-b border-line sm:grid-cols-2">
+                    <div className="border-line p-4 sm:border-r">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Referring provider</p>
+                      <p className="mt-2 font-sans text-sm leading-6 text-ink">
                         {formatDisplayValue(selectedMeta.doctorName, "Not provided")}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Reason for Referral
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-foreground">
+                    <div className="p-4">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Reason for referral</p>
+                      <p className="mt-2 font-sans text-sm leading-6 text-ink">
                         {formatDisplayValue(selectedMeta.reasonForReferral, "Not provided")}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {demographicItems.map((item) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+                    {demographicItems.map((item, i) => (
                       <div
                         key={item.label}
-                        className="rounded-xl border border-border bg-muted/45 p-4"
+                        className={`p-4 ${i % 3 !== 2 ? "sm:border-r sm:border-line" : ""} ${i < demographicItems.length - (demographicItems.length % 3 || 3) ? "border-b border-line" : ""}`}
                       >
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                           {item.label}
                         </p>
-                        <p className="mt-2 text-sm leading-6 text-foreground">{item.value}</p>
+                        <p className="mt-2 font-sans text-sm leading-6 text-ink">{item.value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <ClipboardList className="mt-0.5 h-5 w-5 text-primary" />
+                <div className="border border-line">
+                  <div className="flex items-start gap-3 border-b border-line bg-strong px-5 py-3.5 text-on-strong">
+                    <ClipboardList className="mt-0.5 size-4 shrink-0 text-signal" />
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Routing Recommendation</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <h3 className="font-mono text-[11px] uppercase tracking-[0.16em]">Routing recommendation</h3>
+                      <p className="mt-1 font-sans text-xs text-faint">
                         Clinic, rationale, and providers are grounded in the server knowledge base (clinic catalog JSON and routing guidelines markdown).
                       </p>
                     </div>
                   </div>
 
-                  {routingRecommendation?.escalateForReview && (
-                    <div className="mt-4 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4">
-                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden />
-                      <div>
-                        <p className="text-sm font-semibold text-warning">Physician review recommended</p>
-                        <p className="mt-1 text-sm text-foreground/85">
-                          {formatDisplayValue(routingRecommendation?.escalationReason, "Routing confidence is low.")}
+                  <div className="p-5">
+                    {routingRecommendation?.escalateForReview && (
+                      <div className="mb-5 flex items-start gap-3 border border-warning p-4">
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+                        <div>
+                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-warning">Physician review recommended</p>
+                          <p className="mt-1.5 font-sans text-sm text-ink">
+                            {formatDisplayValue(routingRecommendation?.escalationReason, "Routing confidence is low.")}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-0 border border-line xl:grid-cols-[300px,minmax(0,1fr)]">
+                      <div className="border-line p-5 xl:border-r">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                          Recommended clinic
+                        </p>
+                        <p className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em]">
+                          {formatDisplayValue(routingRecommendation?.recommendedClinic)}
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <StatusPill
+                            tone={CONFIDENCE_TONE[routingRecommendation?.confidenceLevel] || "danger"}
+                            label={`${String(routingRecommendation?.confidenceLevel || "low")} confidence`}
+                          />
+                          {routingRecommendation?.urgency &&
+                            routingRecommendation.urgency !== "routine" && (
+                              <StatusPill
+                                tone={URGENCY_TONE[routingRecommendation.urgency] || "danger"}
+                                label={routingRecommendation.urgency}
+                              />
+                            )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-line p-4 xl:border-t-0">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                          Recommendation rationale
+                        </p>
+                        <p className="mt-3 font-sans text-sm leading-7 text-ink">
+                          {formatDisplayValue(routingRecommendation?.rationale)}
                         </p>
                       </div>
                     </div>
-                  )}
 
-                  <div className="mt-4 grid gap-4 xl:grid-cols-[300px,minmax(0,1fr)]">
-                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                        Recommended Clinic
-                      </p>
-                      <p className="mt-3 text-2xl font-semibold text-foreground">
-                        {formatDisplayValue(routingRecommendation?.recommendedClinic)}
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <StatusPill
-                          tone={CONFIDENCE_TONE[routingRecommendation?.confidenceLevel] || "danger"}
-                          label={`${String(routingRecommendation?.confidenceLevel || "low")} confidence`}
-                        />
-                        {routingRecommendation?.urgency &&
-                          routingRecommendation.urgency !== "routine" && (
-                            <StatusPill
-                              tone={URGENCY_TONE[routingRecommendation.urgency] || "danger"}
-                              label={routingRecommendation.urgency}
-                            />
-                          )}
+                    <div className="mt-5 grid grid-cols-1 gap-0 border border-line lg:grid-cols-2">
+                      <div className="border-line p-4 lg:border-r">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Alternative clinics</p>
+                        {(routingRecommendation?.alternativeClinics || []).length > 0 ? (
+                          <ul className="mt-3 space-y-2 font-sans text-sm text-muted2">
+                            {(routingRecommendation?.alternativeClinics || []).map((clinic, index) => (
+                              <li key={`${clinic?.id || clinic?.name || index}`}>
+                                <span className="font-medium text-ink">
+                                  {clinic?.name || "Unknown clinic"}
+                                </span>
+                                {clinic?.reason ? ` - ${clinic.reason}` : ""}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 font-sans text-sm text-muted-foreground">No alternatives provided.</p>
+                        )}
+                      </div>
+                      <div className="border-t border-line p-4 lg:border-t-0">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Recommended providers</p>
+                        {kbRecommendedProviders.length > 0 ? (
+                          <ul className="mt-3 list-none space-y-2 border-l-2 border-signal pl-4">
+                            {kbRecommendedProviders.map((name) => (
+                              <li key={name} className="font-sans text-sm leading-relaxed text-ink">
+                                {formatKbProviderDisplayName(name)}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 font-sans text-sm text-muted-foreground">
+                            No providers listed for this clinic in the catalog, or routing did not return provider names.
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                        Recommendation Rationale
-                      </p>
-                      <p className="mt-3 text-sm leading-7 text-foreground">
-                        {formatDisplayValue(routingRecommendation?.rationale)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-xl border border-border bg-muted/45 p-4">
-                      <p className="text-sm font-semibold text-foreground">Alternative Clinics</p>
-                      {(routingRecommendation?.alternativeClinics || []).length > 0 ? (
-                        <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                          {(routingRecommendation?.alternativeClinics || []).map((clinic, index) => (
-                            <li key={`${clinic?.id || clinic?.name || index}`}>
-                              <span className="font-medium text-foreground">
-                                {clinic?.name || "Unknown clinic"}
-                              </span>
-                              {clinic?.reason ? ` - ${clinic.reason}` : ""}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-2 text-sm text-muted-foreground">No alternatives provided.</p>
-                      )}
-                    </div>
-                    <div className="rounded-xl border border-border bg-muted/45 p-4">
-                      <p className="text-sm font-semibold text-foreground">Recommended providers</p>
-                      {kbRecommendedProviders.length > 0 ? (
-                        <ul className="mt-3 list-none space-y-2 border-l-2 border-primary/30 pl-4">
-                          {kbRecommendedProviders.map((name) => (
-                            <li key={name} className="text-sm leading-relaxed text-foreground/90">
-                              {formatKbProviderDisplayName(name)}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          No providers listed for this clinic in the catalog, or routing did not return provider names.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {hasIntakeCheckPanel ? (
-                    <div className="mt-6 rounded-2xl border border-primary/25 bg-card p-5 shadow-sm ring-1 ring-primary/10">
-                      <div className="flex items-start gap-3">
-                        <Flag className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
-                            Case-scoped intake checklist
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Only intake rules that apply to this referral’s clinical context are listed; the model compares them to OCR text and structured triage fields.
-                          </p>
-                          {cleanValue(intakeRequirementsCheck?.scopeSummary) ? (
-                            <p className="mt-3 rounded-xl border border-border bg-muted/35 px-4 py-3 text-sm leading-6 text-foreground">
-                              <span className="font-semibold text-primary">Scope: </span>
-                              {intakeRequirementsCheck.scopeSummary}
+                    {hasIntakeCheckPanel ? (
+                      <div className="mt-5 border border-line p-5">
+                        <div className="flex items-start gap-3">
+                          <Flag className="mt-0.5 size-4 shrink-0 text-signal" aria-hidden />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink">
+                              Case-scoped intake checklist
                             </p>
-                          ) : null}
-                          {intakeRequirementsCheck?.evaluationUnavailable &&
-                          cleanValue(intakeRequirementsCheck?.evaluationNote) ? (
-                            <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs leading-5 text-amber-950 dark:bg-amber-950/35 dark:text-amber-50/90">
-                              {intakeRequirementsCheck.evaluationNote}
+                            <p className="mt-1.5 font-sans text-xs text-muted-foreground">
+                              Only intake rules that apply to this referral’s clinical context are listed; the model compares them to OCR text and structured triage fields.
                             </p>
-                          ) : null}
-                          {intakeCheckItemsSorted.length > 0 ? (
-                            <ul className="mt-4 space-y-3">
-                              {intakeCheckItemsSorted.map((item, idx) => {
-                                const ok = item.fulfilled === true;
-                                const missing = item.fulfilled === false;
-                                return (
-                                  <li
-                                    key={`${idx}-${item.requirement?.slice(0, 48) ?? idx}`}
-                                    className={`rounded-lg border px-3 py-3 text-sm leading-relaxed ${
-                                      STATUS_TONE_CLASSES[missing ? "danger" : ok ? "success" : "warning"]
-                                    }`}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      {missing ? (
-                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden />
-                                      ) : ok ? (
-                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
-                                      ) : (
-                                        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
-                                      )}
-                                      <div className="min-w-0">
-                                        <p className="font-medium text-foreground">{item.requirement}</p>
-                                        {cleanValue(item.notes) ? (
-                                          <p className="mt-1 text-xs leading-5 text-foreground/85">{item.notes}</p>
-                                        ) : null}
-                                        {missing ? (
-                                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-destructive">
-                                            Missing or unclear in packet
-                                          </p>
-                                        ) : null}
-                                      </div>
-                                    </div>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          ) : (
-                            <p className="mt-4 text-sm text-foreground/85">
-                              No checklist rows apply to this referral after case scoping (see omitted policy notes below if present).
-                            </p>
-                          )}
-                          {Array.isArray(intakeRequirementsCheck?.excludedPolicyPoints) &&
-                          intakeRequirementsCheck.excludedPolicyPoints.length > 0 ? (
-                            <div className="mt-4 rounded-xl border border-border bg-muted/35 p-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                Clinic policy not applied to this case
+                            {cleanValue(intakeRequirementsCheck?.scopeSummary) ? (
+                              <p className="mt-3 border border-hair px-4 py-3 font-sans text-sm leading-6 text-ink">
+                                <span className="font-semibold text-signal">Scope: </span>
+                                {intakeRequirementsCheck.scopeSummary}
                               </p>
-                              <ul className="mt-2 space-y-3">
-                                {intakeRequirementsCheck.excludedPolicyPoints.map((row, i) => (
-                                  <li
-                                    key={`exc-${i}-${row.excerpt?.slice(0, 24) ?? i}`}
-                                    className="text-xs leading-5 text-foreground/85"
-                                  >
-                                    {cleanValue(row.excerpt) ? (
-                                      <p className="font-medium text-foreground">{row.excerpt}</p>
-                                    ) : null}
-                                    {cleanValue(row.reason) ? (
-                                      <p className="mt-0.5 text-muted-foreground">{row.reason}</p>
-                                    ) : null}
-                                  </li>
-                                ))}
+                            ) : null}
+                            {intakeRequirementsCheck?.evaluationUnavailable &&
+                            cleanValue(intakeRequirementsCheck?.evaluationNote) ? (
+                              <p className="mt-3 border border-warning px-4 py-3 font-sans text-xs leading-5 text-ink">
+                                {intakeRequirementsCheck.evaluationNote}
+                              </p>
+                            ) : null}
+                            {intakeCheckItemsSorted.length > 0 ? (
+                              <ul className="mt-4 space-y-3">
+                                {intakeCheckItemsSorted.map((item, idx) => {
+                                  const ok = item.fulfilled === true;
+                                  const missing = item.fulfilled === false;
+                                  return (
+                                    <li
+                                      key={`${idx}-${item.requirement?.slice(0, 48) ?? idx}`}
+                                      className={`border px-3 py-3 font-sans text-sm leading-relaxed ${
+                                        STATUS_TONE_CLASSES[missing ? "danger" : ok ? "success" : "warning"]
+                                      }`}
+                                    >
+                                      <div className="flex items-start gap-2">
+                                        {missing ? (
+                                          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+                                        ) : ok ? (
+                                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+                                        ) : (
+                                          <HelpCircle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+                                        )}
+                                        <div className="min-w-0">
+                                          <p className="font-medium text-ink">{item.requirement}</p>
+                                          {cleanValue(item.notes) ? (
+                                            <p className="mt-1 text-xs leading-5 text-muted2">{item.notes}</p>
+                                          ) : null}
+                                          {missing ? (
+                                            <p className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                                              Missing or unclear in packet
+                                            </p>
+                                          ) : null}
+                                        </div>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
                               </ul>
-                            </div>
-                          ) : null}
+                            ) : (
+                              <p className="mt-4 font-sans text-sm text-muted2">
+                                No checklist rows apply to this referral after case scoping (see omitted policy notes below if present).
+                              </p>
+                            )}
+                            {Array.isArray(intakeRequirementsCheck?.excludedPolicyPoints) &&
+                            intakeRequirementsCheck.excludedPolicyPoints.length > 0 ? (
+                              <div className="mt-4 border border-hair p-4">
+                                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                                  Clinic policy not applied to this case
+                                </p>
+                                <ul className="mt-2 space-y-3">
+                                  {intakeRequirementsCheck.excludedPolicyPoints.map((row, i) => (
+                                    <li
+                                      key={`exc-${i}-${row.excerpt?.slice(0, 24) ?? i}`}
+                                      className="font-sans text-xs leading-5 text-muted2"
+                                    >
+                                      {cleanValue(row.excerpt) ? (
+                                        <p className="font-medium text-ink">{row.excerpt}</p>
+                                      ) : null}
+                                      {cleanValue(row.reason) ? (
+                                        <p className="mt-0.5 text-muted-foreground">{row.reason}</p>
+                                      ) : null}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : null}
+                    ) : null}
 
-                  <div className="mt-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h4 className="text-base font-semibold text-foreground">Triage Highlights</h4>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          These summaries come from the uploaded referral document and are meant to speed up intake review.
-                        </p>
+                    <div className="mt-6">
+                      <h4 className="font-display text-base font-extrabold tracking-[-0.01em]">Triage highlights</h4>
+                      <p className="mt-1 font-sans text-sm text-muted2">
+                        These summaries come from the uploaded referral document and are meant to speed up intake review.
+                      </p>
+
+                      <div className="mt-4 grid grid-cols-1 border border-line lg:grid-cols-2">
+                        {triageHighlightCards.map((item, i) => (
+                          <div
+                            key={item.key}
+                            className={`p-4 ${i % 2 === 0 ? "lg:border-r lg:border-line" : ""} ${i < triageHighlightCards.length - (triageHighlightCards.length % 2 || 2) ? "border-b border-line" : ""}`}
+                          >
+                            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{item.label}</p>
+                            <p className="mt-2 whitespace-pre-line font-sans text-sm leading-6 text-ink">{item.value}</p>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                      {triageHighlightCards.map((item) => (
-                        <div
-                          key={item.key}
-                          className="rounded-xl border border-border bg-muted/45 p-4"
-                        >
-                          <p className="text-sm font-semibold text-foreground">{item.label}</p>
-                          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-foreground/90">{item.value}</p>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                  <div className="flex items-center justify-between gap-4">
+                <div className="border border-line">
+                  <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-3.5">
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Original referral PDF</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <h3 className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Original referral PDF</h3>
+                      <p className="mt-1 font-sans text-sm text-muted2">
                         Scroll through the original uploaded referral packet without leaving the queue.
                       </p>
                     </div>
@@ -1506,36 +1453,36 @@ export default function ReferralQueue() {
                         href={pdfPreviewUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex shrink-0 items-center rounded-md border border-primary/30 bg-accent/75 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent"
+                        className="shrink-0 font-mono text-xs uppercase tracking-[0.1em] text-signal"
                       >
                         Open full PDF
                       </a>
                     )}
                   </div>
 
-                  <div className="mt-4">
+                  <div className="p-5">
                     {isLoadingPdfPreview && (
-                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/35 text-sm text-muted-foreground">
+                      <div className="flex h-[720px] items-center justify-center border-2 border-dashed border-line font-sans text-sm text-muted-foreground">
                         Loading original PDF...
                       </div>
                     )}
 
                     {!isLoadingPdfPreview && pdfPreviewError && (
-                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10 px-4 text-center text-sm text-destructive">
+                      <div className="flex h-[720px] items-center justify-center border border-destructive px-4 text-center font-sans text-sm text-destructive">
                         {pdfPreviewError}
                       </div>
                     )}
 
                     {!isLoadingPdfPreview && !pdfPreviewError && !selectedReferralDocument && (
-                      <div className="flex h-[720px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/35 px-4 text-center text-sm text-muted-foreground">
+                      <div className="flex h-[720px] items-center justify-center border-2 border-dashed border-line px-4 text-center font-sans text-sm text-muted-foreground">
                         No referral PDF is attached to this record yet.
                       </div>
                     )}
 
                     {!isLoadingPdfPreview && !pdfPreviewError && pdfPreviewUrl && (
-                      <div className="overflow-hidden rounded-xl border border-border bg-card">
-                        <div className="flex items-center gap-2 border-b border-border bg-muted/35 px-4 py-3 text-sm text-muted-foreground">
-                          <FileText className="h-4 w-4 text-primary" />
+                      <div className="border border-line">
+                        <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-sans text-sm text-muted-foreground">
+                          <FileText className="size-4 text-signal" />
                           <span className="truncate">
                             {selectedReferralDocument?.originalName || selectedReferralDocument?.filename || "Referral PDF"}
                           </span>
@@ -1543,16 +1490,16 @@ export default function ReferralQueue() {
                         <iframe
                           title={`Referral PDF preview for ${selectedMeta.fullName || "selected patient"}`}
                           src={pdfPreviewUrl}
-                          className="h-[720px] w-full bg-card"
+                          className="h-[720px] w-full bg-surface"
                         />
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-primary/25 bg-primary/10 p-4">
-                  <p className="text-sm font-semibold text-foreground">How routing recommendations are sourced</p>
-                  <div className="mt-2 space-y-2 text-sm leading-6 text-muted-foreground">
+                <div className="border border-line p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">How routing recommendations are sourced</p>
+                  <div className="mt-2 space-y-2 font-sans text-sm leading-6 text-muted2">
                     {ROUTING_KB_EXPLANATION.map((line) => (
                       <p key={line}>{line}</p>
                     ))}
@@ -1560,55 +1507,54 @@ export default function ReferralQueue() {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
 
-          <Card className="themed-panel min-w-0 self-start lg:sticky lg:top-24">
-            <div className="border-b border-border px-4 py-4 sm:px-5">
-              <h3 className="text-lg font-semibold text-foreground">Patient triage chat</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+          <div className="min-w-0 self-start border border-line lg:sticky lg:top-[76px]">
+            <div className="border-b border-line px-4 py-4 sm:px-5">
+              <h3 className="font-display text-lg font-extrabold tracking-[-0.02em]">Patient triage chat</h3>
+              <p className="mt-1 font-sans text-sm text-muted2">
                 Ask follow-up questions, look for a specific detail in the referral, or clarify something in the packet.
               </p>
             </div>
 
             <div className="px-4 py-4 sm:px-5">
               {selectedId && isLoadingDetail ? (
-                <p className="text-sm text-muted-foreground">Loading chat context...</p>
+                <p className="font-sans text-sm text-muted-foreground">Loading chat context...</p>
               ) : (
                 <>
-                  <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+                  <div className="max-h-[420px] space-y-4 overflow-y-auto pr-1">
                     {!selectedReferral && !isSendingChat && (
-                      <div className="rounded-xl border border-dashed border-primary/30 bg-primary/10 px-4 py-6 text-sm text-muted-foreground">
+                      <div className="border border-dashed border-line px-4 py-6 font-sans text-sm text-muted-foreground">
                         Pick a referral from the patient database to open a dedicated triage chat panel.
                       </div>
                     )}
 
                     {selectedChatMessages.map((message, index) => (
-                      <div
-                        key={`${selectedId}-${index}`}
-                        className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[90%] rounded-xl px-4 py-3 text-sm leading-6 shadow-sm ${
-                            message.role === "user"
-                              ? "bg-primary text-primary-foreground"
-                              : "border border-border bg-muted/35 text-foreground"
-                          }`}
-                        >
-                          {message.content}
+                      message.role === "user" ? (
+                        <div key={`${selectedId}-${index}`} className="flex justify-end">
+                          <div className="max-w-[90%] bg-strong px-3.5 py-3 font-sans text-sm leading-6 text-on-strong">
+                            {message.content}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div key={`${selectedId}-${index}`} className="max-w-[92%]">
+                          <div className="mb-1.5 flex items-center gap-2">
+                            <Mark className="size-3.5" strokeWidth={2.4} />
+                            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">Eligio · triage</span>
+                          </div>
+                          <p className="font-sans text-sm leading-6 text-ink">{message.content}</p>
+                        </div>
+                      )
                     ))}
 
                     {isSendingChat && (
-                      <div className="flex justify-start">
-                        <div className="rounded-xl border border-border bg-muted/35 px-4 py-3 text-sm text-muted-foreground shadow-sm">
-                          Analyzing referral details...
-                        </div>
+                      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        Analyzing<span className="idx-blink text-signal">···</span>
                       </div>
                     )}
 
                     {chatError && (
-                      <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                      <div className="border border-destructive px-4 py-3 font-sans text-sm text-destructive">
                         {chatError}
                       </div>
                     )}
@@ -1616,33 +1562,34 @@ export default function ReferralQueue() {
                     <div ref={chatEndRef} />
                   </div>
 
-                  <form onSubmit={handleChatSubmit} className="mt-4 space-y-3">
+                  <form onSubmit={handleChatSubmit} className="mt-4 border-t border-line pt-4">
                     <Textarea
                       value={chatInput}
                       onChange={(event) => setChatInput(event.target.value)}
                       onKeyDown={handleChatKeyDown}
                       placeholder="Ask a follow-up question about this referral..."
-                      className="min-h-[112px] resize-none border-border focus-visible:border-primary/40 focus-visible:ring-primary/30"
+                      className="min-h-[112px] resize-none border-0 px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                       disabled={!selectedReferral || isSendingChat}
                     />
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-muted-foreground">
-                        Uses the selected referral details as context.
+                    <div className="mt-2 flex items-center justify-between gap-3 border-t border-line pt-3">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                        Uses the selected referral as context
                       </p>
                       <Button
                         type="submit"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        size="sm"
+                        className="gap-2"
                         disabled={!selectedReferral || !chatInput.trim() || isSendingChat}
                       >
-                        <Send className="mr-2 h-4 w-4" />
                         Send
+                        <Send className="size-3.5" />
                       </Button>
                     </div>
                   </form>
                 </>
               )}
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
  * never color alone, always paired with an icon and a text label.
  */
 export const STATUS_TONE_CLASSES = {
-  success: "border-success/30 bg-success/10 text-success",
-  warning: "border-warning/30 bg-warning/10 text-warning",
-  danger: "border-destructive/30 bg-destructive/10 text-destructive",
-  neutral: "border-border bg-muted/60 text-muted-foreground",
+  success: "border-success text-success",
+  warning: "border-warning text-warning",
+  danger: "border-destructive text-destructive",
+  neutral: "border-line text-muted-foreground",
 };
 
 const TONE_ICONS = {
@@ -25,12 +25,12 @@ export default function StatusPill({ tone = "neutral", label, icon: IconOverride
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
+        "inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.08em]",
         STATUS_TONE_CLASSES[tone],
         className,
       )}
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <Icon className="h-3 w-3 shrink-0" aria-hidden />
       {label}
     </span>
   );

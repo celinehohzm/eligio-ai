@@ -12,7 +12,7 @@ export default function RoleTabs({ className }) {
   }
 
   return (
-    <nav className={cn("hidden md:flex items-center space-x-8", className)}>
+    <nav className={cn("hidden md:flex items-center gap-7 h-[60px]", className)}>
       {items.map((item) => (
         <NavLink
           key={item.to}
@@ -20,9 +20,9 @@ export default function RoleTabs({ className }) {
           end
           className={({ isActive }) =>
             cn(
-              "relative pb-1 text-sm font-medium transition-[color] duration-200 ease-out",
-              isActive ? "font-semibold text-primary" : "text-muted-foreground hover:text-foreground",
-              "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-center after:rounded-full after:bg-primary after:transition-transform after:duration-300 after:ease-out",
+              "relative flex h-[60px] items-center font-mono text-[11px] uppercase tracking-[0.14em] transition-colors",
+              isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:origin-center after:bg-signal after:transition-transform after:duration-300 after:ease-out",
               isActive ? "after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-[55%]",
             )
           }

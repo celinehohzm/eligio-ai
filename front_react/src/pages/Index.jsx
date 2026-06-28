@@ -1,365 +1,238 @@
-import { useCallback } from "react";
-import { ArrowRight, Calendar, FileText, Users, Shield, Zap, Brain } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, FileText, ScanSearch } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import AppHeader from "@/components/AppHeader";
+import Logo from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
-import RoleTabs from "@/components/RoleTabs";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import eligioLogo from "@/assets/eligio-logo.png";
 import {
   getDefaultRouteForRole,
   getPrimaryActionLabelForRole,
 } from "@/lib/roles";
 
-const featureItems = [
+const stats = [
+  { value: "60", unit: "%", caption: "of referrals require manual chart review before routing." },
+  { value: "40", unit: "h", caption: "per week spent reviewing documentation by hand." },
+  { value: "1", unit: "×", caption: "PDF packet in — the right clinic out. No guesswork." },
+];
+
+const steps = [
   {
+    no: "01",
     Icon: FileText,
-    title: "Smart Note Summarization",
-    body:
-      "Automatically extract key insights from patient notes using advanced AI, saving hours of manual review time.",
+    title: "Submit the packet",
+    desc: "A referring provider uploads the patient record and one PDF through a simple two-step form.",
   },
   {
-    Icon: Calendar,
-    title: "Intelligent Scheduling",
-    body:
-      "Get personalized scheduling recommendations based on patient history, urgency levels, and optimal care windows.",
+    no: "02",
+    Icon: ScanSearch,
+    title: "Eligio reads & matches",
+    desc: "The AI summarizes the note and matches it to the right subspecialty clinic and intake rules.",
   },
   {
-    Icon: Brain,
-    title: "AI-Powered Insights",
-    body:
-      "Discover patterns in patient data and receive actionable insights to improve treatment outcomes.",
-  },
-  {
-    Icon: Users,
-    title: "Team Collaboration",
-    body:
-      "Seamlessly share insights and coordinate care with your medical team in real-time.",
-  },
-  {
-    Icon: Shield,
-    title: "HIPAA Compliant",
-    body:
-      "Enterprise-grade security ensures all patient data is protected with full HIPAA compliance.",
-  },
-  {
-    Icon: Zap,
-    title: "Lightning Fast",
-    body:
-      "Process thousands of medical notes in seconds, not hours. Get instant results when you need them most.",
+    no: "03",
+    Icon: ArrowRight,
+    title: "Team routes",
+    desc: "A scheduler confirms the recommendation from the routing desk — fast, auditable, repeatable.",
   },
 ];
 
-const testimonialItems = [
+const features = [
+  { no: "01", title: "Patient triage chat", desc: "Describe symptoms and attach a packet — get an intelligent routing recommendation in seconds.", tag: "Clinician" },
+  { no: "02", title: "Referral upload", desc: "Referring providers submit a record plus one PDF through a simple two-step form.", tag: "Referrer" },
+  { no: "03", title: "Specialist index", desc: "A routing knowledge base of subspecialty clinics, conditions, and intake requirements.", tag: "Scheduler" },
+  { no: "04", title: "Routing desk", desc: "One workspace for every open referral with AI-assisted triage chat alongside it.", tag: "Team" },
+];
+
+const testimonials = [
   {
     initials: "KG",
     role: "Neurologist",
     org: "Johns Hopkins Hospital",
-    quote:
-      "Having Eligio AI would cut my note review time by 70%. I would be able to spend more quality time with my patients instead of drowning in paperwork.",
+    quote: "Having Eligio AI would cut my note review time by 70%. I would be able to spend more quality time with my patients instead of drowning in paperwork.",
   },
   {
     initials: "JB",
     role: "Cardiologist",
     org: "Mount Sinai Hospital",
-    quote:
-      "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient needs we might have missed. Absolutely revolutionary.",
+    quote: "Eligio AI would be a game-changer for our practice. The AI insights would help us identify patient needs we might have missed. Absolutely revolutionary.",
   },
   {
     initials: "RP",
     role: "Patient Access Leadership Team",
     org: "Johns Hopkins Hospital",
-    quote:
-      "60% of referrals require manual chart review, and it takes 40 hours/week to review documentation. Eligio AI would really help us reduce scheduling time and streamline referrals.",
+    quote: "60% of referrals require manual chart review, and it takes 40 hours/week to review documentation. Eligio AI would really help us reduce scheduling time and streamline referrals.",
   },
 ];
 
-const SectionDivider = ({ dark = false }) => (
-  <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16" aria-hidden>
-    <div
-      className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${
-        dark ? "via-white/35" : "via-primary/30"
-      } to-transparent`}
-    />
-    <div
-      className={`absolute left-1/2 top-0 h-14 w-px -translate-x-1/2 bg-gradient-to-b ${
-        dark ? "from-white/35" : "from-primary/35"
-      } to-transparent`}
-    />
-    <span
-      className={`absolute left-1/2 top-3 size-2 -translate-x-1/2 rounded-full border ${
-        dark
-          ? "border-white/45 bg-white/70 shadow-[0_0_26px_rgba(255,255,255,0.45)]"
-          : "border-primary/35 bg-background shadow-[0_0_24px_hsl(var(--primary)/0.28)]"
-      }`}
-    />
-  </div>
-);
-
 const Index = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const primaryRoute = getDefaultRouteForRole(user?.role);
   const primaryActionLabel = getPrimaryActionLabelForRole(user?.role);
-  const handlePointerMove = useCallback((event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    event.currentTarget.style.setProperty("--cursor-x", `${event.clientX - rect.left}px`);
-    event.currentTarget.style.setProperty("--cursor-y", `${event.clientY - rect.top}px`);
-  }, []);
 
   return (
-    <div
-      className="relative min-h-screen overflow-x-hidden"
-      onPointerMove={handlePointerMove}
-      style={{ "--cursor-x": "50vw", "--cursor-y": "18rem" }}
-    >
-      <header className="site-header">
-        <div className="container mx-auto flex w-full items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="relative flex shrink-0">
-              <span
-                className="absolute inset-[-6px] rounded-2xl bg-gradient-to-br from-cyan-400/35 via-transparent to-teal-400/35 opacity-80 blur-md motion-safe:animate-pulse motion-reduce:hidden"
-                aria-hidden
-              />
-              <img
-                src={eligioLogo}
-                alt="Eligio AI"
-                className="relative size-14 object-contain motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out motion-safe:hover:scale-[1.03]"
-              />
-            </span>
-            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-xl font-bold tracking-tight text-transparent">
-              Eligio AI
-            </span>
-          </div>
-          <div className="flex items-center gap-3 md:gap-8">
-            <ThemeToggle />
-            <div className="hidden items-center gap-8 md:flex">
-            {isAuthenticated ? (
-              <>
-                <RoleTabs />
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
-                  <Button variant="outline" size="sm" onClick={logout}>
-                    Logout
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-primary"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-primary"
-                >
-                  Register
-                </Link>
-              </>
-            )}
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-paper text-ink">
+      <AppHeader />
 
-      <section
-        className="relative overflow-hidden bg-[linear-gradient(180deg,hsl(198_70%_99%)_0%,hsl(190_64%_96%)_46%,hsl(182_48%_91%)_100%)] px-4 pb-24 pt-16 dark:bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(216_38%_9%)_52%,hsl(198_44%_10%)_100%)] lg:pb-32 lg:pt-24"
-        onPointerMove={handlePointerMove}
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,transparent_58%,hsl(var(--primary)/0.08)_58.2%,transparent_76%),linear-gradient(90deg,hsl(var(--foreground)/0.075)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--foreground)/0.055)_1px,transparent_1px)] bg-[auto,52px_52px,52px_52px]" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_360px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.18),transparent_62%)] opacity-90 transition-opacity duration-300 motion-reduce:hidden" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.16)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.12)_1px,transparent_1px)] bg-[52px_52px] opacity-0 [mask-image:radial-gradient(circle_260px_at_var(--cursor-x)_var(--cursor-y),black,transparent_72%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
-        <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-[min(100%,820px)] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.14),transparent_66%)] blur-[70px]" aria-hidden />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,transparent,hsl(187_52%_91%/0.48),hsl(184_48%_86%/0.76))] dark:bg-[linear-gradient(180deg,transparent,hsl(202_50%_9%/0.58),hsl(190_54%_11%/0.9))]" aria-hidden />
-        <div className="container relative mx-auto text-left">
-          <div className="max-w-4xl">
-            <div className="motion-safe:animate-fade-down">
-              <p className="mb-6 inline-flex items-center rounded-full border border-border/70 bg-background/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground shadow-sm backdrop-blur-sm">
-                Clinical workflow • AI-assisted
-              </p>
-              <h1 className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-foreground md:text-6xl lg:text-[3.5rem] motion-safe:animate-fade-up">
-                Revolutionize Your
-                <span className="mt-3 block bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-600 bg-[length:200%_auto] bg-clip-text pb-2 text-transparent motion-safe:animate-gradient-shift">
-                  Patient Workflow
-                </span>
-              </h1>
-            </div>
-
-            <p className="mb-12 mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
-              AI-powered medical note summarization and intelligent scheduling recommendations that help doctors focus on
-              what matters most — patient care.
+      <main className="idx-in">
+        {/* HERO */}
+        <section className="mx-auto max-w-[1280px] border-b border-line px-4 py-14 sm:px-8 lg:py-16">
+          <div className="mb-7 flex items-center gap-3.5">
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-signal">No. 01 — 06</span>
+            <span className="h-px flex-1 bg-line" />
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">AI patient triage &amp; referral</span>
+          </div>
+          <h1 className="max-w-[1000px] font-display text-[44px] font-extrabold leading-[0.98] tracking-[-0.035em] sm:text-[64px] lg:text-[84px] lg:leading-[0.96]">
+            The routing record,
+            <br />
+            set <span className="text-signal">straight.</span>
+          </h1>
+          <div className="mt-8 flex flex-col items-start gap-8 sm:flex-row sm:items-end sm:justify-between">
+            <p className="max-w-[520px] border-l-2 border-signal pl-4 font-sans text-lg leading-[1.6] text-muted2">
+              AI-powered note summarization and intelligent scheduling recommendations that help doctors focus on what
+              matters most — patient care.
             </p>
-
-            <div className="flex flex-col items-start gap-4 motion-safe:animate-fade-up motion-safe:animate-in-delay-200 sm:flex-row">
+            <div className="flex gap-3">
               {isAuthenticated ? (
                 <Link to={primaryRoute}>
-                  <Button size="lg" className="group min-w-[200px] gap-2 px-8 text-lg">
+                  <Button size="lg" className="gap-2.5">
                     {primaryActionLabel}
-                    <ArrowRight className="h-5 w-5 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:translate-x-1" />
+                    <ArrowRight className="size-4" />
                   </Button>
                 </Link>
               ) : (
                 <>
                   <Link to="/register">
-                    <Button size="lg" className="group min-w-[200px] gap-2 px-8 text-lg">
-                      Get Started Now
-                      <ArrowRight className="h-5 w-5 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:translate-x-1" />
+                    <Button size="lg" className="gap-2.5">
+                      Get started
+                      <ArrowRight className="size-4" />
                     </Button>
                   </Link>
                   <Link to="/login">
-                    <Button size="lg" variant="outline" className="min-w-[160px] border-primary/35 px-8 text-lg text-primary backdrop-blur-sm hover:border-primary/50">
-                      Sign In
+                    <Button size="lg" variant="outline">
+                      Sign in
                     </Button>
                   </Link>
                 </>
               )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section
-        id="features"
-        className="relative overflow-hidden border-y border-primary/15 bg-[linear-gradient(180deg,hsl(188_58%_89%)_0%,hsl(196_58%_93%)_48%,hsl(186_48%_90%)_100%)] px-4 py-24 backdrop-blur-[1px] dark:bg-[linear-gradient(180deg,hsl(202_36%_10%)_0%,hsl(218_34%_8%)_54%,hsl(190_34%_9%)_100%)]"
-        onPointerMove={handlePointerMove}
-      >
-        <SectionDivider />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-[linear-gradient(174deg,transparent_0%,transparent_45%,hsl(var(--background)/0.62)_46%,transparent_68%)]" aria-hidden />
-        <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent md:block" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.095)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.075)_1px,transparent_1px)] bg-[42px_42px] opacity-80" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_420px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.16),transparent_64%)] opacity-80 motion-reduce:hidden" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.2)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.16)_1px,transparent_1px)] bg-[42px_42px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(132deg,transparent_0%,transparent_18%,hsl(var(--background)/0.62)_18.2%,transparent_44%,transparent_100%)]" aria-hidden />
-        <div className="container relative mx-auto">
-          <div className="mb-20 max-w-3xl text-left motion-safe:animate-fade-up">
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Powerful Features for Modern Healthcare
-            </h2>
-            <p className="mt-5 max-w-2xl text-pretty text-lg text-muted-foreground">
-              Our AI-driven platform streamlines your workflow and enhances patient care.
-            </p>
+        {/* STATS BAND */}
+        <section className="bg-strong text-on-strong">
+          <div className="mx-auto grid max-w-[1280px] grid-cols-1 px-4 sm:grid-cols-3 sm:px-8">
+            {stats.map((s, i) => (
+              <div
+                key={s.value + s.unit}
+                className={`py-10 ${i > 0 ? "sm:border-l sm:border-strong-hair sm:pl-9" : ""} ${i > 0 ? "border-t border-strong-hair sm:border-t-0" : ""}`}
+              >
+                <div className="font-display text-[44px] font-extrabold leading-none tracking-[-0.04em] sm:text-[56px]">
+                  {s.value}
+                  <span className="text-signal">{s.unit}</span>
+                </div>
+                <div className="mt-2 max-w-[300px] font-sans text-sm leading-[1.5] text-faint">{s.caption}</div>
+              </div>
+            ))}
           </div>
+        </section>
 
-          <div className="-mx-4 -my-5 overflow-hidden px-4 py-5 [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)] motion-safe:animate-fade-up">
-            <div className="relative z-10 flex w-max gap-6 motion-safe:animate-marquee-left motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center motion-reduce:[animation:none] hover:[animation-play-state:paused]">
-              {[...featureItems, ...featureItems].map(({ Icon, title, body }, i) => (
-                <Card
-                  key={`${title}-${i}`}
-                  aria-hidden={i >= featureItems.length}
-                  className="group relative min-h-[17rem] w-[min(82vw,22rem)] shrink-0 overflow-hidden border border-primary/25 border-t-primary/45 bg-card/90 p-0 shadow-[inset_0_1px_0_hsl(var(--primary)/0.28),0_1px_2px_hsl(var(--primary)/0.05)] outline outline-1 outline-cyan-50/70 backdrop-blur-sm transition-[background-color,border-color,box-shadow,transform] duration-300 hover:border-primary/45 hover:border-t-primary/65 hover:bg-card hover:shadow-[inset_0_1px_0_hsl(var(--primary)/0.42),0_18px_36px_hsl(var(--primary)/0.10)] motion-safe:hover:-translate-y-1 [&:hover_.feature-icon-shell]:border-primary/30 [&:hover_.feature-icon-shell]:bg-primary/10 [&:hover_.feature-icon-shell]:text-primary [&:hover_.feature-orbit]:opacity-100"
-                >
-                  <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-muted/70 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden />
-                  <CardContent className="relative p-6">
-                    <div className="mb-6 flex items-start justify-between gap-4">
-                      <span className="feature-icon-shell relative inline-flex size-12 items-center justify-center rounded-lg border border-border/80 bg-background/80 text-primary/90 shadow-sm transition-[background-color,border-color,color,transform] duration-300 motion-safe:group-hover:scale-[1.04]">
-                        <span className="feature-orbit absolute -inset-2 rounded-xl border border-primary/20 opacity-0 transition-opacity duration-300" aria-hidden />
-                        <Icon className="relative size-6" aria-hidden />
-                      </span>
-                      <span className="mt-1 h-px flex-1 bg-gradient-to-r from-border via-border/60 to-transparent" aria-hidden />
-                    </div>
-                    <h3 className="mb-3 max-w-[14rem] text-xl font-semibold tracking-tight text-foreground">{title}</h3>
-                    <p className="text-sm leading-6 text-muted-foreground">{body}</p>
-                    <span className="mt-6 block h-px w-12 bg-border transition-[width] duration-300 group-hover:w-20" aria-hidden />
-                  </CardContent>
-                </Card>
-              ))}
+        {/* HOW IT WORKS */}
+        <section className="mx-auto max-w-[1280px] border-b border-line px-4 py-14 sm:px-8">
+          <div className="mb-8 flex items-baseline justify-between">
+            <h2 className="font-display text-[26px] font-extrabold tracking-[-0.03em] sm:text-[30px]">How a referral moves</h2>
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Three steps</span>
+          </div>
+          <div className="grid grid-cols-1 border border-line sm:grid-cols-3">
+            {steps.map((st, i) => (
+              <div
+                key={st.no}
+                className={`px-6 py-8 ${i > 0 ? "border-t border-line sm:border-l sm:border-t-0" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-display text-[46px] font-extrabold leading-none tracking-[-0.04em]">{st.no}</span>
+                  <st.Icon className="size-6 text-signal" />
+                </div>
+                <div className="mt-4 font-display text-lg font-bold tracking-[-0.02em]">{st.title}</div>
+                <div className="mt-2 font-sans text-sm leading-[1.55] text-muted2">{st.desc}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* FEATURE INDEX */}
+        <section className="mx-auto max-w-[1280px] border-b border-line px-4 py-14 sm:px-8">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="font-display text-[26px] font-extrabold tracking-[-0.03em] sm:text-[30px]">Built for the people who route</h2>
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">The index</span>
+          </div>
+          {features.map((f) => (
+            <div
+              key={f.no}
+              className="grid grid-cols-[40px_1fr_60px] items-center gap-4 border-t border-line py-6 transition-colors hover:bg-paper sm:grid-cols-[80px_1fr_1.4fr_90px] sm:gap-6"
+            >
+              <span className="font-mono text-[13px] text-signal">{f.no}</span>
+              <span className="font-display text-lg font-bold tracking-[-0.02em] sm:text-xl">{f.title}</span>
+              <span className="col-span-2 mt-1 font-sans text-sm leading-[1.5] text-muted2 sm:col-span-1 sm:mt-0">{f.desc}</span>
+              <span className="hidden font-mono text-[11px] uppercase tracking-[0.12em] sm:block sm:justify-self-end">{f.tag}</span>
             </div>
-          </div>
-        </div>
-      </section>
+          ))}
+        </section>
 
-      <section
-        id="testimonials"
-        className="relative overflow-hidden border-y border-primary/12 bg-[linear-gradient(180deg,hsl(186_48%_91%)_0%,hsl(193_52%_94%)_46%,hsl(188_42%_90%)_100%)] px-4 py-24 dark:bg-[linear-gradient(180deg,hsl(198_40%_11%)_0%,hsl(192_38%_10%)_52%,hsl(202_34%_8%)_100%)]"
-        onPointerMove={handlePointerMove}
-      >
-        <SectionDivider />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,hsl(188_58%_89%/0.78),transparent_70%)] dark:bg-[linear-gradient(180deg,hsl(190_38%_9%/0.86),transparent_70%)]" aria-hidden />
-        <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[min(88%,980px)] -translate-x-1/2 bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.075)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.055)_1px,transparent_1px)] bg-[42px_42px] opacity-70" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_420px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.13),transparent_64%)] opacity-70 motion-reduce:hidden" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.17)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.13)_1px,transparent_1px)] bg-[42px_42px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(142deg,transparent_0%,transparent_26%,hsl(var(--background)/0.44)_26.2%,transparent_54%,transparent_100%)]" aria-hidden />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,transparent,hsl(188_42%_90%/0.9))] dark:bg-[linear-gradient(180deg,transparent,hsl(202_34%_8%/0.92))]" aria-hidden />
-        <div className="container relative mx-auto">
-          <div className="mb-16 max-w-3xl text-left motion-safe:animate-fade-up">
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Trusted by Healthcare Professionals
-            </h2>
-            <p className="mt-4 max-w-2xl text-xl text-muted-foreground">
-              See how Eligio AI will transform medical practices nationwide.
-            </p>
+        {/* TESTIMONIALS */}
+        <section className="mx-auto max-w-[1280px] border-b border-line px-4 py-14 sm:px-8">
+          <div className="mb-8 flex items-baseline justify-between">
+            <h2 className="font-display text-[26px] font-extrabold tracking-[-0.03em] sm:text-[30px]">Trusted by healthcare professionals</h2>
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">What they say</span>
           </div>
+          <div className="grid grid-cols-1 border border-line sm:grid-cols-3">
+            {testimonials.map((t, i) => (
+              <div
+                key={t.initials}
+                className={`flex flex-col gap-4 px-6 py-7 ${i > 0 ? "border-t border-line sm:border-l sm:border-t-0" : ""}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center border border-line font-mono text-xs font-medium">
+                    {t.initials}
+                  </span>
+                  <div>
+                    <div className="font-display text-sm font-bold leading-tight">{t.role}</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{t.org}</div>
+                  </div>
+                </div>
+                <p className="font-sans text-sm italic leading-[1.6] text-muted2">&ldquo;{t.quote}&rdquo;</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-          <div className="-mx-4 -my-5 overflow-hidden px-4 py-5 [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)] motion-safe:animate-fade-up">
-            <div className="relative z-10 flex w-max gap-6 motion-safe:animate-marquee-right motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center motion-reduce:[animation:none] hover:[animation-play-state:paused]">
-              {[...testimonialItems, ...testimonialItems].map((t, idx) => (
-                <Card
-                  key={`${t.initials}-${idx}`}
-                  aria-hidden={idx >= testimonialItems.length}
-                  className="min-h-[17rem] w-[min(82vw,23rem)] shrink-0 border border-primary/18 border-t-primary/35 bg-card/98 p-6 shadow-[inset_0_1px_0_hsl(var(--primary)/0.22),0_1px_2px_hsl(var(--primary)/0.04)] transition-[border-color,box-shadow,transform] duration-300 hover:border-primary/35 hover:border-t-primary/55 hover:shadow-[inset_0_1px_0_hsl(var(--primary)/0.36),0_18px_36px_hsl(var(--primary)/0.10)] motion-safe:hover:-translate-y-1"
-                >
-                  <CardContent className="p-0">
-                    <div className="mb-5 flex items-center gap-4">
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-teal-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25">
-                        {t.initials}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold leading-snug text-foreground">{t.role}</h4>
-                        <p className="text-sm text-muted-foreground">{t.org}</p>
-                      </div>
-                    </div>
-                    <p className="text-pretty italic leading-relaxed text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
-                  </CardContent>
-                </Card>
-              ))}
+        {/* CTA */}
+        <section className="mx-auto max-w-[1280px] px-4 py-12 sm:px-8">
+          <div className="flex flex-col items-start gap-8 bg-signal px-7 py-12 text-white sm:flex-row sm:items-center sm:justify-between sm:px-12">
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/75">Ready when you are</div>
+              <h2 className="mt-2.5 max-w-[560px] font-display text-3xl font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-[44px]">
+                Transform your practice&apos;s referral workflow.
+              </h2>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden border-t border-primary/15 bg-[linear-gradient(180deg,hsl(188_42%_90%)_0%,hsl(190_48%_86%)_58%,hsl(184_45%_82%)_100%)] px-4 py-24 dark:bg-[linear-gradient(180deg,hsl(202_34%_8%)_0%,hsl(194_38%_10%)_58%,hsl(188_42%_12%)_100%)]" onPointerMove={handlePointerMove}>
-        <SectionDivider />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.085)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.065)_1px,transparent_1px)] bg-[48px_48px] opacity-75" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_430px_at_var(--cursor-x)_var(--cursor-y),hsl(var(--primary)/0.14),transparent_64%)] opacity-75 motion-reduce:hidden" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--primary)/0.19)_1px,transparent_1px),linear-gradient(180deg,hsl(var(--primary)/0.145)_1px,transparent_1px)] bg-[48px_48px] opacity-0 [mask-image:radial-gradient(circle_300px_at_var(--cursor-x)_var(--cursor-y),black,transparent_74%)] transition-opacity duration-300 motion-safe:hover:opacity-100" aria-hidden />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-[linear-gradient(180deg,hsl(188_42%_90%/0.86),transparent)] dark:bg-[linear-gradient(180deg,hsl(202_34%_8%/0.82),transparent)]" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,hsl(var(--background)/0.52)_0%,transparent_32%,transparent_100%),linear-gradient(24deg,transparent_0%,transparent_54%,hsl(var(--primary)/0.1)_54.2%,transparent_78%)]" aria-hidden />
-        <div className="relative container mx-auto text-left">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl motion-safe:animate-fade-up">
-            Ready to Transform Your Practice?
-          </h2>
-          <p className="mb-12 mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground motion-safe:animate-fade-up motion-safe:animate-in-delay-100 md:text-xl">
-            Join the waitlist to be among the first healthcare professionals to experience the future of AI-powered
-            medical practice management with Eligio AI.
-          </p>
-          <div className="motion-safe:animate-fade-up motion-safe:animate-in-delay-200">
-            <Link to={isAuthenticated ? primaryRoute : "/login"}>
-              <Button size="lg" className="min-w-[220px] px-8 text-lg shadow-lg shadow-primary/20">
-                {isAuthenticated ? primaryActionLabel : "Eligio AI chat"}
+            <Link to={isAuthenticated ? primaryRoute : "/register"} className="shrink-0">
+              <Button size="lg" className="gap-2.5 bg-ink text-white hover:bg-ink">
+                Get started
+                <ArrowRight className="size-4" />
               </Button>
             </Link>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer className="border-t border-teal-200/10 bg-[linear-gradient(180deg,hsl(194_42%_11%)_0%,hsl(198_42%_9%)_52%,hsl(204_40%_7%)_100%)] px-4 py-14 text-white">
-        <div className="container mx-auto">
-          <div className="text-left">
-            <div className="mb-4 flex items-center justify-start gap-3">
-              <img src={eligioLogo} alt="Eligio AI" className="size-14 object-contain opacity-95" />
-              <span className="text-xl font-bold tracking-tight">Eligio AI</span>
-            </div>
-            <p className="max-w-xl text-pretty text-slate-400">Revolutionizing healthcare with AI-powered solutions for medical professionals.</p>
+        {/* FOOTER */}
+        <footer className="border-t border-line bg-surface">
+          <div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 py-7 sm:px-8">
+            <Logo />
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              © {new Date().getFullYear()} · Right care, routed
+            </span>
           </div>
-          <div className="mt-10 border-t border-white/10 pt-8 text-left text-sm text-slate-500">
-            <p>&copy; {new Date().getFullYear()} Eligio AI. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </main>
     </div>
   );
 };
