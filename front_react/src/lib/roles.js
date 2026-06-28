@@ -61,6 +61,7 @@ export const getTopNavItemsForRole = (role) => {
 
   if (normalizedRole === ROLE_PATIENT_SCHEDULER) {
     return [
+      { to: "/patients", label: "Patients" },
       { to: "/referral-queue", label: "Referral Search" },
       { to: "/specialists-list", label: "Specialists List" },
     ];
@@ -92,7 +93,7 @@ export const getDefaultRouteForRole = (role) => {
   const normalizedRole = normalizeRole(role);
 
   if (normalizedRole === ROLE_PATIENT_SCHEDULER) {
-    return "/referral-queue";
+    return "/patients";
   }
 
   if (normalizedRole === ROLE_REFERRING_PROVIDER) {
@@ -104,7 +105,7 @@ export const getDefaultRouteForRole = (role) => {
   }
 
   if (canAccessReferralSearch(normalizedRole)) {
-    return "/referral-queue";
+    return "/patients";
   }
 
   if (canAccessUpload(normalizedRole)) {
@@ -118,7 +119,7 @@ export const getPrimaryActionLabelForRole = (role) => {
   const normalizedRole = normalizeRole(role);
 
   if (normalizedRole === ROLE_PATIENT_SCHEDULER) {
-    return "Go to Referral Search";
+    return "Go to Patients";
   }
 
   if (normalizedRole === ROLE_REFERRING_PROVIDER) {

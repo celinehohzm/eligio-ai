@@ -13,6 +13,8 @@ import Chat from "./pages/Chat";
 import ExternalProviderUpload from "./pages/ExternalProviderUpload";
 import ReferralQueue from "./pages/ReferralQueue";
 import SpecialistsList from "./pages/SpecialistsList";
+import Patients from "./pages/Patients";
+import PatientDetail from "./pages/PatientDetail";
 import NotFound from "./pages/NotFound";
 import { CHAT_ALLOWED_ROLES, REFERRAL_SEARCH_ALLOWED_ROLES, UPLOAD_ALLOWED_ROLES } from "@/lib/roles";
 
@@ -45,6 +47,22 @@ const App = () => (
                     <ExternalProviderUpload />
                   </ProtectedRoute>
                 } 
+              />
+              <Route
+                path="/patients"
+                element={
+                  <ProtectedRoute allowedRoles={REFERRAL_SEARCH_ALLOWED_ROLES}>
+                    <Patients />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patients/:id"
+                element={
+                  <ProtectedRoute allowedRoles={REFERRAL_SEARCH_ALLOWED_ROLES}>
+                    <PatientDetail />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/referral-queue"

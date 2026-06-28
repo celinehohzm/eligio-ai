@@ -4,14 +4,16 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import RoleTabs from "@/components/RoleTabs";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDefaultRouteForRole } from "@/lib/roles";
 
 export default function AppHeader() {
   const { isAuthenticated, user, logout } = useAuth();
+  const homeRoute = isAuthenticated ? getDefaultRouteForRole(user?.role) : "/";
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-header-bg backdrop-blur-[8px]">
       <div className="mx-auto flex h-[60px] max-w-[1280px] items-center justify-between px-4 lg:px-8">
-        <Link to="/" className="flex items-center">
+        <Link to={homeRoute} className="flex items-center">
           <Logo />
         </Link>
         <div className="flex items-center gap-6">

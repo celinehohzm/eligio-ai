@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mark } from "@/components/Logo";
 import AppHeader from "@/components/AppHeader";
+import { getDefaultRouteForRole } from "@/lib/roles";
 
 const fieldClass =
   "mt-2 h-auto border-0 px-0 py-0 font-sans text-lg font-semibold text-ink shadow-none focus-visible:ring-0 focus-visible:ring-offset-0";
@@ -32,9 +33,9 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      const response = await login(formData.email, formData.password);
       toast.success("Login successful!");
-      navigate("/");
+      navigate(getDefaultRouteForRole(response.user?.role));
     } catch (error) {
       toast.error("Login failed", {
         description: error.message || "Invalid credentials"
