@@ -215,7 +215,7 @@ const Index = () => {
               </h2>
             </div>
             <Link to={isAuthenticated ? primaryRoute : "/register"} className="shrink-0">
-              <Button size="lg" className="gap-2.5 bg-ink text-white hover:bg-ink">
+              <Button size="lg" className="gap-2.5 bg-strong text-on-strong">
                 Get started
                 <ArrowRight className="size-4" />
               </Button>
